@@ -1,6 +1,6 @@
 <div>
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <h3 class="mb-0">Dashboard 4DX Kepwil XI</h3>
+        <h3 class="mb-0">Dashboard 4DX Kepwil XI - 2026</h3>
         <div class="d-flex gap-2 flex-wrap">
             @if(auth()->user() && ! auth()->user()->hasRole('kantor_cabang'))
             <select wire:model.live="cabang_id" class="form-select form-select-sm" style="width:200px">
