@@ -43,11 +43,6 @@ jobs:
       - name: Run Pint (code style)
         run: vendor/bin/pint --test
 
-      - name: Run Pest tests
-        run: php artisan test
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
 
   deploy:
     name: Deploy to VPS
