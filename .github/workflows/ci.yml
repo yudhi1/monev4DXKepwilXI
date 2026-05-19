@@ -65,6 +65,7 @@ jobs:
           rsync -avz --delete \
             --exclude='.env' \
             --exclude='storage/' \
+            --exclude='vendor/' \
             --exclude='node_modules/' \
             --exclude='.git/' \
             -e "ssh -i ~/.ssh/deploy_key" \
