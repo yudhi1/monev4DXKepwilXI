@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Wig extends Model
 {
@@ -19,9 +19,28 @@ class Wig extends Model
         return LogOptions::defaults()->logFillable()->logOnlyDirty();
     }
 
-    public function wilayah() { return $this->belongsTo(Wilayah::class); }
-    public function creator() { return $this->belongsTo(User::class, 'created_by'); }
-    public function lagMeasures() { return $this->hasMany(LagMeasure::class); }
-    public function leadMeasures() { return $this->hasMany(LeadMeasure::class); }
-    public function targets() { return $this->hasMany(WigTarget::class); }
+    public function wilayah()
+    {
+        return $this->belongsTo(Wilayah::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function lagMeasures()
+    {
+        return $this->hasMany(LagMeasure::class);
+    }
+
+    public function leadMeasures()
+    {
+        return $this->hasMany(LeadMeasure::class);
+    }
+
+    public function targets()
+    {
+        return $this->hasMany(WigTarget::class);
+    }
 }

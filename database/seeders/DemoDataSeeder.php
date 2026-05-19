@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Wilayah;
 use App\Models\Cabang;
-use App\Models\Wig;
 use App\Models\LagMeasure;
 use App\Models\LeadMeasure;
+use App\Models\User;
+use App\Models\Wig;
+use App\Models\Wilayah;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 

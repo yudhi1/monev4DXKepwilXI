@@ -4,13 +4,13 @@ namespace App\Exports;
 
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class IuranExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class IuranExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     public function __construct(public Collection $data, public array $bulanLabels = []) {}
 
@@ -22,17 +22,18 @@ class IuranExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
     public function headings(): array
     {
         return ['No', 'Bulan', 'Minggu', 'Kantor Cabang', 'Nama Pemda', 'Tagihan',
-                'Bayar', 'Outstanding', 'Target Penyelesaian', 'PIC', 'Kendala', 'Keterangan'];
+            'Bayar', 'Outstanding', 'Target Penyelesaian', 'PIC', 'Kendala', 'Keterangan'];
     }
 
     public function map($r): array
     {
         static $i = 0;
         $i++;
+
         return [
             $i,
             $this->bulanLabels[$r->bulan] ?? $r->bulan,
-            'Minggu ' . $r->minggu,
+            'Minggu '.$r->minggu,
             $r->cabang?->nama,
             $r->nama_pemda,
             (float) $r->tagihan,

@@ -18,7 +18,7 @@ class RealisasiExport implements FromCollection, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return ['WIG','Lag Measure','Lead Measure','Cabang','Tahun','Bulan','Minggu','Target','Realisasi','% Capaian','Catatan'];
+        return ['WIG', 'Lag Measure', 'Lead Measure', 'Cabang', 'Tahun', 'Bulan', 'Minggu', 'Target', 'Realisasi', '% Capaian', 'Catatan'];
     }
 
     public function map($r): array

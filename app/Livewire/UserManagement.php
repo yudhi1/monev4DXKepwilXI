@@ -2,14 +2,13 @@
 
 namespace App\Livewire;
 
+use App\Models\Cabang;
 use App\Models\User;
 use App\Models\Wilayah;
-use App\Models\Cabang;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Spatie\Permission\Models\Role;
 
 class UserManagement extends Component
 {
@@ -18,9 +17,19 @@ class UserManagement extends Component
     protected string $paginationTheme = 'bootstrap';
 
     public ?int $editingId = null;
-    public string $name = '', $password = '', $role = 'kantor_cabang';
-    public ?int $wilayah_id = null, $cabang_id = null;
+
+    public string $name = '';
+
+    public string $password = '';
+
+    public string $role = 'kantor_cabang';
+
+    public ?int $wilayah_id = null;
+
+    public ?int $cabang_id = null;
+
     public bool $is_active = true;
+
     public string $search = '';
 
     protected function rules(): array
@@ -40,13 +49,17 @@ class UserManagement extends Component
         $base = Str::slug($name, '.') ?: 'user';
         $email = $base.'@monev.local';
         $i = 1;
-        while (User::where('email', $email)->when($ignoreId, fn($q) => $q->where('id','!=',$ignoreId))->exists()) {
+        while (User::where('email', $email)->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->exists()) {
             $email = $base.($i++).'@monev.local';
         }
+
         return $email;
     }
 
-    public function updatingSearch() { $this->resetPage(); }
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
 
     public function edit(int $id): void
     {
@@ -64,7 +77,9 @@ class UserManagement extends Component
     {
         $data = $this->validate();
         $payload = collect($data)->except(['password', 'role'])->toArray();
-        if (! empty($data['password'])) $payload['password'] = Hash::make($data['password']);
+        if (! empty($data['password'])) {
+            $payload['password'] = Hash::make($data['password']);
+        }
 
         if ($this->editingId) {
             $user = User::findOrFail($this->editingId);
@@ -76,7 +91,7 @@ class UserManagement extends Component
         }
 
         $user->syncRoles([$data['role']]);
-        $this->reset(['editingId','name','password','role','wilayah_id','cabang_id']);
+        $this->reset(['editingId', 'name', 'password', 'role', 'wilayah_id', 'cabang_id']);
         $this->is_active = true;
         session()->flash('success', 'User tersimpan.');
     }
@@ -90,8 +105,8 @@ class UserManagement extends Component
     public function render()
     {
         return view('livewire.user-management', [
-            'users' => User::with('roles','wilayah','cabang')
-                ->when($this->search, fn($q) => $q->where('name','like',"%{$this->search}%"))
+            'users' => User::with('roles', 'wilayah', 'cabang')
+                ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
                 ->latest()->paginate(10),
             'wilayahs' => Wilayah::orderBy('nama')->get(),
             'cabangs' => Cabang::orderBy('nama')->get(),

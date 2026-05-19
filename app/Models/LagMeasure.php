@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class LagMeasure extends Model
 {
@@ -21,7 +21,18 @@ class LagMeasure extends Model
         return LogOptions::defaults()->logFillable()->logOnlyDirty();
     }
 
-    public function wig() { return $this->belongsTo(Wig::class); }
-    public function cabang() { return $this->belongsTo(Cabang::class); }
-    public function leadMeasures() { return $this->hasMany(LeadMeasure::class); }
+    public function wig()
+    {
+        return $this->belongsTo(Wig::class);
+    }
+
+    public function cabang()
+    {
+        return $this->belongsTo(Cabang::class);
+    }
+
+    public function leadMeasures()
+    {
+        return $this->hasMany(LeadMeasure::class);
+    }
 }

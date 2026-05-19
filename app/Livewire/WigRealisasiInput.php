@@ -11,7 +11,9 @@ use Livewire\Component;
 class WigRealisasiInput extends Component
 {
     public ?int $wig_id = null;
+
     public ?int $cabang_id = null;
+
     public int $tahun;
 
     /** @var array<int, array{nilai: float|string, catatan: string}> */
@@ -31,15 +33,26 @@ class WigRealisasiInput extends Component
             $this->cabang_id = $u->cabang_id;
         }
         $this->wig_id = Wig::query()
-            ->when($u && ! $u->hasRole('admin') && $u->wilayah_id, fn($q) => $q->where('wilayah_id', $u->wilayah_id))
+            ->when($u && ! $u->hasRole('admin') && $u->wilayah_id, fn ($q) => $q->where('wilayah_id', $u->wilayah_id))
             ->orderByDesc('tahun')->orderBy('kode_wig')
             ->value('id');
         $this->loadRows();
     }
 
-    public function updatedWigId(): void { $this->loadRows(); }
-    public function updatedCabangId(): void { $this->loadRows(); }
-    public function updatedTahun(): void { $this->loadRows(); }
+    public function updatedWigId(): void
+    {
+        $this->loadRows();
+    }
+
+    public function updatedCabangId(): void
+    {
+        $this->loadRows();
+    }
+
+    public function updatedTahun(): void
+    {
+        $this->loadRows();
+    }
 
     public function loadRows(): void
     {
@@ -47,7 +60,9 @@ class WigRealisasiInput extends Component
         for ($b = 1; $b <= 12; $b++) {
             $this->rows[$b] = ['nilai' => 0, 'catatan' => ''];
         }
-        if (! $this->wig_id || ! $this->cabang_id) return;
+        if (! $this->wig_id || ! $this->cabang_id) {
+            return;
+        }
 
         $existing = WigRealisasi::where('wig_id', $this->wig_id)
             ->where('cabang_id', $this->cabang_id)
@@ -73,6 +88,7 @@ class WigRealisasiInput extends Component
         $u = auth()->user();
         if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id && $this->cabang_id !== $u->cabang_id) {
             $this->dispatch('notify', type: 'error', message: 'Tidak diizinkan input untuk cabang lain.');
+
             return;
         }
 
@@ -112,7 +128,7 @@ class WigRealisasiInput extends Component
                 ->where('cabang_id', $this->cabang_id)->first();
         }
 
-        $totalRealisasi = collect($this->rows)->sum(fn($r) => (float) ($r['nilai'] ?? 0));
+        $totalRealisasi = collect($this->rows)->sum(fn ($r) => (float) ($r['nilai'] ?? 0));
         $nilaiAwal = (float) ($target?->nilai_awal ?? 0);
         $nilaiTarget = (float) ($target?->nilai_target ?? 0);
         $range = $nilaiTarget - $nilaiAwal;

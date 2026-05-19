@@ -21,7 +21,7 @@ class ReportController extends Controller
             ->where('tahun', (int) ($request->tahun ?? date('Y')));
 
         if ($request->filled('wig_id')) {
-            $q->whereHas('leadMeasure', fn($l) => $l->where('wig_id', $request->wig_id));
+            $q->whereHas('leadMeasure', fn ($l) => $l->where('wig_id', $request->wig_id));
         }
         if ($request->filled('lead_measure_id')) {
             $q->where('lead_measure_id', $request->lead_measure_id);
@@ -40,7 +40,7 @@ class ReportController extends Controller
             if ($u->cabang_id) {
                 $q->where('cabang_id', $u->cabang_id);
             } elseif ($u->wilayah_id) {
-                $q->whereHas('cabang', fn($c) => $c->where('wilayah_id', $u->wilayah_id));
+                $q->whereHas('cabang', fn ($c) => $c->where('wilayah_id', $u->wilayah_id));
             }
         }
 
@@ -59,9 +59,11 @@ class ReportController extends Controller
         $wigs = $wigsQ->get();
 
         $leadsQ = LeadMeasure::with('lagMeasure.wig')->orderBy('kode_lead');
-        if ($request->filled('wig_id')) $leadsQ->where('wig_id', $request->wig_id);
+        if ($request->filled('wig_id')) {
+            $leadsQ->where('wig_id', $request->wig_id);
+        }
         if ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
-            $leadsQ->whereHas('wig', fn($w) => $w->where('wilayah_id', $u->wilayah_id));
+            $leadsQ->whereHas('wig', fn ($w) => $w->where('wilayah_id', $u->wilayah_id));
         }
         $leads = $leadsQ->get();
 
@@ -79,13 +81,14 @@ class ReportController extends Controller
             'wigs' => $wigs,
             'leads' => $leads,
             'cabangs' => $cabangs,
-            'filters' => $request->only(['wig_id','lead_measure_id','cabang_id','bulan','minggu','tahun']),
+            'filters' => $request->only(['wig_id', 'lead_measure_id', 'cabang_id', 'bulan', 'minggu', 'tahun']),
         ]);
     }
 
     public function excel(Request $request)
     {
         $tahun = (int) ($request->tahun ?? date('Y'));
+
         return Excel::download(
             new RealisasiExport($this->buildQuery($request)->get()),
             "laporan-realisasi-{$tahun}.xlsx"
@@ -99,6 +102,7 @@ class ReportController extends Controller
             'realisasis' => $this->buildQuery($request)->get(),
             'tahun' => $tahun,
         ])->setPaper('a4', 'landscape');
+
         return $pdf->download("laporan-realisasi-{$tahun}.pdf");
     }
 }

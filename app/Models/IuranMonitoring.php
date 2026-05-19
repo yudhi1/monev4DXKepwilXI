@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class IuranMonitoring extends Model
 {
@@ -33,6 +33,13 @@ class IuranMonitoring extends Model
         return LogOptions::defaults()->logFillable()->logOnlyDirty();
     }
 
-    public function creator() { return $this->belongsTo(User::class, 'created_by'); }
-    public function cabang() { return $this->belongsTo(Cabang::class); }
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function cabang()
+    {
+        return $this->belongsTo(Cabang::class);
+    }
 }

@@ -15,10 +15,17 @@ class LagManagement extends Component
     protected string $paginationTheme = 'bootstrap';
 
     public ?int $editingId = null;
+
     public ?int $wig_id = null;
+
     public ?int $cabang_id = null;
-    public string $kode_lag = '', $nama_lag = '';
+
+    public string $kode_lag = '';
+
+    public string $nama_lag = '';
+
     public ?string $tanggal_target = null;
+
     public int $tahun;
 
     public function mount(): void
@@ -38,15 +45,30 @@ class LagManagement extends Component
         ];
     }
 
-    public function updatedCabangId(): void { $this->generateKode(); }
-    public function updatedTahun(): void { $this->generateKode(); }
+    public function updatedCabangId(): void
+    {
+        $this->generateKode();
+    }
+
+    public function updatedTahun(): void
+    {
+        $this->generateKode();
+    }
 
     private function generateKode(): void
     {
-        if ($this->editingId) return;
-        if (! $this->cabang_id) { $this->kode_lag = ''; return; }
+        if ($this->editingId) {
+            return;
+        }
+        if (! $this->cabang_id) {
+            $this->kode_lag = '';
+
+            return;
+        }
         $cabang = Cabang::find($this->cabang_id);
-        if (! $cabang) return;
+        if (! $cabang) {
+            return;
+        }
         $base = preg_replace('/^KC-?/i', '', $cabang->kode);
         $count = LagMeasure::where('cabang_id', $this->cabang_id)->where('tahun', $this->tahun)->count() + 1;
         $this->kode_lag = $base.'-'.str_pad((string) $count, 2, '0', STR_PAD_LEFT).'-'.$this->tahun;
@@ -68,7 +90,7 @@ class LagManagement extends Component
     {
         $data = $this->validate();
         LagMeasure::updateOrCreate(['id' => $this->editingId], $data);
-        $this->reset(['editingId','wig_id','cabang_id','kode_lag','nama_lag','tanggal_target']);
+        $this->reset(['editingId', 'wig_id', 'cabang_id', 'kode_lag', 'nama_lag', 'tanggal_target']);
         $this->tahun = (int) date('Y');
         session()->flash('success', 'Lag tersimpan.');
     }
@@ -81,10 +103,10 @@ class LagManagement extends Component
 
     public function render()
     {
-        $q = LagMeasure::with('wig','cabang');
+        $q = LagMeasure::with('wig', 'cabang');
         $u = auth()->user();
         if ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
-            $q->whereHas('wig', fn($w) => $w->where('wilayah_id', $u->wilayah_id));
+            $q->whereHas('wig', fn ($w) => $w->where('wilayah_id', $u->wilayah_id));
         }
 
         $cabangsQ = Cabang::orderBy('nama');

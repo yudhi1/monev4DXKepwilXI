@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class LeadMeasureRealisasi extends Model
 {
@@ -29,6 +29,13 @@ class LeadMeasureRealisasi extends Model
         return LogOptions::defaults()->logFillable()->logOnlyDirty();
     }
 
-    public function leadMeasure() { return $this->belongsTo(LeadMeasure::class); }
-    public function cabang() { return $this->belongsTo(Cabang::class); }
+    public function leadMeasure()
+    {
+        return $this->belongsTo(LeadMeasure::class);
+    }
+
+    public function cabang()
+    {
+        return $this->belongsTo(Cabang::class);
+    }
 }

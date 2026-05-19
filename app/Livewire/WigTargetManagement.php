@@ -10,6 +10,7 @@ use Livewire\Component;
 class WigTargetManagement extends Component
 {
     public ?int $wig_id = null;
+
     public array $rows = [];
 
     public function mount(): void
@@ -26,7 +27,9 @@ class WigTargetManagement extends Component
     public function loadRows(): void
     {
         $this->rows = [];
-        if (! $this->wig_id) return;
+        if (! $this->wig_id) {
+            return;
+        }
 
         $u = auth()->user();
         $cabangsQ = Cabang::orderBy('nama');
@@ -75,6 +78,7 @@ class WigTargetManagement extends Component
         if ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
             $wigsQ->where('wilayah_id', $u->wilayah_id);
         }
+
         return view('livewire.wig-target-management', [
             'wigs' => $wigsQ->get(),
             'wig' => $this->wig_id ? Wig::find($this->wig_id) : null,

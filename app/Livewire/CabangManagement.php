@@ -14,8 +14,12 @@ class CabangManagement extends Component
     protected string $paginationTheme = 'bootstrap';
 
     public ?int $editingId = null;
+
     public ?int $wilayah_id = null;
-    public string $kode = '', $nama = '';
+
+    public string $kode = '';
+
+    public string $nama = '';
 
     protected function rules(): array
     {
@@ -31,7 +35,8 @@ class CabangManagement extends Component
         $c = Cabang::findOrFail($id);
         $this->editingId = $c->id;
         $this->wilayah_id = $c->wilayah_id;
-        $this->kode = $c->kode; $this->nama = $c->nama;
+        $this->kode = $c->kode;
+        $this->nama = $c->nama;
     }
 
     public function save(): void

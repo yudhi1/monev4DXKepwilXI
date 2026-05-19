@@ -46,9 +46,9 @@ class KantorCabangSeeder extends Seeder
 
             $emailSlug = Str::lower(Str::after($k['kode'], 'KC-'));
             $u = User::firstOrCreate(
-                ['email' => $emailSlug . '@monev.test'],
+                ['email' => $emailSlug.'@monev.test'],
                 [
-                    'name' => 'User ' . $k['nama'],
+                    'name' => 'User '.$k['nama'],
                     'password' => Hash::make('password'),
                     'wilayah_id' => $wilayah->id,
                     'cabang_id' => $c->id,
@@ -64,46 +64,46 @@ class KantorCabangSeeder extends Seeder
 
         $wigDefs = [
             [
-                'kode' => 'WIG-' . $tahun . '-01',
+                'kode' => 'WIG-'.$tahun.'-01',
                 'nama' => 'Peningkatan Pertumbuhan Tabungan',
                 'output' => 'Pertumbuhan saldo tabungan minimal 15% YoY',
                 'lags' => [
                     [
-                        'kode' => 'LAG-' . $tahun . '-01', 'nama' => 'Total saldo tabungan tercapai',
+                        'kode' => 'LAG-'.$tahun.'-01', 'nama' => 'Total saldo tabungan tercapai',
                         'target' => 5000000000, 'satuan' => 'Rp',
                         'leads' => [
-                            ['kode' => 'LEAD-' . $tahun . '-01', 'nama' => 'Kunjungan nasabah baru', 'satuan' => 'kunjungan'],
-                            ['kode' => 'LEAD-' . $tahun . '-02', 'nama' => 'Pembukaan rekening baru', 'satuan' => 'rekening'],
+                            ['kode' => 'LEAD-'.$tahun.'-01', 'nama' => 'Kunjungan nasabah baru', 'satuan' => 'kunjungan'],
+                            ['kode' => 'LEAD-'.$tahun.'-02', 'nama' => 'Pembukaan rekening baru', 'satuan' => 'rekening'],
                         ],
                     ],
                 ],
             ],
             [
-                'kode' => 'WIG-' . $tahun . '-02',
+                'kode' => 'WIG-'.$tahun.'-02',
                 'nama' => 'Peningkatan Penyaluran Kredit',
                 'output' => 'Pertumbuhan portofolio kredit minimal 12%',
                 'lags' => [
                     [
-                        'kode' => 'LAG-' . $tahun . '-02', 'nama' => 'Realisasi penyaluran kredit',
+                        'kode' => 'LAG-'.$tahun.'-02', 'nama' => 'Realisasi penyaluran kredit',
                         'target' => 10000000000, 'satuan' => 'Rp',
                         'leads' => [
-                            ['kode' => 'LEAD-' . $tahun . '-03', 'nama' => 'Proposal kredit masuk', 'satuan' => 'proposal'],
-                            ['kode' => 'LEAD-' . $tahun . '-04', 'nama' => 'Survey lapangan', 'satuan' => 'survey'],
+                            ['kode' => 'LEAD-'.$tahun.'-03', 'nama' => 'Proposal kredit masuk', 'satuan' => 'proposal'],
+                            ['kode' => 'LEAD-'.$tahun.'-04', 'nama' => 'Survey lapangan', 'satuan' => 'survey'],
                         ],
                     ],
                 ],
             ],
             [
-                'kode' => 'WIG-' . $tahun . '-03',
+                'kode' => 'WIG-'.$tahun.'-03',
                 'nama' => 'Peningkatan Kualitas Layanan',
                 'output' => 'CSI (Customer Satisfaction Index) minimal 90',
                 'lags' => [
                     [
-                        'kode' => 'LAG-' . $tahun . '-03', 'nama' => 'Skor kepuasan nasabah',
+                        'kode' => 'LAG-'.$tahun.'-03', 'nama' => 'Skor kepuasan nasabah',
                         'target' => 90, 'satuan' => 'skor',
                         'leads' => [
-                            ['kode' => 'LEAD-' . $tahun . '-05', 'nama' => 'Pelatihan service excellence', 'satuan' => 'sesi'],
-                            ['kode' => 'LEAD-' . $tahun . '-06', 'nama' => 'Penyelesaian komplain < 24 jam', 'satuan' => 'komplain'],
+                            ['kode' => 'LEAD-'.$tahun.'-05', 'nama' => 'Pelatihan service excellence', 'satuan' => 'sesi'],
+                            ['kode' => 'LEAD-'.$tahun.'-06', 'nama' => 'Penyelesaian komplain < 24 jam', 'satuan' => 'komplain'],
                         ],
                     ],
                 ],

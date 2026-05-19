@@ -14,6 +14,7 @@ class EnsureRole
         if (! $user || ! $user->hasAnyRole($roles)) {
             abort(403, 'Anda tidak memiliki akses.');
         }
+
         return $next($request);
     }
 }

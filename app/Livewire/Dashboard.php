@@ -12,8 +12,11 @@ use Livewire\Component;
 class Dashboard extends Component
 {
     public int $tahun;
+
     public int $bulan;
+
     public int $minggu;
+
     public ?int $cabang_id = null;
 
     public function mount(): void
@@ -32,6 +35,7 @@ class Dashboard extends Component
     private function currentWeekOfMonth(): int
     {
         $w = (int) ceil(date('j') / 7);
+
         return min(max($w, 1), 4);
     }
 
@@ -42,32 +46,53 @@ class Dashboard extends Component
     {
         $n = min(count($x), count($y));
         // Drop trailing zeros (bulan yang belum diisi sama sekali) supaya tidak bias.
-        while ($n > 0 && (($x[$n-1] ?? 0) == 0) && (($y[$n-1] ?? 0) == 0)) { $n--; }
+        while ($n > 0 && (($x[$n - 1] ?? 0) == 0) && (($y[$n - 1] ?? 0) == 0)) {
+            $n--;
+        }
         if ($n < 3) {
             return ['r' => null, 'label' => 'Data belum cukup', 'level' => 'kurang_data'];
         }
-        $x = array_slice($x, 0, $n); $y = array_slice($y, 0, $n);
-        $mx = array_sum($x) / $n; $my = array_sum($y) / $n;
-        $num = 0.0; $dx = 0.0; $dy = 0.0;
+        $x = array_slice($x, 0, $n);
+        $y = array_slice($y, 0, $n);
+        $mx = array_sum($x) / $n;
+        $my = array_sum($y) / $n;
+        $num = 0.0;
+        $dx = 0.0;
+        $dy = 0.0;
         for ($i = 0; $i < $n; $i++) {
-            $a = $x[$i] - $mx; $b = $y[$i] - $my;
-            $num += $a * $b; $dx += $a * $a; $dy += $b * $b;
+            $a = $x[$i] - $mx;
+            $b = $y[$i] - $my;
+            $num += $a * $b;
+            $dx += $a * $a;
+            $dy += $b * $b;
         }
         if ($dx == 0.0 || $dy == 0.0) {
             return ['r' => null, 'label' => 'Tidak ada variasi', 'level' => 'kurang_data'];
         }
         $r = $num / sqrt($dx * $dy);
         $r = round($r, 2);
-        if ($r >= 0.6)  return ['r' => $r, 'label' => 'Lead efektif',   'level' => 'kuat'];
-        if ($r >= 0.3)  return ['r' => $r, 'label' => 'Lead cukup',     'level' => 'sedang'];
-        if ($r >= -0.3) return ['r' => $r, 'label' => 'Lead lemah',     'level' => 'lemah'];
-        return            ['r' => $r, 'label' => 'Berlawanan arah', 'level' => 'lemah'];
+        if ($r >= 0.6) {
+            return ['r' => $r, 'label' => 'Lead efektif',   'level' => 'kuat'];
+        }
+        if ($r >= 0.3) {
+            return ['r' => $r, 'label' => 'Lead cukup',     'level' => 'sedang'];
+        }
+        if ($r >= -0.3) {
+            return ['r' => $r, 'label' => 'Lead lemah',     'level' => 'lemah'];
+        }
+
+        return ['r' => $r, 'label' => 'Berlawanan arah', 'level' => 'lemah'];
     }
 
     private function prevPeriod(int $tahun, int $bulan, int $minggu): array
     {
-        if ($minggu > 1) return [$tahun, $bulan, $minggu - 1];
-        if ($bulan > 1) return [$tahun, $bulan - 1, 4];
+        if ($minggu > 1) {
+            return [$tahun, $bulan, $minggu - 1];
+        }
+        if ($bulan > 1) {
+            return [$tahun, $bulan - 1, 4];
+        }
+
         return [$tahun - 1, 12, 4];
     }
 
@@ -116,7 +141,9 @@ class Dashboard extends Component
             'cabang_id' => $this->cabang_id,
         ])->get()->keyBy('lead_measure_id');
 
-        $totalLead = 0; $onTrack = 0; $sumPct = 0;
+        $totalLead = 0;
+        $onTrack = 0;
+        $sumPct = 0;
         foreach ($wigs as $w) {
             foreach ($w->lagMeasures as $lag) {
                 foreach ($lag->leadMeasures as $lead) {
@@ -124,18 +151,22 @@ class Dashboard extends Component
                     $pct = $r?->persentase ?? 0;
                     $totalLead++;
                     $sumPct += $pct;
-                    if ($pct >= 100) $onTrack++;
+                    if ($pct >= 100) {
+                        $onTrack++;
+                    }
                 }
             }
         }
         $avgPct = $totalLead > 0 ? round($sumPct / $totalLead, 2) : 0;
 
         $perBulan = LeadMeasureRealisasi::where('tahun', $this->tahun)
-            ->when($this->cabang_id, fn($q) => $q->where('cabang_id', $this->cabang_id))
+            ->when($this->cabang_id, fn ($q) => $q->where('cabang_id', $this->cabang_id))
             ->selectRaw('bulan, AVG(persentase) as pct')
-            ->groupBy('bulan')->orderBy('bulan')->pluck('pct','bulan')->toArray();
+            ->groupBy('bulan')->orderBy('bulan')->pluck('pct', 'bulan')->toArray();
         $bulanData = [];
-        for ($i = 1; $i <= 12; $i++) $bulanData[] = round($perBulan[$i] ?? 0, 2);
+        for ($i = 1; $i <= 12; $i++) {
+            $bulanData[] = round($perBulan[$i] ?? 0, 2);
+        }
 
         $rankingQ = LeadMeasureRealisasi::where('tahun', $this->tahun)
             ->selectRaw('cabang_id, AVG(persentase) as pct')
@@ -150,14 +181,14 @@ class Dashboard extends Component
         if ($this->cabang_id) {
             $targets = WigTarget::with('wig')
                 ->where('cabang_id', $this->cabang_id)
-                ->whereHas('wig', fn($q) => $q->where('tahun', $this->tahun))
+                ->whereHas('wig', fn ($q) => $q->where('tahun', $this->tahun))
                 ->get();
             foreach ($targets as $t) {
                 $nilaiAwal = (float) $t->nilai_awal;
                 $nilaiTarget = (float) $t->nilai_target;
                 $range = $nilaiTarget - $nilaiAwal;
                 $kontribusi = (float) LeadMeasureRealisasi::whereHas('leadMeasure',
-                        fn($q) => $q->where('wig_id', $t->wig_id)->where('is_active', true))
+                    fn ($q) => $q->where('wig_id', $t->wig_id)->where('is_active', true))
                     ->where('cabang_id', $this->cabang_id)
                     ->sum('realisasi');
                 $nilaiSekarang = $nilaiAwal + $kontribusi;
@@ -170,7 +201,7 @@ class Dashboard extends Component
                     ->where('tahun', $this->tahun)
                     ->pluck('nilai', 'bulan')->toArray();
                 $leadAvgBulan = LeadMeasureRealisasi::whereHas('leadMeasure',
-                        fn($q) => $q->where('wig_id', $t->wig_id)->where('is_active', true))
+                    fn ($q) => $q->where('wig_id', $t->wig_id)->where('is_active', true))
                     ->where('cabang_id', $this->cabang_id)
                     ->where('tahun', $this->tahun)
                     ->selectRaw('bulan, AVG(persentase) as pct')
@@ -178,7 +209,7 @@ class Dashboard extends Component
 
                 // Lead mingguan: 12 bulan × 4 minggu (rata-rata persentase per minggu)
                 $leadWeekly = LeadMeasureRealisasi::whereHas('leadMeasure',
-                        fn($q) => $q->where('wig_id', $t->wig_id)->where('is_active', true))
+                    fn ($q) => $q->where('wig_id', $t->wig_id)->where('is_active', true))
                     ->where('cabang_id', $this->cabang_id)
                     ->where('tahun', $this->tahun)
                     ->selectRaw('bulan, minggu_ke, AVG(persentase) as pct')

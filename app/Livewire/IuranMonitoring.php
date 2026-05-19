@@ -14,21 +14,35 @@ class IuranMonitoring extends Component
     public const MAX_PEMDA_PER_MINGGU = 3;
 
     public int $tahun;
+
     public int $bulan;
+
     public ?int $filter_cabang_id = null;
+
     public ?int $filter_minggu = null;
+
     public string $filter_status = '';
 
     public ?int $editingId = null;
+
     public ?int $cabang_id = null;
+
     public int $minggu = 1;
+
     public string $nama_pemda = '';
+
     public $tagihan = 0;
+
     public string $status_bayar = 'belum';
+
     public $outstanding = 0;
+
     public string $pic = '';
+
     public string $kendala = '';
+
     public string $keterangan = '';
+
     public ?string $target_penyelesaian = null;
 
     public const BULAN = [
@@ -66,8 +80,15 @@ class IuranMonitoring extends Component
         ];
     }
 
-    public function updatedTagihan(): void { $this->recalcOutstanding(); }
-    public function updatedStatusBayar(): void { $this->recalcOutstanding(); }
+    public function updatedTagihan(): void
+    {
+        $this->recalcOutstanding();
+    }
+
+    public function updatedStatusBayar(): void
+    {
+        $this->recalcOutstanding();
+    }
 
     private function recalcOutstanding(): void
     {
@@ -91,12 +112,13 @@ class IuranMonitoring extends Component
             ->where('tahun', $this->tahun)
             ->where('bulan', $this->bulan)
             ->where('minggu', $this->minggu)
-            ->when($this->editingId, fn($q) => $q->where('id', '!=', $this->editingId));
+            ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId));
 
         // Validasi: tidak boleh duplikat nama Pemda di minggu yang sama
         $duplicate = (clone $sameWeekQ)->whereRaw('LOWER(nama_pemda) = ?', [mb_strtolower(trim($this->nama_pemda))])->exists();
         if ($duplicate) {
-            $this->dispatch('notify', type: 'error', message: 'Pemda "' . $this->nama_pemda . '" sudah ada di Minggu ' . $this->minggu . '.');
+            $this->dispatch('notify', type: 'error', message: 'Pemda "'.$this->nama_pemda.'" sudah ada di Minggu '.$this->minggu.'.');
+
             return;
         }
 
@@ -104,7 +126,8 @@ class IuranMonitoring extends Component
         $existingCount = $sameWeekQ->count();
         if ($existingCount >= self::MAX_PEMDA_PER_MINGGU) {
             $this->dispatch('notify', type: 'error',
-                message: 'Maksimal ' . self::MAX_PEMDA_PER_MINGGU . ' Pemda per minggu sudah tercapai.');
+                message: 'Maksimal '.self::MAX_PEMDA_PER_MINGGU.' Pemda per minggu sudah tercapai.');
+
             return;
         }
 
@@ -189,9 +212,15 @@ class IuranMonitoring extends Component
             ->where('bulan', $this->bulan)
             ->whereIn('cabang_id', $cabangIds);
 
-        if ($this->filter_cabang_id) $q->where('cabang_id', $this->filter_cabang_id);
-        if ($this->filter_minggu) $q->where('minggu', $this->filter_minggu);
-        if ($this->filter_status !== '') $q->where('status_bayar', $this->filter_status);
+        if ($this->filter_cabang_id) {
+            $q->where('cabang_id', $this->filter_cabang_id);
+        }
+        if ($this->filter_minggu) {
+            $q->where('minggu', $this->filter_minggu);
+        }
+        if ($this->filter_status !== '') {
+            $q->where('status_bayar', $this->filter_status);
+        }
 
         return $q->orderBy('minggu')->orderBy('cabang_id')->orderBy('no_urut')->orderBy('id')->get();
     }
@@ -199,7 +228,8 @@ class IuranMonitoring extends Component
     public function exportExcel()
     {
         $items = $this->buildFilteredItems();
-        $filename = 'monitoring-iuran-' . $this->tahun . '-' . str_pad($this->bulan, 2, '0', STR_PAD_LEFT) . '.xlsx';
+        $filename = 'monitoring-iuran-'.$this->tahun.'-'.str_pad($this->bulan, 2, '0', STR_PAD_LEFT).'.xlsx';
+
         return Excel::download(new IuranExport($items, self::BULAN), $filename);
     }
 
@@ -207,16 +237,17 @@ class IuranMonitoring extends Component
     {
         $items = $this->buildFilteredItems();
         $cabangFilter = $this->filter_cabang_id ? Cabang::find($this->filter_cabang_id)?->nama : '';
-        $periode = (self::BULAN[$this->bulan] ?? '') . ' ' . $this->tahun
-            . ($this->filter_minggu ? ' · Minggu ' . $this->filter_minggu : '');
+        $periode = (self::BULAN[$this->bulan] ?? '').' '.$this->tahun
+            .($this->filter_minggu ? ' · Minggu '.$this->filter_minggu : '');
         $pdf = Pdf::loadView('reports.iuran-pdf', [
             'items' => $items,
             'bulanLabels' => self::BULAN,
             'periode' => $periode,
             'cabangFilter' => $cabangFilter,
         ])->setPaper('a4', 'landscape');
-        $filename = 'monitoring-iuran-' . $this->tahun . '-' . str_pad($this->bulan, 2, '0', STR_PAD_LEFT) . '.pdf';
-        return response()->streamDownload(fn() => print($pdf->output()), $filename);
+        $filename = 'monitoring-iuran-'.$this->tahun.'-'.str_pad($this->bulan, 2, '0', STR_PAD_LEFT).'.pdf';
+
+        return response()->streamDownload(fn () => print ($pdf->output()), $filename);
     }
 
     public function render()

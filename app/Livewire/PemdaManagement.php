@@ -11,8 +11,11 @@ class PemdaManagement extends Component
     public const MAX_PEMDA_PER_CABANG = 3;
 
     public ?int $editingId = null;
+
     public ?int $cabang_id = null;
+
     public string $nama = '';
+
     public string $keterangan = '';
 
     public ?int $filter_cabang_id = null;
@@ -45,22 +48,24 @@ class PemdaManagement extends Component
         $data = $this->validate();
 
         $existingCount = Pemda::where('cabang_id', $this->cabang_id)
-            ->when($this->editingId, fn($q) => $q->where('id', '!=', $this->editingId))
+            ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
             ->count();
 
         if ($existingCount >= self::MAX_PEMDA_PER_CABANG) {
             $this->dispatch('notify', type: 'error',
-                message: 'Maksimal ' . self::MAX_PEMDA_PER_CABANG . ' Pemda per kantor cabang.');
+                message: 'Maksimal '.self::MAX_PEMDA_PER_CABANG.' Pemda per kantor cabang.');
+
             return;
         }
 
         $duplicate = Pemda::where('cabang_id', $this->cabang_id)
             ->where('nama', $this->nama)
-            ->when($this->editingId, fn($q) => $q->where('id', '!=', $this->editingId))
+            ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
             ->exists();
 
         if ($duplicate) {
             $this->dispatch('notify', type: 'error', message: 'Nama Pemda sudah ada untuk cabang ini.');
+
             return;
         }
 

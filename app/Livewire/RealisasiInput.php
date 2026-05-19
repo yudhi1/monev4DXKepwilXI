@@ -11,9 +11,13 @@ use Livewire\Component;
 class RealisasiInput extends Component
 {
     public ?int $wig_id = null;
+
     public ?int $cabang_id = null;
+
     public int $tahun;
+
     public int $bulan;
+
     public int $minggu = 1;
 
     /** rows[lead_id][minggu_ke] = ['target' => x, 'realisasi' => y] */
@@ -24,19 +28,38 @@ class RealisasiInput extends Component
         $this->tahun = (int) date('Y');
         $this->bulan = (int) date('n');
         $u = auth()->user();
-        if ($u && $u->cabang_id) $this->cabang_id = $u->cabang_id;
+        if ($u && $u->cabang_id) {
+            $this->cabang_id = $u->cabang_id;
+        }
         $this->loadRows();
     }
 
-    public function updatedWigId(): void { $this->loadRows(); }
-    public function updatedCabangId(): void { $this->loadRows(); }
-    public function updatedTahun(): void { $this->loadRows(); }
-    public function updatedBulan(): void { $this->loadRows(); }
+    public function updatedWigId(): void
+    {
+        $this->loadRows();
+    }
+
+    public function updatedCabangId(): void
+    {
+        $this->loadRows();
+    }
+
+    public function updatedTahun(): void
+    {
+        $this->loadRows();
+    }
+
+    public function updatedBulan(): void
+    {
+        $this->loadRows();
+    }
 
     public function loadRows(): void
     {
         $this->rows = [];
-        if (! $this->wig_id || ! $this->cabang_id) return;
+        if (! $this->wig_id || ! $this->cabang_id) {
+            return;
+        }
 
         $leads = LeadMeasure::where('wig_id', $this->wig_id)
             ->where('cabang_id', $this->cabang_id)
@@ -101,7 +124,9 @@ class RealisasiInput extends Component
         $u = auth()->user();
 
         $wigsQ = Wig::orderBy('kode_wig');
-        if ($u && ! $u->hasRole('admin') && $u->wilayah_id) $wigsQ->where('wilayah_id', $u->wilayah_id);
+        if ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
+            $wigsQ->where('wilayah_id', $u->wilayah_id);
+        }
 
         $cabangsQ = Cabang::orderBy('nama');
         if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id) {

@@ -13,7 +13,12 @@ class WilayahManagement extends Component
     protected string $paginationTheme = 'bootstrap';
 
     public ?int $editingId = null;
-    public string $kode = '', $nama = '', $deskripsi = '';
+
+    public string $kode = '';
+
+    public string $nama = '';
+
+    public string $deskripsi = '';
 
     protected function rules(): array
     {
@@ -28,7 +33,9 @@ class WilayahManagement extends Component
     {
         $w = Wilayah::findOrFail($id);
         $this->editingId = $w->id;
-        $this->kode = $w->kode; $this->nama = $w->nama; $this->deskripsi = $w->deskripsi ?? '';
+        $this->kode = $w->kode;
+        $this->nama = $w->nama;
+        $this->deskripsi = $w->deskripsi ?? '';
     }
 
     public function save(): void

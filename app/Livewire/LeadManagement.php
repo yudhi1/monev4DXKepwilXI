@@ -6,17 +6,24 @@ use App\Models\Cabang;
 use App\Models\LagMeasure;
 use App\Models\LeadMeasure;
 use App\Models\Wig;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class LeadManagement extends Component
 {
     public ?int $wig_id = null;
+
     public ?int $cabang_id = null;
+
     public int $tahun;
 
     // form
     public ?int $editingId = null;
-    public string $kode_lead = '', $nama_lead = '';
+
+    public string $kode_lead = '';
+
+    public string $nama_lead = '';
+
     public ?int $lag_measure_id = null;
 
     public function mount(): void
@@ -28,16 +35,33 @@ class LeadManagement extends Component
         }
     }
 
-    public function updatedWigId(): void { $this->resetForm(); $this->generateKode(); }
-    public function updatedCabangId(): void { $this->resetForm(); $this->generateKode(); }
+    public function updatedWigId(): void
+    {
+        $this->resetForm();
+        $this->generateKode();
+    }
+
+    public function updatedCabangId(): void
+    {
+        $this->resetForm();
+        $this->generateKode();
+    }
 
     private function generateKode(): void
     {
-        if ($this->editingId) return;
-        if (! $this->cabang_id || ! $this->wig_id) { $this->kode_lead = ''; return; }
+        if ($this->editingId) {
+            return;
+        }
+        if (! $this->cabang_id || ! $this->wig_id) {
+            $this->kode_lead = '';
+
+            return;
+        }
         $cabang = Cabang::find($this->cabang_id);
         $wig = Wig::find($this->wig_id);
-        if (! $cabang || ! $wig) return;
+        if (! $cabang || ! $wig) {
+            return;
+        }
         $bidang = strtoupper(trim((string) $wig->bidang)) ?: 'UMUM';
         $base = preg_replace('/^KC-?/i', '', $cabang->kode);
         $prefix = 'LEAD-'.$bidang.'-'.$base.'-';
@@ -76,9 +100,9 @@ class LeadManagement extends Component
     {
         try {
             $data = $this->validate();
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             $msg = collect($e->errors())->flatten()->implode(' ');
-            $this->dispatch('notify', type: 'error', message: 'Validasi gagal: ' . $msg);
+            $this->dispatch('notify', type: 'error', message: 'Validasi gagal: '.$msg);
             throw $e;
         }
         $data['tahun'] = $this->tahun;
@@ -92,7 +116,7 @@ class LeadManagement extends Component
             $this->generateKode();
             $this->dispatch('notify', type: 'success', message: 'Lead Measure berhasil disimpan.');
         } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: 'Gagal menyimpan: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Gagal menyimpan: '.$e->getMessage());
         }
     }
 
@@ -112,7 +136,7 @@ class LeadManagement extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId','kode_lead','nama_lead','lag_measure_id']);
+        $this->reset(['editingId', 'kode_lead', 'nama_lead', 'lag_measure_id']);
     }
 
     public function render()
@@ -120,7 +144,9 @@ class LeadManagement extends Component
         $u = auth()->user();
 
         $wigsQ = Wig::orderBy('kode_wig');
-        if ($u && ! $u->hasRole('admin') && $u->wilayah_id) $wigsQ->where('wilayah_id', $u->wilayah_id);
+        if ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
+            $wigsQ->where('wilayah_id', $u->wilayah_id);
+        }
 
         $cabangsQ = Cabang::orderBy('nama');
         if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id) {

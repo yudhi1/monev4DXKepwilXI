@@ -11,15 +11,24 @@ use Livewire\Component;
 class KepwilDashboard extends Component
 {
     public int $tahun;
+
     public int $bulan;
+
     public int $minggu;
+
     public ?int $selected_cabang_id = null;
+
     public ?int $filter_wig_id = null;
 
     private function prevPeriod(int $tahun, int $bulan, int $minggu): array
     {
-        if ($minggu > 1) return [$tahun, $bulan, $minggu - 1];
-        if ($bulan > 1) return [$tahun, $bulan - 1, 4];
+        if ($minggu > 1) {
+            return [$tahun, $bulan, $minggu - 1];
+        }
+        if ($bulan > 1) {
+            return [$tahun, $bulan - 1, 4];
+        }
+
         return [$tahun - 1, 12, 4];
     }
 
@@ -64,6 +73,7 @@ class KepwilDashboard extends Component
             $status = $pct >= 100 ? ['success', '🟢', 'On Track']
                 : ($pct >= 90 ? ['warning', '🟡', 'Waspada']
                 : ['danger', '🔴', 'Awas']);
+
             return [
                 'cabang' => $c,
                 'pct' => $pct,
@@ -111,14 +121,15 @@ class KepwilDashboard extends Component
                 $rPrev = $realPrev->get($lead->id);
                 $pctNow = (float) ($rNow?->persentase ?? 0);
                 $pctPrev = (float) ($rPrev?->persentase ?? 0);
-                $status = $pctNow >= 100 ? ['success','🟢','On Track']
-                    : ($pctNow >= 70 ? ['warning','🟡','Hati-hati']
-                    : ($pctNow > 0 ? ['danger','🔴','Belum Tercapai']
-                    : ['secondary','⚪','Belum Ada Data']));
+                $status = $pctNow >= 100 ? ['success', '🟢', 'On Track']
+                    : ($pctNow >= 70 ? ['warning', '🟡', 'Hati-hati']
+                    : ($pctNow > 0 ? ['danger', '🔴', 'Belum Tercapai']
+                    : ['secondary', '⚪', 'Belum Ada Data']));
                 $diff = $pctNow - $pctPrev;
-                $tren = abs($diff) < 1 ? ['→','text-secondary','Stabil']
-                    : ($diff > 0 ? ['↗','text-success','Naik']
-                    : ['↘','text-danger','Turun']);
+                $tren = abs($diff) < 1 ? ['→', 'text-secondary', 'Stabil']
+                    : ($diff > 0 ? ['↗', 'text-success', 'Naik']
+                    : ['↘', 'text-danger', 'Turun']);
+
                 return [
                     'lead' => $lead,
                     'wig' => $lead->wig,

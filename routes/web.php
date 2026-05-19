@@ -2,21 +2,21 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportController;
-use App\Livewire\Dashboard;
-use App\Livewire\KepwilDashboard;
-use App\Livewire\UserManagement;
-use App\Livewire\WilayahManagement;
 use App\Livewire\CabangManagement;
-use App\Livewire\WigManagement;
-use App\Livewire\WigTargetManagement;
+use App\Livewire\Dashboard;
+use App\Livewire\IuranMonitoring;
+use App\Livewire\KepwilDashboard;
 use App\Livewire\LagManagement;
 use App\Livewire\LeadManagement;
 use App\Livewire\RealisasiInput;
+use App\Livewire\UserManagement;
+use App\Livewire\WigManagement;
 use App\Livewire\WigRealisasiInput;
-use App\Livewire\IuranMonitoring;
+use App\Livewire\WigTargetManagement;
+use App\Livewire\WilayahManagement;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn() => redirect('/dashboard'));
+Route::get('/', fn () => redirect('/dashboard'));
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
         if ($u && $u->hasRole('kedeputian_wilayah') && request('mode') !== 'cabang') {
             return redirect('/dashboard-kepwil');
         }
+
         return redirect('/dashboard-cabang');
     })->name('dashboard');
 
@@ -54,7 +55,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan/pdf', [ReportController::class, 'pdf'])->name('laporan.pdf');
     });
 
-    Route::get('/panduan', fn() => view('panduan'))->name('panduan');
+    Route::get('/panduan', fn () => view('panduan'))->name('panduan');
 
     Route::get('/lead-measures', LeadManagement::class)->name('leads');
     Route::get('/realisasi', RealisasiInput::class)->name('realisasi');

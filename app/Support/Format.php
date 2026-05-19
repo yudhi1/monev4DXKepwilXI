@@ -17,6 +17,7 @@ class Format
 
         if ($satuan !== '' && str_contains($satuan, '%')) {
             $formatted = rtrim(rtrim(number_format($value, 2, ',', '.'), '0'), ',');
+
             return $formatted.'%';
         }
 
