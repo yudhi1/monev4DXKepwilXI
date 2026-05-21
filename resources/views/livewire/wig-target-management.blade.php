@@ -48,9 +48,9 @@
                             <tr>
                                 <th style="width:50px">#</th>
                                 <th style="width:200px">Kantor Cabang</th>
+                                <th style="width:160px">Satuan</th>
                                 <th style="width:170px">Nilai Awal</th>
                                 <th style="width:170px">Nilai Target</th>
-                                <th style="width:100px">Satuan</th>
                                 <th style="width:170px">Tanggal Target</th>
                                 <th style="width:120px" class="text-end">Selisih</th>
                             </tr>
@@ -60,9 +60,38 @@
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
                                 <td>{{ $r['cabang_nama'] }}</td>
-                                <td><input type="number" step="0.01" wire:model="rows.{{ $cid }}.nilai_awal" class="form-control form-control-sm text-end"></td>
-                                <td><input type="number" step="0.01" wire:model="rows.{{ $cid }}.nilai_target" class="form-control form-control-sm text-end"></td>
-                                <td><input wire:model="rows.{{ $cid }}.satuan" class="form-control form-control-sm" placeholder="Rp / % / unit / dst"></td>
+
+                                {{-- Dropdown satuan --}}
+                                <td x-data="satuanInput($wire.entangle('rows.{{ $cid }}.satuan'))">
+                                    <div class="d-flex gap-1 align-items-center">
+                                        <select :value="selectVal" @change="onSelectChange" class="form-select form-select-sm">
+                                            <option value="Rp">Rp</option>
+                                            <option value="%">%</option>
+                                            <option value="unit">jiwa</option>
+                                            <option value="__lainnya__">Lainnya...</option>
+                                        </select>
+                                        <input x-show="isLainnya" type="text" :value="custom"
+                                            @input="onCustomInput" placeholder="isi satuan"
+                                            class="form-control form-control-sm" style="width:80px; display:none">
+                                    </div>
+                                </td>
+
+                                {{-- Nilai Awal dengan masking --}}
+                                <td x-data="numInput($wire.entangle('rows.{{ $cid }}.nilai_awal'), $wire.entangle('rows.{{ $cid }}.satuan'))">
+                                    <input type="text" inputmode="decimal"
+                                        :value="display"
+                                        @focus="onFocus" @blur="onBlur" @input="onInput"
+                                        class="form-control form-control-sm text-end">
+                                </td>
+
+                                {{-- Nilai Target dengan masking --}}
+                                <td x-data="numInput($wire.entangle('rows.{{ $cid }}.nilai_target'), $wire.entangle('rows.{{ $cid }}.satuan'))">
+                                    <input type="text" inputmode="decimal"
+                                        :value="display"
+                                        @focus="onFocus" @blur="onBlur" @input="onInput"
+                                        class="form-control form-control-sm text-end">
+                                </td>
+
                                 <td><input type="date" wire:model="rows.{{ $cid }}.tanggal_target" class="form-control form-control-sm"></td>
                                 <td class="text-end">
                                     {{ \App\Support\Format::nilai(((float)($r['nilai_target'] ?? 0)) - ((float)($r['nilai_awal'] ?? 0)), $r['satuan'] ?? '') }}

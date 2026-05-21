@@ -15,7 +15,7 @@
             </select>
             <select wire:model.live="minggu" class="form-select form-select-sm" style="width:120px">
                 @for($i=1;$i<=4;$i++)<option value="{{ $i }}">Minggu {{ $i }}</option>@endfor
-            </select>
+            </select>''''''''''''''
         </div>
     </div>
 

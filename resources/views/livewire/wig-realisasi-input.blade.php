@@ -85,10 +85,12 @@
                                 <tr>
                                     <td>{{ $no }}</td>
                                     <td>{{ $label }}</td>
-                                    <td>
-                                        <input type="number" step="0.01"
-                                            wire:model="rows.{{ $no }}.nilai"
-                                            class="form-control form-control-sm text-end">
+                                    <td x-data="numInput($wire.entangle('rows.{{ $no }}.nilai'), '{{ $target?->satuan ?? 'Rp' }}')">
+                                        <input type="text" inputmode="decimal"
+                                            :value="display"
+                                            @focus="onFocus" @blur="onBlur" @input="onInput"
+                                            class="form-control form-control-sm text-end"
+                                            @if(!$target) disabled @endif>
                                     </td>
                                     <td>
                                         <input type="text"

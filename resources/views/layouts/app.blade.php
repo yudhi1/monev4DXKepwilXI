@@ -263,6 +263,133 @@
         });
     });
 
+    // Alpine component: input angka dengan format ribuan Indonesia (real-time masking)
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('numInput', (entangled, satuanRef) => ({
+            entangled,
+            satuanRef,
+            display: '',
+            focused: false,
+
+            get satuan() {
+                return typeof this.satuanRef === 'object' ? (this.satuanRef ?? '') : (this.satuanRef || '');
+            },
+            get isRp() { return /^rp$/i.test(this.satuan.trim()); },
+
+            addSeparator(str) {
+                // Tambahkan titik sebagai pemisah ribuan pada bagian integer
+                const parts = str.split(',');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return parts.join(',');
+            },
+
+            toFloat(display) {
+                return parseFloat(display.replace(/\./g, '').replace(',', '.')) || 0;
+            },
+
+            formatFull(val) {
+                // Untuk display awal (dari data tersimpan), format lengkap
+                const n = parseFloat(val);
+                if (isNaN(n) || n === 0) return '';
+                if (this.isRp) {
+                    return n.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                }
+                return n.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            },
+
+            init() {
+                this.display = this.formatFull(parseFloat(this.entangled) || 0);
+                this.$watch('entangled', (val) => {
+                    if (!this.focused) this.display = this.formatFull(parseFloat(val) || 0);
+                });
+                this.$watch('satuanRef', () => {
+                    if (!this.focused) this.display = this.formatFull(this.toFloat(this.display));
+                });
+            },
+
+            onFocus() { this.focused = true; },
+
+            onBlur() {
+                this.focused = false;
+                const val = this.toFloat(this.display);
+                this.entangled = val;
+                // Normalisasi tampilan akhir (tambah ,00 jika bukan Rp)
+                this.display = this.formatFull(val);
+            },
+
+            onInput(e) {
+                const el = e.target;
+                const selEnd = el.selectionEnd;
+                const oldVal = el.value;
+
+                // Hitung karakter non-titik sebelum kursor (untuk restore posisi kursor)
+                const charsBeforeCursor = oldVal.slice(0, selEnd).replace(/\./g, '').length;
+
+                // Bersihkan input: hanya angka dan koma (koma = desimal)
+                let raw = oldVal.replace(/\./g, '').replace(/[^\d,]/g, '');
+                if (this.isRp) raw = raw.replace(/,/g, ''); // Rp tidak pakai desimal
+                const parts = raw.split(',');
+                if (parts.length > 2) raw = parts[0] + ',' + parts[1]; // maks 1 koma
+
+                // Tambah titik pemisah ribuan secara real-time
+                const formatted = this.addSeparator(raw);
+                this.display = formatted;
+
+                // Restore posisi kursor setelah Alpine update DOM
+                this.$nextTick(() => {
+                    let count = 0, newPos = formatted.length;
+                    for (let i = 0; i < formatted.length; i++) {
+                        if (formatted[i] !== '.') count++;
+                        if (count === charsBeforeCursor) { newPos = i + 1; break; }
+                    }
+                    el.setSelectionRange(newPos, newPos);
+                });
+            },
+        }));
+
+        // Alpine component: dropdown satuan + opsi lainnya
+        Alpine.data('satuanInput', (entangled) => ({
+            entangled,
+            PRESET: ['Rp', '%', 'unit', 'orang', 'rekening', 'nasabah'],
+            custom: '',
+            isLainnya: false,
+
+            init() {
+                const val = this.entangled ?? 'Rp';
+                if (this.PRESET.includes(val)) {
+                    this.isLainnya = false;
+                } else {
+                    this.isLainnya = true;
+                    this.custom = val;
+                }
+                this.$watch('entangled', (val) => {
+                    if (!this.isLainnya && this.PRESET.includes(val)) return;
+                });
+            },
+
+            onSelectChange(e) {
+                const v = e.target.value;
+                if (v === '__lainnya__') {
+                    this.isLainnya = true;
+                    this.entangled = this.custom || '';
+                } else {
+                    this.isLainnya = false;
+                    this.custom = '';
+                    this.entangled = v;
+                }
+            },
+
+            onCustomInput(e) {
+                this.custom = e.target.value;
+                this.entangled = this.custom;
+            },
+
+            get selectVal() {
+                return this.isLainnya ? '__lainnya__' : (this.entangled || 'Rp');
+            },
+        }));
+    });
+
     @if (session('success'))
         document.addEventListener('DOMContentLoaded', () => swalToast('success', @json(session('success'))));
     @endif
