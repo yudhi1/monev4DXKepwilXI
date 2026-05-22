@@ -30,6 +30,8 @@ class UserManagement extends Component
 
     public bool $is_active = true;
 
+    public string $alamat = '';
+
     public string $search = '';
 
     protected function rules(): array
@@ -41,6 +43,7 @@ class UserManagement extends Component
             'wilayah_id' => 'nullable|exists:wilayahs,id',
             'cabang_id' => 'nullable|exists:cabangs,id',
             'is_active' => 'boolean',
+            'alamat' => 'nullable|string|max:500',
         ];
     }
 
@@ -71,6 +74,7 @@ class UserManagement extends Component
         $this->wilayah_id = $u->wilayah_id;
         $this->cabang_id = $u->cabang_id;
         $this->is_active = $u->is_active;
+        $this->alamat = $u->alamat ?? '';
     }
 
     public function save(): void
@@ -91,7 +95,7 @@ class UserManagement extends Component
         }
 
         $user->syncRoles([$data['role']]);
-        $this->reset(['editingId', 'name', 'password', 'role', 'wilayah_id', 'cabang_id']);
+        $this->reset(['editingId', 'name', 'password', 'role', 'wilayah_id', 'cabang_id', 'alamat']);
         $this->is_active = true;
         session()->flash('success', 'User tersimpan.');
     }

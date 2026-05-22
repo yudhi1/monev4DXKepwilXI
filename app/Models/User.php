@@ -14,7 +14,7 @@ class User extends Authenticatable
     use HasFactory, HasRoles, LogsActivity, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'wilayah_id', 'cabang_id', 'is_active',
+        'name', 'email', 'password', 'wilayah_id', 'cabang_id', 'is_active', 'alamat',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -31,7 +31,7 @@ class User extends Authenticatable
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'wilayah_id', 'cabang_id', 'is_active'])
+            ->logOnly(['name', 'email', 'wilayah_id', 'cabang_id', 'is_active', 'alamat'])
             ->logOnlyDirty();
     }
 
