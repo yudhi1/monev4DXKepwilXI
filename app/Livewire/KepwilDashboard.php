@@ -58,14 +58,20 @@ class KepwilDashboard extends Component
         $wigs = $wigsQ->get();
 
         // === RANKING CABANG ===
-        $ranking = LeadMeasureRealisasi::where('tahun', $this->tahun)
+        $rankingQ = LeadMeasureRealisasi::where('tahun', $this->tahun)
             ->where('bulan', $this->bulan)
             ->where('minggu_ke', $this->minggu)
             ->whereIn('cabang_id', $cabangIds)
             ->selectRaw('cabang_id, AVG(persentase) as pct, COUNT(*) as cnt')
-            ->groupBy('cabang_id')
-            ->get()
-            ->keyBy('cabang_id');
+            ->groupBy('cabang_id');
+
+        if ($this->filter_wig_id) {
+            $rankingQ->whereIn('lead_measure_id',
+                LeadMeasure::where('wig_id', $this->filter_wig_id)->where('is_active', true)->pluck('id')
+            );
+        }
+
+        $ranking = $rankingQ->get()->keyBy('cabang_id');
 
         $rankingRows = $cabangs->map(function ($c) use ($ranking) {
             $r = $ranking->get($c->id);

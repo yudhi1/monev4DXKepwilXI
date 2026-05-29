@@ -41,8 +41,24 @@
         {{-- RANKING CABANG --}}
         <div class="col-lg-12">
             <div class="card h-100">
-                <div class="card-header bg-dark text-white">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <strong><i class="bi bi-trophy"></i> Ranking Cabang — Minggu {{ $minggu }}/{{ $bulan }}/{{ $tahun }}</strong>
+                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                        <small class="text-muted">Cabang:</small>
+                        <select wire:model.live="selected_cabang_id" class="form-select form-select-sm" style="width:150px">
+                            <option value="">- Pilih -</option>
+                            @foreach ($cabangs as $c)
+                                <option value="{{ $c->id }}">{{ $c->nama }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">WIG:</small>
+                        <select wire:model.live="filter_wig_id" class="form-select form-select-sm" style="width:170px">
+                            <option value="">Semua WIG</option>
+                            @foreach ($wigs as $w)
+                                <option value="{{ $w->id }}">{{ $w->kode_wig }} — {{ \Illuminate\Support\Str::limit($w->nama_wig, 30) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -92,27 +108,9 @@
 
     {{-- DETAIL LEAD MEASURE PER KC --}}
     <div class="card mb-4">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <div>
-                <strong><i class="bi bi-list-check"></i> Detail Lead Measure per Kantor Cabang</strong>
-                <small class="ms-2 opacity-75">Periode: Minggu {{ $minggu }} / {{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }} {{ $tahun }} · diurutkan dari % capaian terendah</small>
-            </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <small class="text-white-50">Filter Cabang:</small>
-                <select wire:model.live="selected_cabang_id" class="form-select form-select-sm" style="min-width:200px">
-                    <option value="">- Pilih Cabang -</option>
-                    @foreach ($cabangs as $c)
-                        <option value="{{ $c->id }}">{{ $c->nama }}</option>
-                    @endforeach
-                </select>
-                <small class="text-white-50">Filter WIG:</small>
-                <select wire:model.live="filter_wig_id" class="form-select form-select-sm" style="min-width:220px">
-                    <option value="">Semua WIG</option>
-                    @foreach ($wigs as $w)
-                        <option value="{{ $w->id }}">{{ $w->kode_wig }} — {{ \Illuminate\Support\Str::limit($w->nama_wig, 40) }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="card-header bg-primary text-white">
+            <strong><i class="bi bi-list-check"></i> Detail Lead Measure per Kantor Cabang</strong>
+            <small class="ms-2 opacity-75">Periode: Minggu {{ $minggu }} / {{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }} {{ $tahun }} · diurutkan dari % capaian terendah</small>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive" style="max-height: 60vh;">
