@@ -128,9 +128,8 @@ class KepwilDashboard extends Component
                 $pctNow = (float) ($rNow?->persentase ?? 0);
                 $pctPrev = (float) ($rPrev?->persentase ?? 0);
                 $status = $pctNow >= 100 ? ['success', '🟢', 'On Track']
-                    : ($pctNow >= 70 ? ['warning', '🟡', 'Hati-hati']
-                    : ($pctNow > 0 ? ['danger', '🔴', 'Belum Tercapai']
-                    : ['secondary', '⚪', 'Belum Ada Data']));
+                    : ($pctNow >= 90 ? ['warning', '🟡', 'Waspada']
+                    : ['danger', '🔴', 'Awas']);
                 $diff = $pctNow - $pctPrev;
                 $tren = abs($diff) < 1 ? ['→', 'text-secondary', 'Stabil']
                     : ($diff > 0 ? ['↗', 'text-success', 'Naik']
