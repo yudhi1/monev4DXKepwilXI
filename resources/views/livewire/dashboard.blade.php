@@ -333,7 +333,8 @@
                                                         <td class="text-center {{ $tren[1] }}"
                                                             title="Sebelumnya {{ $pctPrev }}%"><span
                                                                 style="font-size:1.3em">{{ $tren[0] }}</span>
-                                                            <small>{{ $tren[2] }}</small></td>
+                                                            <small>{{ $tren[2] }}</small>
+                                                        </td>
                                                         <td class="small" style="white-space: pre-wrap;">
                                                             {{ $rNow?->catatan ?: '-' }}</td>
                                                     </tr>
