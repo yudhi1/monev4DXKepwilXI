@@ -60,7 +60,7 @@ class RealisasiInput extends Component
     public function loadRows(): void
     {
         $this->rows = [];
-        if (!$this->wig_id || !$this->cabang_id) {
+        if (! $this->wig_id || ! $this->cabang_id) {
             return;
         }
 
@@ -92,7 +92,7 @@ class RealisasiInput extends Component
 
     public function toggleEdit(int $lead_id): void
     {
-        $this->editing[$lead_id] = !($this->editing[$lead_id] ?? false);
+        $this->editing[$lead_id] = ! ($this->editing[$lead_id] ?? false);
     }
 
     public function saveLead(int $lead_id): void
