@@ -2,170 +2,236 @@
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <h3 class="mb-0">Dashboard 4DX Kepwil 11 - 2026</h3>
         <div class="d-flex gap-2 flex-wrap">
-            @if(auth()->user() && ! auth()->user()->hasRole('kantor_cabang'))
-            <select wire:model.live="cabang_id" class="form-select form-select-sm" style="width:200px">
-                @foreach($cabangs as $c)<option value="{{ $c->id }}">{{ $c->nama }}</option>@endforeach
-            </select>
+            @if (auth()->user() && !auth()->user()->hasRole('kantor_cabang'))
+                <select wire:model.live="cabang_id" class="form-select form-select-sm" style="width:200px">
+                    @foreach ($cabangs as $c)
+                        <option value="{{ $c->id }}">{{ $c->nama }}</option>
+                    @endforeach
+                </select>
             @endif
             <input type="number" wire:model.live="tahun" class="form-control form-control-sm" style="width:90px">
             <select wire:model.live="bulan" class="form-select form-select-sm" style="width:110px">
-                @foreach([1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',7=>'Jul',8=>'Agu',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'] as $k=>$v)
+                @foreach ([1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'] as $k => $v)
                     <option value="{{ $k }}">{{ $v }}</option>
                 @endforeach
             </select>
             <select wire:model.live="minggu" class="form-select form-select-sm" style="width:120px">
-                @for($i=1;$i<=4;$i++)<option value="{{ $i }}">Minggu {{ $i }}</option>@endfor
-            </select>''''''''''''''
+                @for ($i = 1; $i <= 4; $i++)
+                    <option value="{{ $i }}">Minggu {{ $i }}</option>
+                @endfor
+            </select>
         </div>
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-md-4"><div class="card text-white bg-primary"><div class="card-body p-3">
-            <small>Total WIG</small><h3 class="mb-0">{{ $totalWig }}</h3></div></div></div>
-        <div class="col-md-4"><div class="card text-white bg-info"><div class="card-body p-3">
-            <small>Total Lead Measure</small><h3 class="mb-0">{{ $totalLead }}</h3></div></div></div>
-        <div class="col-md-4"><div class="card text-white bg-success"><div class="card-body p-3">
-            <small>Lead On Track ({{ $totalLead ? round($onTrack/$totalLead*100) : 0 }}%)</small><h3 class="mb-0">{{ $onTrack }}/{{ $totalLead }}</h3></div></div></div>
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body p-3">
+                    <small>Total WIG</small>
+                    <h3 class="mb-0">{{ $totalWig }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body p-3">
+                    <small>Total Lead Measure</small>
+                    <h3 class="mb-0">{{ $totalLead }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body p-3">
+                    <small>Lead On Track ({{ $totalLead ? round(($onTrack / $totalLead) * 100) : 0 }}%)</small>
+                    <h3 class="mb-0">{{ $onTrack }}/{{ $totalLead }}</h3>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- WIG PROGRESS PER CABANG (disembunyikan sementara) --}}
-    @if(false && count($wigProgress))
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <strong>WIG Progress — {{ $cabangs->firstWhere('id', $cabang_id)?->nama ?? '-' }}</strong>
-        </div>
-        <div class="card-body" x-data="{ selected: 0, mode: 'bulanan' }">
-            {{-- LEGEND / CARA BACA --}}
-            <div class="border rounded bg-light p-3 mb-3 small">
-                <div class="d-flex align-items-center mb-2">
-                    <i class="bi bi-info-circle-fill text-primary me-2"></i>
-                    <strong>Panduan Membaca Tabel</strong>
-                    <span class="text-muted ms-2">— klik baris WIG untuk melihat detail di bawah</span>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="d-flex">
-                            <span class="badge bg-primary me-2 align-self-start" style="min-width:90px">% WIG</span>
-                            <span class="text-muted">Capaian hasil bulanan WIG terhadap target.</span>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="d-flex">
-                            <span class="badge bg-warning text-dark me-2 align-self-start" style="min-width:90px">% Aktivitas</span>
-                            <span class="text-muted">Rata-rata capaian Lead Measure (aktivitas pendorong).</span>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="d-flex">
-                            <span class="badge bg-success me-2 align-self-start" style="min-width:90px">Korelasi</span>
-                            <span class="text-muted">Apakah aktivitas benar-benar mendorong hasil WIG.</span>
-                        </div>
-                    </div>
-                </div>
-                <hr class="my-2">
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="text-muted me-1">Skala korelasi:</span>
-                    <span class="badge rounded-pill bg-success">🟢 Lead efektif &nbsp;·&nbsp; r ≥ 0.6</span>
-                    <span class="badge rounded-pill bg-warning text-dark">🟡 Cukup &nbsp;·&nbsp; 0.3 – 0.6</span>
-                    <span class="badge rounded-pill bg-danger">🔴 Lemah &nbsp;·&nbsp; &lt; 0.3</span>
-                    <span class="badge rounded-pill bg-secondary">⚪ Data belum cukup</span>
-                </div>
+    @if (false && count($wigProgress))
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <strong>WIG Progress — {{ $cabangs->firstWhere('id', $cabang_id)?->nama ?? '-' }}</strong>
             </div>
+            <div class="card-body" x-data="{ selected: 0, mode: 'bulanan' }">
+                {{-- LEGEND / CARA BACA --}}
+                <div class="border rounded bg-light p-3 mb-3 small">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                        <strong>Panduan Membaca Tabel</strong>
+                        <span class="text-muted ms-2">— klik baris WIG untuk melihat detail di bawah</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="d-flex">
+                                <span class="badge bg-primary me-2 align-self-start" style="min-width:90px">% WIG</span>
+                                <span class="text-muted">Capaian hasil bulanan WIG terhadap target.</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex">
+                                <span class="badge bg-warning text-dark me-2 align-self-start" style="min-width:90px">%
+                                    Aktivitas</span>
+                                <span class="text-muted">Rata-rata capaian Lead Measure (aktivitas pendorong).</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex">
+                                <span class="badge bg-success me-2 align-self-start"
+                                    style="min-width:90px">Korelasi</span>
+                                <span class="text-muted">Apakah aktivitas benar-benar mendorong hasil WIG.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="text-muted me-1">Skala korelasi:</span>
+                        <span class="badge rounded-pill bg-success">🟢 Lead efektif &nbsp;·&nbsp; r ≥ 0.6</span>
+                        <span class="badge rounded-pill bg-warning text-dark">🟡 Cukup &nbsp;·&nbsp; 0.3 – 0.6</span>
+                        <span class="badge rounded-pill bg-danger">🔴 Lemah &nbsp;·&nbsp; &lt; 0.3</span>
+                        <span class="badge rounded-pill bg-secondary">⚪ Data belum cukup</span>
+                    </div>
+                </div>
 
-            {{-- TABEL --}}
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width:28%">WIG</th>
-                            <th class="text-end" style="width:11%">Sekarang / Target</th>
-                            <th class="text-center" style="width:16%">Progres Tahun</th>
-                            <th class="text-center" style="width:8%">% WIG</th>
-                            <th class="text-center" style="width:8%">% Aktivitas</th>
-                            <th class="text-center" style="width:9%">Gap</th>
-                            <th class="text-center" style="width:11%">Korelasi</th>
-                            <th class="text-center" style="width:9%">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($wigProgress as $idxWp => $wp)
-                            @php
-                                $paceColor = ['on'=>'success','warn'=>'warning','behind'=>'danger','unknown'=>'secondary'][$wp['pace']];
-                                $paceLabel = ['on'=>'On Pace','warn'=>'Hati-hati','behind'=>'Belum Tercapai','unknown'=>'-'][$wp['pace']];
-                                $wigPctNow = $wp['wig_pct_bulan'][$bulan-1] ?? 0;
-                                $leadPctNow = $wp['lead_pct_bulan'][$bulan-1] ?? 0;
-                                $gapAkhir = round($leadPctNow - $wigPctNow, 2);
-                                $gapBadge = $gapAkhir >= 0 ? 'success' : ($gapAkhir >= -15 ? 'warning' : 'danger');
-                                $korColor = ['kuat'=>'success','sedang'=>'warning','lemah'=>'danger','kurang_data'=>'secondary'][$wp['korelasi']['level']];
-                                $korIcon = ['kuat'=>'🟢','sedang'=>'🟡','lemah'=>'🔴','kurang_data'=>'⚪'][$wp['korelasi']['level']];
-                            @endphp
-                            <tr style="cursor:pointer" :class="selected === {{ $idxWp }} ? 'table-primary' : ''" @click="selected = {{ $idxWp }}; setTimeout(()=>renderWigDetail(), 30)">
-                                <td>
-                                    <div>
-                                        <span class="badge bg-primary">{{ $wp['wig']->kode_wig }}</span>
-                                        @if($wp['wig']->bidang)<span class="badge bg-info">{{ $wp['wig']->bidang }}</span>@endif
-                                    </div>
-                                    <div class="small fw-semibold">{{ $wp['wig']->nama_wig }}</div>
-                                </td>
-                                <td class="text-end small">
-                                    <strong>{{ \App\Support\Format::nilai($wp['nilai_sekarang'], $wp['satuan']) }}</strong>
-                                    <div class="text-muted">/ {{ \App\Support\Format::nilai($wp['nilai_target'], $wp['satuan']) }}</div>
-                                </td>
-                                <td>
-                                    <div class="progress" style="height:18px">
-                                        <div class="progress-bar bg-{{ $paceColor }}" style="width: {{ $wp['pct'] }}%">{{ $wp['pct_raw'] }}%</div>
-                                    </div>
-                                </td>
-                                <td class="text-center"><span class="badge bg-primary">{{ round($wigPctNow,1) }}%</span></td>
-                                <td class="text-center"><span class="badge bg-warning text-dark">{{ round($leadPctNow,1) }}%</span></td>
-                                <td class="text-center">
-                                    <span class="badge bg-{{ $gapBadge }}">{{ $gapAkhir >= 0 ? '+' : '' }}{{ $gapAkhir }}%</span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-{{ $korColor }}" title="{{ $wp['korelasi']['label'] }}">
-                                        {{ $korIcon }} {{ $wp['korelasi']['r'] !== null ? $wp['korelasi']['r'] : '—' }}
-                                    </span>
-                                </td>
-                                <td class="text-center"><span class="badge bg-{{ $paceColor }}">{{ $paceLabel }}</span></td>
+                {{-- TABEL --}}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:28%">WIG</th>
+                                <th class="text-end" style="width:11%">Sekarang / Target</th>
+                                <th class="text-center" style="width:16%">Progres Tahun</th>
+                                <th class="text-center" style="width:8%">% WIG</th>
+                                <th class="text-center" style="width:8%">% Aktivitas</th>
+                                <th class="text-center" style="width:9%">Gap</th>
+                                <th class="text-center" style="width:11%">Korelasi</th>
+                                <th class="text-center" style="width:9%">Status</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- PANEL DETAIL --}}
-            @php
-                $detailPayload = collect($wigProgress)->map(fn($wp) => [
-                    'kode' => $wp['wig']->kode_wig,
-                    'nama' => $wp['wig']->nama_wig,
-                    'satuan' => $wp['satuan'],
-                    'nilai_awal' => $wp['nilai_awal'],
-                    'nilai_sekarang' => $wp['nilai_sekarang'],
-                    'nilai_target' => $wp['nilai_target'],
-                    'wig_pct_bulan' => $wp['wig_pct_bulan'],
-                    'wig_delta_bulan' => $wp['wig_delta_bulan'],
-                    'lead_pct_bulan' => $wp['lead_pct_bulan'],
-                    'lead_pct_mingguan' => $wp['lead_pct_mingguan'],
-                    'lead_labels_mingguan' => $wp['lead_labels_mingguan'],
-                    'korelasi' => $wp['korelasi'],
-                ])->values();
-            @endphp
-            <div class="border rounded mt-3 p-3 bg-light" id="wigDetailPanel" data-payload='@json($detailPayload)'>
-                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                    <div>
-                        <strong id="wigDetailTitle">—</strong>
-                        <small id="wigDetailNilai" class="text-muted d-block"></small>
-                    </div>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-primary" :class="mode==='bulanan' ? 'active' : ''" @click="mode='bulanan'; setTimeout(()=>renderWigDetail(), 30)">📅 Bulanan</button>
-                        <button type="button" class="btn btn-outline-primary" :class="mode==='mingguan' ? 'active' : ''" @click="mode='mingguan'; setTimeout(()=>renderWigDetail(), 30)">📆 Detail Mingguan (Aktivitas)</button>
-                    </div>
+                        </thead>
+                        <tbody>
+                            @foreach ($wigProgress as $idxWp => $wp)
+                                @php
+                                    $paceColor = [
+                                        'on' => 'success',
+                                        'warn' => 'warning',
+                                        'behind' => 'danger',
+                                        'unknown' => 'secondary',
+                                    ][$wp['pace']];
+                                    $paceLabel = [
+                                        'on' => 'On Pace',
+                                        'warn' => 'Hati-hati',
+                                        'behind' => 'Belum Tercapai',
+                                        'unknown' => '-',
+                                    ][$wp['pace']];
+                                    $wigPctNow = $wp['wig_pct_bulan'][$bulan - 1] ?? 0;
+                                    $leadPctNow = $wp['lead_pct_bulan'][$bulan - 1] ?? 0;
+                                    $gapAkhir = round($leadPctNow - $wigPctNow, 2);
+                                    $gapBadge = $gapAkhir >= 0 ? 'success' : ($gapAkhir >= -15 ? 'warning' : 'danger');
+                                    $korColor = [
+                                        'kuat' => 'success',
+                                        'sedang' => 'warning',
+                                        'lemah' => 'danger',
+                                        'kurang_data' => 'secondary',
+                                    ][$wp['korelasi']['level']];
+                                    $korIcon = [
+                                        'kuat' => '🟢',
+                                        'sedang' => '🟡',
+                                        'lemah' => '🔴',
+                                        'kurang_data' => '⚪',
+                                    ][$wp['korelasi']['level']];
+                                @endphp
+                                <tr style="cursor:pointer"
+                                    :class="selected === {{ $idxWp }} ? 'table-primary' : ''"
+                                    @click="selected = {{ $idxWp }}; setTimeout(()=>renderWigDetail(), 30)">
+                                    <td>
+                                        <div>
+                                            <span class="badge bg-primary">{{ $wp['wig']->kode_wig }}</span>
+                                            @if ($wp['wig']->bidang)
+                                                <span class="badge bg-info">{{ $wp['wig']->bidang }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="small fw-semibold">{{ $wp['wig']->nama_wig }}</div>
+                                    </td>
+                                    <td class="text-end small">
+                                        <strong>{{ \App\Support\Format::nilai($wp['nilai_sekarang'], $wp['satuan']) }}</strong>
+                                        <div class="text-muted">/
+                                            {{ \App\Support\Format::nilai($wp['nilai_target'], $wp['satuan']) }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height:18px">
+                                            <div class="progress-bar bg-{{ $paceColor }}"
+                                                style="width: {{ $wp['pct'] }}%">{{ $wp['pct_raw'] }}%</div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center"><span
+                                            class="badge bg-primary">{{ round($wigPctNow, 1) }}%</span></td>
+                                    <td class="text-center"><span
+                                            class="badge bg-warning text-dark">{{ round($leadPctNow, 1) }}%</span></td>
+                                    <td class="text-center">
+                                        <span
+                                            class="badge bg-{{ $gapBadge }}">{{ $gapAkhir >= 0 ? '+' : '' }}{{ $gapAkhir }}%</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ $korColor }}"
+                                            title="{{ $wp['korelasi']['label'] }}">
+                                            {{ $korIcon }}
+                                            {{ $wp['korelasi']['r'] !== null ? $wp['korelasi']['r'] : '—' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center"><span
+                                            class="badge bg-{{ $paceColor }}">{{ $paceLabel }}</span></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-                <canvas id="wigDetailChart" height="100"></canvas>
-                <div id="wigDetailInsight" class="alert mt-3 mb-0 small py-2"></div>
+
+                {{-- PANEL DETAIL --}}
+                @php
+                    $detailPayload = collect($wigProgress)
+                        ->map(
+                            fn($wp) => [
+                                'kode' => $wp['wig']->kode_wig,
+                                'nama' => $wp['wig']->nama_wig,
+                                'satuan' => $wp['satuan'],
+                                'nilai_awal' => $wp['nilai_awal'],
+                                'nilai_sekarang' => $wp['nilai_sekarang'],
+                                'nilai_target' => $wp['nilai_target'],
+                                'wig_pct_bulan' => $wp['wig_pct_bulan'],
+                                'wig_delta_bulan' => $wp['wig_delta_bulan'],
+                                'lead_pct_bulan' => $wp['lead_pct_bulan'],
+                                'lead_pct_mingguan' => $wp['lead_pct_mingguan'],
+                                'lead_labels_mingguan' => $wp['lead_labels_mingguan'],
+                                'korelasi' => $wp['korelasi'],
+                            ],
+                        )
+                        ->values();
+                @endphp
+                <div class="border rounded mt-3 p-3 bg-light" id="wigDetailPanel"
+                    data-payload='@json($detailPayload)'>
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <div>
+                            <strong id="wigDetailTitle">—</strong>
+                            <small id="wigDetailNilai" class="text-muted d-block"></small>
+                        </div>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary"
+                                :class="mode === 'bulanan' ? 'active' : ''"
+                                @click="mode='bulanan'; setTimeout(()=>renderWigDetail(), 30)">📅 Bulanan</button>
+                            <button type="button" class="btn btn-outline-primary"
+                                :class="mode === 'mingguan' ? 'active' : ''"
+                                @click="mode='mingguan'; setTimeout(()=>renderWigDetail(), 30)">📆 Detail Mingguan
+                                (Aktivitas)</button>
+                        </div>
+                    </div>
+                    <canvas id="wigDetailChart" height="100"></canvas>
+                    <div id="wigDetailInsight" class="alert mt-3 mb-0 small py-2"></div>
+                </div>
             </div>
         </div>
-    </div>
     @endif
 
     {{-- SCOREBOARD --}}
@@ -175,7 +241,8 @@
             <span class="float-end small">
                 Cabang:
                 <strong>{{ $cabangs->firstWhere('id', $cabang_id)?->nama ?? '-' }}</strong>
-                &nbsp;|&nbsp; Periode: <strong>{{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }} {{ $tahun }} – Minggu {{ $minggu }}</strong>
+                &nbsp;|&nbsp; Periode: <strong>{{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }}
+                    {{ $tahun }} – Minggu {{ $minggu }}</strong>
             </span>
         </div>
         <div class="card-body p-0">
@@ -183,20 +250,26 @@
                 @forelse($wigs as $i => $wig)
                     <div class="accordion-item">
                         <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#wig-{{ $wig->id }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#wig-{{ $wig->id }}">
                                 <span class="badge bg-primary me-2">{{ $wig->kode_wig }}</span>
                                 <strong>{{ $wig->nama_wig }}</strong>
-                                @if($wig->bidang)<span class="badge bg-info ms-2">{{ $wig->bidang }}</span>@endif
+                                @if ($wig->bidang)
+                                    <span class="badge bg-info ms-2">{{ $wig->bidang }}</span>
+                                @endif
                             </button>
                         </h2>
-                        <div id="wig-{{ $wig->id }}" class="accordion-collapse collapse" data-bs-parent="#wigAcc">
+                        <div id="wig-{{ $wig->id }}" class="accordion-collapse collapse"
+                            data-bs-parent="#wigAcc">
                             <div class="accordion-body p-3">
                                 @forelse($wig->lagMeasures as $lag)
                                     <div class="mb-3">
                                         <div class="text-secondary small mb-1">
                                             <span class="badge bg-secondary">{{ $lag->kode_lag }}</span>
                                             {{ $lag->nama_lag }}
-                                            <span class="text-muted">(Target Tahunan: {{ number_format($lag->target_tahunan, 0, ',', '.') }} {{ $lag->satuan }})</span>
+                                            <span class="text-muted">(Target Tahunan:
+                                                {{ number_format($lag->target_tahunan, 0, ',', '.') }}
+                                                {{ $lag->satuan }})</span>
                                         </div>
                                         <table class="table table-sm table-bordered mb-0">
                                             <thead class="table-light">
@@ -213,36 +286,63 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                            @forelse($lag->leadMeasures as $lead)
-                                                @php
-                                                    $rNow = $realisasiNow->get($lead->id);
-                                                    $rPrev = $realisasiPrev->get($lead->id);
-                                                    $pctNow = $rNow?->persentase ?? 0;
-                                                    $pctPrev = $rPrev?->persentase ?? 0;
-                                                    $status = $pctNow >= 100 ? ['green','🟢','On Track'] : ($pctNow >= 70 ? ['yellow','🟡','Hati-hati'] : ['red','🔴','Belum Tercapai']);
-                                                    $diff = $pctNow - $pctPrev;
-                                                    $tren = abs($diff) < 1 ? ['→','text-secondary','Stabil'] : ($diff > 0 ? ['↗','text-success','Naik'] : ['↘','text-danger','Turun']);
-                                                @endphp
-                                                <tr>
-                                                    <td class="text-center">{{ $loop->iteration }}</td>
-                                                    <td>{{ $lead->nama_lead }} ({{ $lead->kode_lead }})</td>
-                                                    <td class="text-end">{{ $rNow ? number_format($rNow->target, 0, ',', '.') : '-' }}</td>
-                                                    <td class="text-end">{{ $rNow ? number_format($rNow->realisasi, 0, ',', '.') : '-' }}</td>
-                                                    <td class="text-center small">
-                                                        @if ($rNow && $rNow->target > 0)
-                                                            <span class="text-muted">({{ number_format($rNow->realisasi, 0, ',', '.') }} ÷ {{ number_format($rNow->target, 0, ',', '.') }}) × 100</span>
-                                                        @else
-                                                            <span class="text-muted">-</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center"><strong>{{ $pctNow }}%</strong></td>
-                                                    <td class="text-center" title="{{ $status[2] }}">{{ $status[1] }} <small class="text-muted">{{ $status[2] }}</small></td>
-                                                    <td class="text-center {{ $tren[1] }}" title="Sebelumnya {{ $pctPrev }}%"><span style="font-size:1.3em">{{ $tren[0] }}</span> <small>{{ $tren[2] }}</small></td>
-                                                    <td class="small" style="white-space: pre-wrap;">{{ $rNow?->catatan ?: '-' }}</td>
-                                                </tr>
-                                            @empty
-                                                <tr><td colspan="9" class="text-muted text-center">Belum ada Lead Measure</td></tr>
-                                            @endforelse
+                                                @forelse($lag->leadMeasures as $lead)
+                                                    @php
+                                                        $rNow = $realisasiNow->get($lead->id);
+                                                        $rPrev = $realisasiPrev->get($lead->id);
+                                                        $pctNow = $rNow?->persentase ?? 0;
+                                                        $pctPrev = $rPrev?->persentase ?? 0;
+                                                        $status =
+                                                            $pctNow >= 100
+                                                                ? ['green', '🟢', 'On Track']
+                                                                : ($pctNow >= 70
+                                                                    ? ['yellow', '🟡', 'Hati-hati']
+                                                                    : ['red', '🔴', 'Belum Tercapai']);
+                                                        $diff = $pctNow - $pctPrev;
+                                                        $tren =
+                                                            abs($diff) < 1
+                                                                ? ['→', 'text-secondary', 'Stabil']
+                                                                : ($diff > 0
+                                                                    ? ['↗', 'text-success', 'Naik']
+                                                                    : ['↘', 'text-danger', 'Turun']);
+                                                    @endphp
+                                                    <tr>
+                                                        <td class="text-center">{{ $loop->iteration }}</td>
+                                                        <td>{{ $lead->nama_lead }} ({{ $lead->kode_lead }})</td>
+                                                        <td class="text-end">
+                                                            {{ $rNow ? number_format($rNow->target, 0, ',', '.') : '-' }}
+                                                        </td>
+                                                        <td class="text-end">
+                                                            {{ $rNow ? number_format($rNow->realisasi, 0, ',', '.') : '-' }}
+                                                        </td>
+                                                        <td class="text-center small">
+                                                            @if ($rNow && $rNow->target > 0)
+                                                                <span
+                                                                    class="text-muted">({{ number_format($rNow->realisasi, 0, ',', '.') }}
+                                                                    ÷ {{ number_format($rNow->target, 0, ',', '.') }})
+                                                                    × 100</span>
+                                                            @else
+                                                                <span class="text-muted">-</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center"><strong>{{ $pctNow }}%</strong>
+                                                        </td>
+                                                        <td class="text-center" title="{{ $status[2] }}">
+                                                            {{ $status[1] }} <small
+                                                                class="text-muted">{{ $status[2] }}</small></td>
+                                                        <td class="text-center {{ $tren[1] }}"
+                                                            title="Sebelumnya {{ $pctPrev }}%"><span
+                                                                style="font-size:1.3em">{{ $tren[0] }}</span>
+                                                            <small>{{ $tren[2] }}</small></td>
+                                                        <td class="small" style="white-space: pre-wrap;">
+                                                            {{ $rNow?->catatan ?: '-' }}</td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="9" class="text-muted text-center">Belum ada
+                                                            Lead Measure</td>
+                                                    </tr>
+                                                @endforelse
                                             </tbody>
                                         </table>
                                     </div>
