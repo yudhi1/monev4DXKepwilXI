@@ -144,7 +144,7 @@
                                             <button type="button" x-show="!editing[{{ $lead->id }}]" @click="editing[{{ $lead->id }}] = true" class="btn btn-sm btn-primary" title="Edit">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" x-show="editing[{{ $lead->id }}]" wire:click="$call('saveLead', {{ $lead->id }})" class="btn btn-sm btn-success" title="Simpan" style="display:none">
+                                            <button type="button" x-show="editing[{{ $lead->id }}]" @click="$wire.$call('saveLead', {{ $lead->id }})" class="btn btn-sm btn-success" title="Simpan" style="display:none">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                             <button type="button" x-show="editing[{{ $lead->id }}]" @click="editing[{{ $lead->id }}] = false; $wire.$call('cancelEdit', {{ $lead->id }})" class="btn btn-sm btn-secondary" title="Batal" style="display:none">
