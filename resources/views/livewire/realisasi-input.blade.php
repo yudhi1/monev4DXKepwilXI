@@ -102,7 +102,7 @@
                         </ul>
 
                         {{-- TABEL FOKUS MINGGU TERPILIH --}}
-                        <div class="table-responsive" x-data="{ editing: {} }">
+                        <div class="table-responsive" x-data="{ editing: {} }" @lead-saved="editing[$event.detail.leadId] = false">
                             <table class="table table-sm table-bordered align-middle">
                                 <thead class="table-light text-center">
                                     <tr>

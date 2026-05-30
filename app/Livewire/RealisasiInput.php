@@ -120,6 +120,7 @@ class RealisasiInput extends Component
         }
         unset($this->editing[$lead_id]);
         $this->loadRows();
+        $this->dispatch('lead-saved', leadId: $lead_id);
         session()->flash('success', 'Lead tersimpan.');
     }
 
