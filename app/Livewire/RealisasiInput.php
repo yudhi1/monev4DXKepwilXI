@@ -60,7 +60,7 @@ class RealisasiInput extends Component
     public function loadRows(): void
     {
         $this->rows = [];
-        if (! $this->wig_id || ! $this->cabang_id) {
+        if (!$this->wig_id || !$this->cabang_id) {
             return;
         }
 
