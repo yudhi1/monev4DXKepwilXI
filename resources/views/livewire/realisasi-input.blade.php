@@ -54,8 +54,7 @@
         @if($leads->isEmpty())
             <div class="alert alert-warning">Belum ada Lead Measure untuk kombinasi ini. Silakan setup terlebih dahulu di menu <strong>Lead</strong>.</div>
         @else
-            <form wire:submit="save">
-                <div class="card">
+            <div class="card">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                         <strong>Input Realisasi — {{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }} {{ $tahun }}</strong>
                         <small>Pilih minggu di bawah, isi target & realisasi per Lead.</small>
@@ -103,7 +102,7 @@
                         </ul>
 
                         {{-- TABEL FOKUS MINGGU TERPILIH --}}
-                        <div class="table-responsive">
+                        <div class="table-responsive" x-data="{ editing: {} }">
                             <table class="table table-sm table-bordered align-middle">
                                 <thead class="table-light text-center">
                                     <tr>
@@ -112,7 +111,8 @@
                                         <th style="width:140px">Target</th>
                                         <th style="width:140px">Realisasi</th>
                                         <th style="width:90px">% Capaian</th>
-                                        <th style="min-width:240px">Keterangan</th>
+                                        <th style="min-width:280px">Keterangan</th>
+                                        <th style="width:70px">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -129,24 +129,37 @@
                                             <div class="fw-semibold">{{ $lead->nama_lead }} <span class="text-muted">({{ $lead->kode_lead }})</span></div>
                                             @if($lead->satuan)<small class="badge bg-light text-dark">{{ $lead->satuan }}</small>@endif
                                         </td>
-                                        <td><input type="number" step="0.01" wire:key="t-{{ $lead->id }}-m{{ $minggu }}" wire:model.live.debounce.400ms="rows.{{ $lead->id }}.{{ $minggu }}.target" class="form-control form-control-sm text-end"></td>
-                                        <td><input type="number" step="0.01" wire:key="r-{{ $lead->id }}-m{{ $minggu }}" wire:model.live.debounce.400ms="rows.{{ $lead->id }}.{{ $minggu }}.realisasi" class="form-control form-control-sm text-end"></td>
+                                        <td x-show="!editing[{{ $lead->id }}]" class="text-end"><span class="badge bg-light text-dark" style="font-size:.9rem">{{ number_format($tM, 2, ',', '.') }}</span></td>
+                                        <td x-show="editing[{{ $lead->id }}]" style="display:none"><input type="number" step="0.01" wire:key="t-{{ $lead->id }}-m{{ $minggu }}" wire:model.live.debounce.400ms="rows.{{ $lead->id }}.{{ $minggu }}.target" class="form-control form-control-sm text-end" @focus="editing[{{ $lead->id }}] = true"></td>
+
+                                        <td x-show="!editing[{{ $lead->id }}]" class="text-end"><span class="badge bg-light text-dark" style="font-size:.9rem">{{ number_format($rM, 2, ',', '.') }}</span></td>
+                                        <td x-show="editing[{{ $lead->id }}]" style="display:none"><input type="number" step="0.01" wire:key="r-{{ $lead->id }}-m{{ $minggu }}" wire:model.live.debounce.400ms="rows.{{ $lead->id }}.{{ $minggu }}.realisasi" class="form-control form-control-sm text-end"></td>
+
                                         <td class="text-center"><span class="badge bg-{{ $cM }}" style="font-size:.9rem">{{ $pM }}%</span></td>
-                                        <td><textarea rows="1" wire:key="k-{{ $lead->id }}-m{{ $minggu }}" wire:model="rows.{{ $lead->id }}.{{ $minggu }}.keterangan" class="form-control form-control-sm" placeholder="Catatan minggu {{ $minggu }}..."></textarea></td>
+
+                                        <td x-show="!editing[{{ $lead->id }}]" style="white-space: pre-wrap;"><small class="text-muted">{{ $rows[$lead->id][$minggu]['keterangan'] ?: '-' }}</small></td>
+                                        <td x-show="editing[{{ $lead->id }}]" style="display:none"><textarea rows="1" wire:key="k-{{ $lead->id }}-m{{ $minggu }}" wire:model="rows.{{ $lead->id }}.{{ $minggu }}.keterangan" class="form-control form-control-sm" placeholder="Catatan minggu {{ $minggu }}..."></textarea></td>
+
+                                        <td class="text-center">
+                                            <button type="button" x-show="!editing[{{ $lead->id }}]" @click="editing[{{ $lead->id }}] = true" class="btn btn-sm btn-primary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" x-show="editing[{{ $lead->id }}]" wire:click="$call('saveLead', {{ $lead->id }})" class="btn btn-sm btn-success" title="Simpan" style="display:none">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            <button type="button" x-show="editing[{{ $lead->id }}]" @click="editing[{{ $lead->id }}] = false; $wire.$call('cancelEdit', {{ $lead->id }})" class="btn btn-sm btn-secondary" title="Batal" style="display:none">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="6" class="text-center text-muted">Tidak ada Lead Measure.</td></tr>
+                                    <tr><td colspan="7" class="text-center text-muted">Tidak ada Lead Measure.</td></tr>
                                 @endforelse
                                 </tbody>
                             </table>
                         </div>
-
-                        <button type="button" class="btn btn-primary mt-3" @click="swalConfirm('Simpan semua realisasi bulan ini?', () => $wire.save())">
-                            <i class="bi bi-save"></i> Simpan Realisasi
-                        </button>
                     </div>
-                </div>
-            </form>
+            </div>
         @endif
     @else
         <div class="alert alert-info">Pilih <strong>WIG</strong> dan <strong>Kantor Cabang</strong> dulu untuk menampilkan grid input.</div>

@@ -23,6 +23,9 @@ class RealisasiInput extends Component
     /** rows[lead_id][minggu_ke] = ['target' => x, 'realisasi' => y] */
     public array $rows = [];
 
+    /** editing[lead_id] = true untuk lead yang sedang diedit */
+    public array $editing = [];
+
     public function mount(): void
     {
         $this->tahun = (int) date('Y');
@@ -87,35 +90,42 @@ class RealisasiInput extends Component
         }
     }
 
-    public function save(): void
+    public function toggleEdit(int $lead_id): void
     {
-        $this->validate([
-            'wig_id' => 'required|exists:wigs,id',
-            'cabang_id' => 'required|exists:cabangs,id',
-            'tahun' => 'required|integer',
-            'bulan' => 'required|integer|min:1|max:12',
-        ]);
+        $this->editing[$lead_id] = !($this->editing[$lead_id] ?? false);
+    }
 
-        foreach ($this->rows as $lead_id => $byMinggu) {
-            foreach ($byMinggu as $minggu => $vals) {
-                LeadMeasureRealisasi::updateOrCreate(
-                    [
-                        'lead_measure_id' => $lead_id,
-                        'cabang_id' => $this->cabang_id,
-                        'tahun' => $this->tahun,
-                        'bulan' => $this->bulan,
-                        'minggu_ke' => $minggu,
-                    ],
-                    [
-                        'target' => (float) ($vals['target'] ?? 0),
-                        'realisasi' => (float) ($vals['realisasi'] ?? 0),
-                        'catatan' => $vals['keterangan'] ?? null,
-                        'created_by' => auth()->id(),
-                    ]
-                );
-            }
+    public function saveLead(int $lead_id): void
+    {
+        if (! isset($this->rows[$lead_id])) {
+            return;
         }
-        session()->flash('success', 'Realisasi tersimpan.');
+
+        foreach ($this->rows[$lead_id] as $minggu => $vals) {
+            LeadMeasureRealisasi::updateOrCreate(
+                [
+                    'lead_measure_id' => $lead_id,
+                    'cabang_id' => $this->cabang_id,
+                    'tahun' => $this->tahun,
+                    'bulan' => $this->bulan,
+                    'minggu_ke' => $minggu,
+                ],
+                [
+                    'target' => (float) ($vals['target'] ?? 0),
+                    'realisasi' => (float) ($vals['realisasi'] ?? 0),
+                    'catatan' => $vals['keterangan'] ?? null,
+                    'created_by' => auth()->id(),
+                ]
+            );
+        }
+        unset($this->editing[$lead_id]);
+        $this->loadRows();
+        session()->flash('success', 'Lead tersimpan.');
+    }
+
+    public function cancelEdit(int $lead_id): void
+    {
+        unset($this->editing[$lead_id]);
         $this->loadRows();
     }
 
