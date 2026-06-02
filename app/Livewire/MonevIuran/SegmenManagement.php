@@ -8,8 +8,11 @@ use Livewire\Component;
 class SegmenManagement extends Component
 {
     public ?int $editingId = null;
+
     public string $nama = '';
+
     public int $urutan = 0;
+
     public bool $is_active = true;
 
     protected function rules(): array
@@ -50,6 +53,7 @@ class SegmenManagement extends Component
         $s = MonevSegmen::findOrFail($id);
         if ($s->realisasis()->exists()) {
             $this->dispatch('notify', type: 'error', message: 'Segmen tidak bisa dihapus karena sudah memiliki data realisasi.');
+
             return;
         }
         $s->delete();

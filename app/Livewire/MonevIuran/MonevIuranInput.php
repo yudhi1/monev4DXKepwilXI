@@ -10,8 +10,11 @@ use Livewire\Component;
 class MonevIuranInput extends Component
 {
     public int $tahun;
+
     public int $bulan;
+
     public ?int $cabang_id = null;
+
     public array $realisasiData = [];
 
     /** Segmen yang sedang diedit (null = tidak ada) */
@@ -50,7 +53,7 @@ class MonevIuranInput extends Component
     {
         $this->realisasiData = [];
 
-        if (!$this->cabang_id) {
+        if (! $this->cabang_id) {
             return;
         }
 
@@ -80,8 +83,9 @@ class MonevIuranInput extends Component
     /** Mulai edit satu baris segmen */
     public function editRow(int $segmenId): void
     {
-        if (!empty($this->realisasiData[$segmenId]['locked'])) {
+        if (! empty($this->realisasiData[$segmenId]['locked'])) {
             $this->dispatch('notify', type: 'error', message: 'Periode sudah Final. Tidak bisa diedit.');
+
             return;
         }
         $this->editingSegmenId = $segmenId;
@@ -102,25 +106,28 @@ class MonevIuranInput extends Component
             $this->cabang_id = $u->cabang_id;
         }
 
-        if (!$this->cabang_id) {
+        if (! $this->cabang_id) {
             $this->dispatch('notify', type: 'error', message: 'Pilih Kantor Cabang terlebih dahulu.');
+
             return;
         }
 
         $data = $this->realisasiData[$segmenId] ?? null;
-        if (!$data) {
+        if (! $data) {
             return;
         }
 
-        if (!empty($data['locked'])) {
+        if (! empty($data['locked'])) {
             $this->dispatch('notify', type: 'error', message: 'Periode sudah Final. Tidak bisa diedit.');
+
             return;
         }
 
         // Validasi: nominal tidak boleh negatif
         foreach (['realisasi_sd_bulan_lalu', 'mg1', 'mg2', 'mg3', 'mg4'] as $field) {
-            if (!is_numeric($data[$field] ?? 0) || (float) ($data[$field] ?? 0) < 0) {
+            if (! is_numeric($data[$field] ?? 0) || (float) ($data[$field] ?? 0) < 0) {
                 $this->dispatch('notify', type: 'error', message: 'Nilai nominal tidak boleh negatif atau kosong.');
+
                 return;
             }
         }
@@ -150,8 +157,9 @@ class MonevIuranInput extends Component
 
     public function lockPeriode(): void
     {
-        if (!$this->cabang_id) {
+        if (! $this->cabang_id) {
             $this->dispatch('notify', type: 'error', message: 'Pilih Kantor Cabang terlebih dahulu.');
+
             return;
         }
 
@@ -160,8 +168,9 @@ class MonevIuranInput extends Component
             ->where('bulan', $this->bulan)
             ->exists();
 
-        if (!$exists) {
+        if (! $exists) {
             $this->dispatch('notify', type: 'error', message: 'Belum ada data untuk dikunci.');
+
             return;
         }
 
@@ -181,8 +190,9 @@ class MonevIuranInput extends Component
 
     public function unlockPeriode(): void
     {
-        if (!auth()->user()->hasRole('admin')) {
+        if (! auth()->user()->hasRole('admin')) {
             $this->dispatch('notify', type: 'error', message: 'Hanya admin yang bisa membuka kunci periode.');
+
             return;
         }
 
@@ -206,7 +216,7 @@ class MonevIuranInput extends Component
 
         if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id) {
             $cabangsQ->where('id', $u->cabang_id);
-        } elseif ($u && !$u->hasRole('admin') && $u->wilayah_id) {
+        } elseif ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
             $cabangsQ->where('wilayah_id', $u->wilayah_id);
         }
 
