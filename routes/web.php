@@ -8,6 +8,8 @@ use App\Livewire\IuranMonitoring;
 use App\Livewire\KepwilDashboard;
 use App\Livewire\LagManagement;
 use App\Livewire\LeadManagement;
+use App\Livewire\MonevIuran\MonevIuranInput;
+use App\Livewire\MonevIuran\SegmenManagement;
 use App\Livewire\RealisasiInput;
 use App\Livewire\UserManagement;
 use App\Livewire\WigManagement;
@@ -63,5 +65,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
         Route::get('/wig-realisasi', WigRealisasiInput::class)->name('wig-realisasi');
         Route::get('/monitoring-prioritas/iuran', IuranMonitoring::class)->name('monitoring-prioritas.iuran');
+
+        Route::get('/monev-iuran/input', MonevIuranInput::class)->name('monev-iuran.input');
+    });
+
+    // Master Segmen — hanya Admin Kepwil / Admin
+    Route::middleware('role:admin,kedeputian_wilayah')->group(function () {
+        Route::get('/monev-iuran/segmen', SegmenManagement::class)->name('monev-iuran.segmen');
     });
 });

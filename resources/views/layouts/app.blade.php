@@ -196,6 +196,12 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url('/monitoring-prioritas/iuran') }}"><i class="bi bi-cash-coin"></i> Iuran</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Monev Iuran</h6></li>
+                            @hasanyrole('admin|kedeputian_wilayah')
+                                <li><a class="dropdown-item" href="{{ route('monev-iuran.segmen') }}"><i class="bi bi-list-ul"></i> Master Segmen</a></li>
+                            @endhasanyrole
+                            <li><a class="dropdown-item" href="{{ route('monev-iuran.input') }}"><i class="bi bi-pencil-square"></i> Input Realisasi</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
