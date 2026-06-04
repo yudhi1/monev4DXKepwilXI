@@ -69,14 +69,16 @@ jobs:
             --exclude='node_modules/' \
             --exclude='.git/' \
             -e "ssh -i ~/.ssh/deploy_key" \
-            ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/www/wwwroot/monevkinejarakw11.my.id/
+            ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/www/wwwroot/monevkinerjakw11.my.id/
 
       - name: Run post-deploy commands
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd ${{ secrets.DEPLOY_PATH }}
+            cd /www/wwwroot/monevkinerjakw11.my.id
             composer install --no-dev --no-interaction --optimize-autoloader
             php artisan migrate --force
+            php artisan db:seed --class=MonevSegmenSeeder --force
+            php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
