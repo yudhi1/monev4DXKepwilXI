@@ -185,7 +185,7 @@
                         <li class="nav-item">
                             <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}"
                                 href="{{ url('/dashboard') }}">
-                                <i class="bi bi-speedometer2"></i> Dashboard-
+                                <i class="bi bi-speedometer2"></i> Dashboard
                             </a>
                         </li>
                         @role('admin')
