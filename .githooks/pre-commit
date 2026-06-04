@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Pre-commit hook: format file PHP yang di-stage dengan Laravel Pint,
+# lalu stage ulang otomatis. Tujuannya supaya CI (vendor/bin/pint --test)
+# tidak pernah merah karena masalah code style.
+#
+# Aktif via: git config core.hooksPath .githooks
+#
+
+if [ ! -f vendor/bin/pint ]; then
+    echo "[pre-commit] Pint tidak ditemukan (jalankan 'composer install'). Dilewati."
+    exit 0
+fi
+
+# Ambil daftar file PHP yang di-stage (Added/Copied/Modified/Renamed)
+STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACMR -- '*.php')
+
+if [ -z "$STAGED_PHP" ]; then
+    exit 0
+fi
+
+echo "[pre-commit] Menjalankan Pint pada file PHP yang di-stage..."
+echo "$STAGED_PHP" | tr '\n' '\0' | xargs -0 php vendor/bin/pint
+
+# Stage ulang file yang mungkin sudah diformat ulang oleh Pint
+echo "$STAGED_PHP" | tr '\n' '\0' | xargs -0 git add
+
+echo "[pre-commit] Selesai - file sudah rapi & di-stage ulang."
+exit 0
