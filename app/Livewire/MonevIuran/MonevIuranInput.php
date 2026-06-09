@@ -20,6 +20,12 @@ class MonevIuranInput extends Component
     /** Segmen yang sedang diedit (null = tidak ada) */
     public ?int $editingSegmenId = null;
 
+    /** Pilihan dropdown: '' = belum pilih, 'konsolidasi' = semua cabang, atau id cabang */
+    public string $pilihan = '';
+
+    /** Mode konsolidasi: total semua cabang (lihat-saja, tidak bisa diedit) */
+    public bool $konsolidasi = false;
+
     public function mount(): void
     {
         $this->tahun = (int) date('Y');
@@ -27,13 +33,26 @@ class MonevIuranInput extends Component
         $u = auth()->user();
         if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id) {
             $this->cabang_id = $u->cabang_id;
+            $this->pilihan = (string) $u->cabang_id;
         }
         $this->loadData();
     }
 
-    public function updatedCabangId()
+    public function updatedPilihan(): void
     {
         $this->editingSegmenId = null;
+
+        if ($this->pilihan === 'konsolidasi') {
+            $this->konsolidasi = true;
+            $this->cabang_id = null;
+        } elseif ($this->pilihan === '') {
+            $this->konsolidasi = false;
+            $this->cabang_id = null;
+        } else {
+            $this->konsolidasi = false;
+            $this->cabang_id = (int) $this->pilihan;
+        }
+
         $this->loadData();
     }
 
@@ -49,9 +68,29 @@ class MonevIuranInput extends Component
         $this->loadData();
     }
 
+    private function scopedCabangs()
+    {
+        $u = auth()->user();
+        $q = Cabang::orderBy('nama');
+
+        if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id) {
+            $q->where('id', $u->cabang_id);
+        } elseif ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
+            $q->where('wilayah_id', $u->wilayah_id);
+        }
+
+        return $q->get();
+    }
+
     private function loadData(): void
     {
         $this->realisasiData = [];
+
+        if ($this->konsolidasi) {
+            $this->loadKonsolidasi();
+
+            return;
+        }
 
         if (! $this->cabang_id) {
             return;
@@ -76,6 +115,34 @@ class MonevIuranInput extends Component
                 'realisasi_sd_bulan_lalu' => (float) ($r?->realisasi_sd_bulan_lalu ?? 0),
                 'keterangan' => (string) ($r?->keterangan ?? ''),
                 'locked' => $r?->status_periode === 'final',
+            ];
+        }
+    }
+
+    /** Muat data konsolidasi: total seluruh cabang (sesuai hak akses) per segmen */
+    private function loadKonsolidasi(): void
+    {
+        $cabangIds = $this->scopedCabangs()->pluck('id');
+        $segmens = MonevSegmen::where('is_active', true)->orderBy('urutan')->orderBy('id')->get();
+
+        foreach ($segmens as $segmen) {
+            $agg = MonevIuranRealisasi::where('tahun', $this->tahun)
+                ->where('bulan', $this->bulan)
+                ->where('segmen_id', $segmen->id)
+                ->whereIn('cabang_id', $cabangIds)
+                ->selectRaw('SUM(mg1) m1, SUM(mg2) m2, SUM(mg3) m3, SUM(mg4) m4, SUM(realisasi_sd_bulan_lalu) sdl')
+                ->first();
+
+            $this->realisasiData[$segmen->id] = [
+                'segmen_id' => $segmen->id,
+                'nama' => $segmen->nama,
+                'mg1' => (float) ($agg->m1 ?? 0),
+                'mg2' => (float) ($agg->m2 ?? 0),
+                'mg3' => (float) ($agg->m3 ?? 0),
+                'mg4' => (float) ($agg->m4 ?? 0),
+                'realisasi_sd_bulan_lalu' => (float) ($agg->sdl ?? 0),
+                'keterangan' => '',
+                'locked' => true,
             ];
         }
     }
@@ -211,16 +278,7 @@ class MonevIuranInput extends Component
 
     public function render()
     {
-        $u = auth()->user();
-        $cabangsQ = Cabang::orderBy('nama');
-
-        if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id) {
-            $cabangsQ->where('id', $u->cabang_id);
-        } elseif ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
-            $cabangsQ->where('wilayah_id', $u->wilayah_id);
-        }
-
-        $cabangs = $cabangsQ->get();
+        $cabangs = $this->scopedCabangs();
 
         $isPeriodeLocked = $this->cabang_id
             ? MonevIuranRealisasi::where('cabang_id', $this->cabang_id)
@@ -232,6 +290,7 @@ class MonevIuranInput extends Component
 
         return view('livewire.monev-iuran.input', [
             'cabangs' => $cabangs,
+            'konsolidasi' => $this->konsolidasi,
             'bulanLabels' => MonevIuranRealisasi::BULAN,
             'isPeriodeLocked' => $isPeriodeLocked,
             'bulanLalu' => MonevIuranRealisasi::BULAN[$this->bulan == 1 ? 12 : $this->bulan - 1] ?? '',

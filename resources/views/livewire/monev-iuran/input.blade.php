@@ -73,10 +73,13 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label for="cabang_id" class="form-label">Kantor Cabang</label>
-                    <select class="form-select" id="cabang_id" wire:model.live="cabang_id"
+                    <label for="pilihan" class="form-label">Kantor Cabang</label>
+                    <select class="form-select" id="pilihan" wire:model.live="pilihan"
                         {{ auth()->user()->hasRole('kantor_cabang') ? 'disabled' : '' }}>
                         <option value="">-- Pilih Cabang --</option>
+                        @unless (auth()->user()->hasRole('kantor_cabang'))
+                            <option value="konsolidasi">🔢 Konsolidasi (Semua Cabang)</option>
+                        @endunless
                         @foreach ($cabangs as $cabang)
                             <option value="{{ $cabang->id }}">{{ $cabang->nama }}</option>
                         @endforeach
@@ -86,7 +89,7 @@
         </div>
     </div>
 
-    @if ($cabang_id)
+    @if ($cabang_id || $konsolidasi)
         @if (count($realisasiData) === 0)
             <div class="alert alert-warning">
                 Belum ada Master Segmen. Silakan tambahkan segmen terlebih dahulu di menu <strong>Master Segmen</strong>.
@@ -94,9 +97,14 @@
         @else
             <div class="card card-iuran mb-3 shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="mb-0"><i class="bi bi-table"></i> Data Realisasi</h5>
+                    <h5 class="mb-0">
+                        <i class="bi bi-table"></i>
+                        {{ $konsolidasi ? 'Konsolidasi Realisasi — Total ' . count($cabangs) . ' Kantor Cabang' : 'Data Realisasi' }}
+                    </h5>
                     <div>
-                        @if ($isPeriodeLocked)
+                        @if ($konsolidasi)
+                            <span class="badge bg-info"><i class="bi bi-bar-chart-fill"></i> Konsolidasi (lihat-saja)</span>
+                        @elseif ($isPeriodeLocked)
                             <span class="badge bg-danger me-2"><i class="bi bi-lock-fill"></i> Final / Terkunci</span>
                             @if (auth()->user()->hasRole('admin'))
                                 <button type="button" class="btn btn-sm btn-outline-danger"
@@ -200,7 +208,9 @@
 
                                     {{-- Aksi --}}
                                     <td class="text-center text-nowrap">
-                                        @if ($isPeriodeLocked)
+                                        @if ($konsolidasi)
+                                            <span class="text-muted">—</span>
+                                        @elseif ($isPeriodeLocked)
                                             <span class="text-muted small"><i class="bi bi-lock-fill"></i></span>
                                         @elseif ($isEditing)
                                             <button type="button" class="btn btn-sm btn-success"
@@ -238,7 +248,11 @@
                     </table>
                 </div>
                 <div class="card-footer text-muted small">
-                    <i class="bi bi-info-circle"></i> Klik <strong>Edit</strong> pada baris segmen untuk mengubah nilai, lalu klik <i class="bi bi-check-lg"></i> untuk menyimpan. Geser tabel ke kanan untuk melihat kolom Keterangan & Aksi.
+                    @if ($konsolidasi)
+                        <i class="bi bi-bar-chart-fill"></i> Mode <strong>Konsolidasi</strong>: menampilkan penjumlahan realisasi seluruh kantor cabang per segmen untuk {{ $bulanLabels[$bulan] ?? '' }} {{ $tahun }}. Data hanya bisa dilihat (tidak bisa diedit di sini).
+                    @else
+                        <i class="bi bi-info-circle"></i> Klik <strong>Edit</strong> pada baris segmen untuk mengubah nilai, lalu klik <i class="bi bi-check-lg"></i> untuk menyimpan. Geser tabel ke kanan untuk melihat kolom Keterangan & Aksi.
+                    @endif
                 </div>
             </div>
         @endif
