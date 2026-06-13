@@ -10,6 +10,7 @@ use App\Livewire\LagManagement;
 use App\Livewire\LeadManagement;
 use App\Livewire\MonevIuran\MonevIuranInput;
 use App\Livewire\MonevIuran\SegmenManagement;
+use App\Livewire\MonitoringKinerja\ApcDashboard;
 use App\Livewire\RealisasiInput;
 use App\Livewire\UserManagement;
 use App\Livewire\WigManagement;
@@ -72,5 +73,12 @@ Route::middleware('auth')->group(function () {
     // Master Segmen — hanya Admin Kepwil / Admin
     Route::middleware('role:admin,kedeputian_wilayah')->group(function () {
         Route::get('/monev-iuran/segmen', SegmenManagement::class)->name('monev-iuran.segmen');
+    });
+
+    // Monitoring Kinerja (APC) — dashboard per indikator via upload Excel
+    Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
+        Route::get('/monitoring-kinerja/{indikator}', ApcDashboard::class)
+            ->where('indikator', 'total|peserta-aktif|kepuasan|penerimaan-iuran|biaya-manfaat|biaya-operasional')
+            ->name('monitoring-kinerja.show');
     });
 });

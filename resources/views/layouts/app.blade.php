@@ -269,6 +269,22 @@
                                                 class="bi bi-pencil-square"></i> Input Realisasi</a></li>
                                 </ul>
                             </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle {{ request()->is('monitoring-kinerja*') ? 'active' : '' }}"
+                                    href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-speedometer2"></i> Monitoring Kinerja
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('monitoring-kinerja.show', 'total') }}"><i class="bi bi-clipboard-data"></i> Capaian Total APC</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">Indikator APC</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('monitoring-kinerja.show', 'peserta-aktif') }}"><i class="bi bi-people"></i> Peserta Aktif</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('monitoring-kinerja.show', 'kepuasan') }}"><i class="bi bi-emoji-smile"></i> Tingkat Kepuasan Peserta</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('monitoring-kinerja.show', 'penerimaan-iuran') }}"><i class="bi bi-cash-stack"></i> Jumlah Penerimaan Iuran</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('monitoring-kinerja.show', 'biaya-manfaat') }}"><i class="bi bi-heart-pulse"></i> Realisasi Biaya Manfaat</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('monitoring-kinerja.show', 'biaya-operasional') }}"><i class="bi bi-receipt"></i> Biaya Operasional</a></li>
+                                </ul>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->is('laporan*') ? 'active' : '' }}"
                                     href="{{ url('/laporan') }}">
