@@ -52,10 +52,14 @@
                         <strong>{{ number_format($totalRealisasi, 2, ',', '.') }}</strong>
                     </div>
                     <div class="col-md-3">
-                        <small class="text-muted d-block">Progres Tahun</small>
-                        <div class="progress" style="height: 22px;">
+                        <div class="d-flex justify-content-between align-items-end">
+                            <small class="text-muted d-block">Progres Tahun</small>
+                            <strong class="text-{{ $progres >= 100 ? 'success' : ($progres >= 70 ? 'warning' : 'danger') }}">{{ number_format($progres, 2, ',', '.') }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 18px;">
                             <div class="progress-bar bg-{{ $progres >= 100 ? 'success' : ($progres >= 70 ? 'warning' : 'danger') }}"
-                                style="width: {{ min(100, max(0, $progres)) }}%;">{{ $progres }}%</div>
+                                style="width: {{ min(100, max(0, $progres)) }}%;"
+                                role="progressbar" aria-valuenow="{{ $progres }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
                 </div>

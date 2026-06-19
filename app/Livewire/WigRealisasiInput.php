@@ -132,7 +132,16 @@ class WigRealisasiInput extends Component
         $nilaiAwal = (float) ($target?->nilai_awal ?? 0);
         $nilaiTarget = (float) ($target?->nilai_target ?? 0);
         $range = $nilaiTarget - $nilaiAwal;
-        $progres = $range > 0 ? round(($totalRealisasi / $range) * 100, 2) : 0;
+
+        if ($range > 0) {
+            // Indikator naik: progres = realisasi terhadap rentang (awal -> target)
+            $progres = round(($totalRealisasi / $range) * 100, 2);
+        } elseif ($nilaiTarget > 0) {
+            // Tidak ada rentang naik (mis. target <= awal): ukur terhadap target langsung
+            $progres = round(($totalRealisasi / $nilaiTarget) * 100, 2);
+        } else {
+            $progres = 0;
+        }
 
         return view('livewire.wig-realisasi-input', [
             'wigs' => $wigsQ->get(),
