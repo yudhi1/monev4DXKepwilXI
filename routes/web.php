@@ -7,6 +7,9 @@ use App\Http\Controllers\LagMeasureController;
 use App\Http\Controllers\LeadMeasureController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WigController;
+use App\Http\Controllers\WigRealisasiController;
+use App\Http\Controllers\WigTargetController;
 use App\Http\Controllers\WilayahController;
 use App\Livewire\IuranMonitoring;
 use App\Livewire\KepwilDashboard;
@@ -14,9 +17,6 @@ use App\Livewire\MonevIuran\MonevIuranInput;
 use App\Livewire\MonevIuran\SegmenManagement;
 use App\Livewire\MonitoringKinerja\ApcDashboard;
 use App\Livewire\RealisasiInput;
-use App\Livewire\WigManagement;
-use App\Livewire\WigRealisasiInput;
-use App\Livewire\WigTargetManagement;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -59,8 +59,13 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('role:admin,kedeputian_wilayah')->group(function () {
-        Route::get('/wigs', WigManagement::class)->name('wigs');
-        Route::get('/wig-targets', WigTargetManagement::class)->name('wig-targets');
+        Route::get('/wigs', [WigController::class, 'index'])->name('wigs');
+        Route::post('/wigs', [WigController::class, 'store'])->name('wigs.store');
+        Route::put('/wigs/{wig}', [WigController::class, 'update'])->name('wigs.update');
+        Route::delete('/wigs/{wig}', [WigController::class, 'destroy'])->name('wigs.destroy');
+
+        Route::get('/wig-targets', [WigTargetController::class, 'index'])->name('wig-targets');
+        Route::post('/wig-targets', [WigTargetController::class, 'store'])->name('wig-targets.store');
         Route::get('/lag-measures', [LagMeasureController::class, 'index'])->name('lags');
         Route::get('/lag-measures/kode', [LagMeasureController::class, 'kodeSaran'])->name('lags.kode');
         Route::post('/lag-measures', [LagMeasureController::class, 'store'])->name('lags.store');
@@ -85,7 +90,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/realisasi', RealisasiInput::class)->name('realisasi');
 
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
-        Route::get('/wig-realisasi', WigRealisasiInput::class)->name('wig-realisasi');
+        Route::get('/wig-realisasi', [WigRealisasiController::class, 'index'])->name('wig-realisasi');
+        Route::post('/wig-realisasi', [WigRealisasiController::class, 'store'])->name('wig-realisasi.store');
         Route::get('/monitoring-prioritas/iuran', IuranMonitoring::class)->name('monitoring-prioritas.iuran');
 
         Route::get('/monev-iuran/input', MonevIuranInput::class)->name('monev-iuran.input');
