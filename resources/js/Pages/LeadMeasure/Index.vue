@@ -301,7 +301,7 @@ const hapus = () => {
                                         :class="
                                             lead.is_active
                                                 ? 'border-success/30 bg-success/10 text-success'
-                                                : 'text-muted-foreground'
+                                                : 'border-destructive/30 bg-destructive/10 text-destructive'
                                         "
                                     >
                                         {{ lead.is_active ? 'Aktif' : 'Nonaktif' }}
