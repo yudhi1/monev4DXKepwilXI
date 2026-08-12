@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\WilayahController;
 use App\Livewire\CabangManagement;
 use App\Livewire\Dashboard;
 use App\Livewire\IuranMonitoring;
@@ -16,7 +17,6 @@ use App\Livewire\UserManagement;
 use App\Livewire\WigManagement;
 use App\Livewire\WigRealisasiInput;
 use App\Livewire\WigTargetManagement;
-use App\Livewire\WilayahManagement;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -43,7 +43,12 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', UserManagement::class)->name('users');
-        Route::get('/wilayahs', WilayahManagement::class)->name('wilayahs');
+        // Fase 2 — dimigrasi ke Inertia + Vue. Komponen Livewire lama
+        // (App\Livewire\WilayahManagement) sengaja belum dihapus agar mudah dibalik.
+        Route::get('/wilayahs', [WilayahController::class, 'index'])->name('wilayahs');
+        Route::post('/wilayahs', [WilayahController::class, 'store'])->name('wilayahs.store');
+        Route::put('/wilayahs/{wilayah}', [WilayahController::class, 'update'])->name('wilayahs.update');
+        Route::delete('/wilayahs/{wilayah}', [WilayahController::class, 'destroy'])->name('wilayahs.destroy');
         Route::get('/cabangs', CabangManagement::class)->name('cabangs');
     });
 
