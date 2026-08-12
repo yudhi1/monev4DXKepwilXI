@@ -1,0 +1,386 @@
+<script setup>
+import { computed, ref, watch } from 'vue';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ArrowLeftRight, Pencil, Plus, Power, TrendingUp, Trash2 } from '@lucide/vue';
+
+const props = defineProps({
+    leads: { type: Array, required: true },
+    lags: { type: Array, required: true },
+    wigs: { type: Array, required: true },
+    cabangs: { type: Array, required: true },
+    filter: { type: Object, required: true },
+    terkunciCabang: { type: Boolean, default: false },
+});
+
+/* --- Konteks: WIG + cabang harus dipilih dulu --- */
+const wigId = ref(props.filter.wig_id ? String(props.filter.wig_id) : '');
+const cabangId = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : '');
+const tahun = ref(props.filter.tahun);
+
+const konteksLengkap = computed(() => !! wigId.value && !! cabangId.value);
+
+const muatUlang = () =>
+    router.get(
+        '/lead-measures',
+        {
+            wig_id: wigId.value || undefined,
+            cabang_id: cabangId.value || undefined,
+            tahun: tahun.value,
+        },
+        { preserveState: true, replace: true }
+    );
+
+watch([wigId, cabangId, tahun], muatUlang);
+
+const wigTerpilih = computed(() => props.wigs.find((w) => String(w.id) === wigId.value));
+
+/* --- Form --- */
+const dialogTerbuka = ref(false);
+const leadDiedit = ref(null);
+
+const form = useForm({
+    wig_id: '',
+    cabang_id: '',
+    lag_measure_id: '',
+    kode_lead: '',
+    nama_lead: '',
+    satuan: '',
+    tahun: props.filter.tahun,
+});
+
+const ambilSaranKode = async () => {
+    const params = new URLSearchParams({
+        cabang_id: cabangId.value,
+        wig_id: wigId.value,
+        tahun: tahun.value,
+    });
+
+    const respons = await fetch(`/lead-measures/kode?${params}`, {
+        headers: { Accept: 'application/json' },
+    });
+
+    if (respons.ok) {
+        form.kode_lead = (await respons.json()).kode;
+    }
+};
+
+const bukaTambah = async () => {
+    leadDiedit.value = null;
+    form.reset();
+    form.clearErrors();
+    form.wig_id = wigId.value;
+    form.cabang_id = cabangId.value;
+    form.tahun = tahun.value;
+    dialogTerbuka.value = true;
+    await ambilSaranKode();
+};
+
+const bukaEdit = (lead) => {
+    leadDiedit.value = lead;
+    form.clearErrors();
+    form.wig_id = String(lead.wig_id);
+    form.cabang_id = String(lead.cabang_id);
+    form.lag_measure_id = String(lead.lag_measure_id);
+    form.kode_lead = lead.kode_lead;
+    form.nama_lead = lead.nama_lead;
+    form.satuan = lead.satuan ?? '';
+    form.tahun = lead.tahun;
+    dialogTerbuka.value = true;
+};
+
+const simpan = () => {
+    const opsi = {
+        preserveScroll: true,
+        onSuccess: () => {
+            dialogTerbuka.value = false;
+            form.reset();
+        },
+    };
+
+    if (leadDiedit.value) {
+        form.put(`/lead-measures/${leadDiedit.value.id}`, opsi);
+    } else {
+        form.post('/lead-measures', opsi);
+    }
+};
+
+const toggleAktif = (lead) => router.patch(`/lead-measures/${lead.id}/toggle`, {}, { preserveScroll: true });
+
+/* --- Hapus --- */
+const leadDihapus = ref(null);
+
+const hapus = () => {
+    router.delete(`/lead-measures/${leadDihapus.value.id}`, {
+        preserveScroll: true,
+        onFinish: () => (leadDihapus.value = null),
+    });
+};
+</script>
+
+<template>
+    <Head title="Lead Measure" />
+
+    <AppLayout>
+        <template #header>
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-semibold tracking-tight">Lead Measure</h1>
+                    <p class="text-muted-foreground mt-1 text-sm">
+                        Aktivitas pendorong per WIG dan cabang. Kode dibuat otomatis dari bidang WIG dan kode cabang.
+                    </p>
+                </div>
+                <Button :disabled="!konteksLengkap" @click="bukaTambah">
+                    <Plus class="mr-1.5 size-4" />
+                    Tambah Lead
+                </Button>
+            </div>
+        </template>
+
+        <!-- Pemilih konteks -->
+        <Card class="mb-4">
+            <CardContent class="flex flex-wrap items-end gap-4">
+                <div class="min-w-72 flex-1 space-y-2">
+                    <Label>WIG</Label>
+                    <Select v-model="wigId">
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Pilih WIG" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
+                                {{ w.kode_wig }} — {{ w.nama_wig }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="min-w-56 flex-1 space-y-2">
+                    <Label>Cabang</Label>
+                    <Select v-model="cabangId" :disabled="terkunciCabang">
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Pilih cabang" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
+                                {{ c.nama }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="w-28 space-y-2">
+                    <Label for="tahun">Tahun</Label>
+                    <Input id="tahun" v-model.number="tahun" type="number" />
+                </div>
+            </CardContent>
+        </Card>
+
+        <div v-if="wigTerpilih && konteksLengkap" class="bg-accent/40 mb-4 rounded-lg border p-3 text-sm">
+            <div class="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" class="font-mono">{{ wigTerpilih.kode_wig }}</Badge>
+                <Badge v-if="wigTerpilih.bidang" variant="outline">{{ wigTerpilih.bidang }}</Badge>
+            </div>
+            <p class="text-muted-foreground mt-1.5 whitespace-pre-wrap">{{ wigTerpilih.nama_wig }}</p>
+        </div>
+
+        <!-- Daftar -->
+        <Card v-if="konteksLengkap" class="overflow-hidden py-0">
+            <div class="flex items-center gap-3 border-b px-4 py-3">
+                <h2 class="text-sm font-medium">Daftar Lead Measure</h2>
+                <span class="text-muted-foreground ml-auto text-sm">{{ leads.length }} lead</span>
+            </div>
+
+            <CardContent class="p-0">
+                <div class="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow class="hover:bg-transparent">
+                                <TableHead class="w-14 pl-4">#</TableHead>
+                                <TableHead class="w-64">Kode</TableHead>
+                                <TableHead class="min-w-[22rem]">Nama Lead</TableHead>
+                                <TableHead>Lag Measure</TableHead>
+                                <TableHead class="w-24 text-center">Status</TableHead>
+                                <TableHead class="w-32 pr-4 text-right">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow v-for="(lead, index) in leads" :key="lead.id">
+                                <TableCell class="text-muted-foreground pl-4 tabular-nums">{{ index + 1 }}</TableCell>
+                                <TableCell>
+                                    <Badge variant="secondary" class="font-mono text-xs">{{ lead.kode_lead }}</Badge>
+                                </TableCell>
+                                <TableCell class="text-sm whitespace-pre-wrap">{{ lead.nama_lead }}</TableCell>
+                                <TableCell class="text-muted-foreground text-sm">
+                                    {{ lead.lag_measure?.kode_lag ?? '—' }}
+                                </TableCell>
+                                <TableCell class="text-center">
+                                    <Badge
+                                        variant="outline"
+                                        :class="
+                                            lead.is_active
+                                                ? 'border-success/30 bg-success/10 text-success'
+                                                : 'text-muted-foreground'
+                                        "
+                                    >
+                                        {{ lead.is_active ? 'Aktif' : 'Nonaktif' }}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell class="pr-4">
+                                    <div class="flex justify-end gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            :title="lead.is_active ? 'Nonaktifkan' : 'Aktifkan'"
+                                            @click="toggleAktif(lead)"
+                                        >
+                                            <Power class="size-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" title="Edit" @click="bukaEdit(lead)">
+                                            <Pencil class="size-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Hapus"
+                                            class="text-destructive hover:text-destructive"
+                                            @click="leadDihapus = lead"
+                                        >
+                                            <Trash2 class="size-4" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+
+                            <TableRow v-if="leads.length === 0" class="hover:bg-transparent">
+                                <TableCell colspan="6" class="py-12">
+                                    <div class="text-muted-foreground flex flex-col items-center gap-2">
+                                        <TrendingUp class="size-8 opacity-40" />
+                                        <p class="text-sm">Belum ada Lead Measure untuk kombinasi ini.</p>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+
+        <!-- Belum memilih konteks -->
+        <Card v-else>
+            <CardContent class="py-16">
+                <div class="text-muted-foreground flex flex-col items-center gap-2">
+                    <ArrowLeftRight class="size-8 opacity-40" />
+                    <p class="text-sm">Pilih WIG dan cabang terlebih dahulu untuk melihat Lead Measure.</p>
+                </div>
+            </CardContent>
+        </Card>
+
+        <!-- Dialog tambah / edit -->
+        <Dialog v-model:open="dialogTerbuka">
+            <DialogContent class="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>{{ leadDiedit ? 'Edit Lead Measure' : 'Tambah Lead Measure' }}</DialogTitle>
+                    <DialogDescription>
+                        Lead Measure mengikuti WIG dan cabang yang sedang dipilih di atas.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <form class="space-y-4" @submit.prevent="simpan">
+                    <div class="space-y-2">
+                        <Label>Lag Measure</Label>
+                        <Select v-model="form.lag_measure_id">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="Pilih Lag Measure" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="lag in lags" :key="lag.id" :value="String(lag.id)">
+                                    {{ lag.kode_lag }} — {{ lag.nama_lag }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="form.errors.lag_measure_id" class="text-destructive text-sm">
+                            {{ form.errors.lag_measure_id }}
+                        </p>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="space-y-2 sm:col-span-2">
+                            <Label for="kode_lead">Kode Lead</Label>
+                            <Input id="kode_lead" v-model="form.kode_lead" class="font-mono" />
+                            <p v-if="form.errors.kode_lead" class="text-destructive text-sm">
+                                {{ form.errors.kode_lead }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="satuan">Satuan</Label>
+                            <Input id="satuan" v-model="form.satuan" placeholder="mis. orang" />
+                            <p v-if="form.errors.satuan" class="text-destructive text-sm">{{ form.errors.satuan }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="nama_lead">Nama Lead</Label>
+                        <Textarea id="nama_lead" v-model="form.nama_lead" rows="3" />
+                        <p v-if="form.errors.nama_lead" class="text-destructive text-sm">{{ form.errors.nama_lead }}</p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" @click="dialogTerbuka = false">Batal</Button>
+                        <Button type="submit" :disabled="form.processing">
+                            {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Konfirmasi hapus -->
+        <AlertDialog :open="!!leadDihapus" @update:open="(v) => !v && (leadDihapus = null)">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus Lead Measure ini?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        <strong>{{ leadDihapus?.kode_lead }}</strong> akan dihapus permanen.
+                        Tindakan ini tidak dapat dibatalkan.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        @click="hapus"
+                    >
+                        Ya, Hapus
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    </AppLayout>
+</template>

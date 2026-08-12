@@ -1,0 +1,224 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Cabang;
+use App\Models\LagMeasure;
+use App\Models\LeadMeasure;
+use App\Models\User;
+use App\Models\Wig;
+use App\Models\Wilayah;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class LagLeadInertiaTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Wilayah $wilayah;
+
+    private Cabang $cabang;
+
+    private Wig $wig;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        foreach (['admin', 'kedeputian_wilayah', 'kantor_cabang'] as $role) {
+            Role::findOrCreate($role);
+        }
+
+        $this->wilayah = Wilayah::create(['kode' => 'W01', 'nama' => 'Wilayah Satu']);
+        $this->cabang = Cabang::create([
+            'kode' => 'KC-BDG', 'nama' => 'Cabang Bandung', 'wilayah_id' => $this->wilayah->id,
+        ]);
+        $this->wig = Wig::create([
+            'kode_wig' => 'WIG-01',
+            'nama_wig' => 'WIG Pertama',
+            'bidang' => 'Kepesertaan',
+            'tahun' => (int) date('Y'),
+            'wilayah_id' => $this->wilayah->id,
+        ]);
+    }
+
+    private function admin(): User
+    {
+        return User::factory()->create()->assignRole('admin');
+    }
+
+    private function buatLag(array $ubah = []): LagMeasure
+    {
+        return LagMeasure::create(array_merge([
+            'kode_lag' => 'BDG-01-'.date('Y'),
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lag' => 'Lag Pertama',
+            'tahun' => (int) date('Y'),
+        ], $ubah));
+    }
+
+    /* ---------------- Lag ---------------- */
+
+    public function test_daftar_lag_tampil(): void
+    {
+        $this->buatLag();
+
+        $this->actingAs($this->admin())
+            ->get('/lag-measures')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('LagMeasure/Index')
+                ->has('lags.data', 1)
+            );
+    }
+
+    public function test_kode_lag_diusulkan_dari_kode_cabang_dan_tahun(): void
+    {
+        $tahun = (int) date('Y');
+
+        $this->actingAs($this->admin())
+            ->getJson("/lag-measures/kode?cabang_id={$this->cabang->id}&tahun={$tahun}")
+            ->assertOk()
+            ->assertJson(['kode' => "BDG-01-{$tahun}"]);
+    }
+
+    public function test_usulan_kode_lag_melompati_kode_yang_sudah_dipakai(): void
+    {
+        $tahun = (int) date('Y');
+        $this->buatLag();
+
+        $this->actingAs($this->admin())
+            ->getJson("/lag-measures/kode?cabang_id={$this->cabang->id}&tahun={$tahun}")
+            ->assertOk()
+            ->assertJson(['kode' => "BDG-02-{$tahun}"]);
+    }
+
+    public function test_menyimpan_lag(): void
+    {
+        $this->actingAs($this->admin())
+            ->post('/lag-measures', [
+                'wig_id' => $this->wig->id,
+                'cabang_id' => $this->cabang->id,
+                'kode_lag' => 'BDG-09-'.date('Y'),
+                'nama_lag' => 'Lag Baru',
+                'tahun' => (int) date('Y'),
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('lag_measures', ['kode_lag' => 'BDG-09-'.date('Y')]);
+    }
+
+    public function test_lag_dengan_lead_tidak_bisa_dihapus(): void
+    {
+        $lag = $this->buatLag();
+        LeadMeasure::create([
+            'kode_lead' => 'LEAD-KEPESERTAAN-BDG-01-'.date('Y'),
+            'lag_measure_id' => $lag->id,
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead Pertama',
+            'tahun' => (int) date('Y'),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->delete("/lag-measures/{$lag->id}")
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('lag_measures', ['id' => $lag->id]);
+    }
+
+    public function test_kantor_cabang_ditolak_membuka_lag(): void
+    {
+        $user = User::factory()->create()->assignRole('kantor_cabang');
+
+        $this->actingAs($user)->get('/lag-measures')->assertForbidden();
+    }
+
+    /* ---------------- Lead ---------------- */
+
+    public function test_daftar_lead_kosong_sebelum_wig_dan_cabang_dipilih(): void
+    {
+        $this->actingAs($this->admin())
+            ->get('/lead-measures')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('LeadMeasure/Index')
+                ->has('leads', 0)
+            );
+    }
+
+    public function test_daftar_lead_terisi_setelah_konteks_dipilih(): void
+    {
+        $lag = $this->buatLag();
+        LeadMeasure::create([
+            'kode_lead' => 'LEAD-KEPESERTAAN-BDG-01-'.date('Y'),
+            'lag_measure_id' => $lag->id,
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead Pertama',
+            'tahun' => (int) date('Y'),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get("/lead-measures?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('leads', 1)
+                ->where('leads.0.kode_lead', 'LEAD-KEPESERTAAN-BDG-01-'.date('Y'))
+            );
+    }
+
+    public function test_kode_lead_memakai_bidang_wig_dan_kode_cabang(): void
+    {
+        $tahun = (int) date('Y');
+
+        $this->actingAs($this->admin())
+            ->getJson("/lead-measures/kode?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}&tahun={$tahun}")
+            ->assertOk()
+            ->assertJson(['kode' => "LEAD-KEPESERTAAN-BDG-01-{$tahun}"]);
+    }
+
+    public function test_toggle_membalik_status_aktif(): void
+    {
+        $lag = $this->buatLag();
+        $lead = LeadMeasure::create([
+            'kode_lead' => 'LEAD-KEPESERTAAN-BDG-01-'.date('Y'),
+            'lag_measure_id' => $lag->id,
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead Pertama',
+            'is_active' => true,
+            'tahun' => (int) date('Y'),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->patch("/lead-measures/{$lead->id}/toggle")
+            ->assertSessionHas('success');
+
+        $this->assertFalse($lead->fresh()->is_active);
+    }
+
+    public function test_kantor_cabang_terkunci_pada_cabangnya_sendiri(): void
+    {
+        $lain = Cabang::create([
+            'kode' => 'KC-JKT', 'nama' => 'Cabang Jakarta', 'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        $user = User::factory()->create([
+            'wilayah_id' => $this->wilayah->id,
+            'cabang_id' => $this->cabang->id,
+        ])->assignRole('kantor_cabang');
+
+        // Walau meminta cabang lain lewat query string, server tetap memakai cabangnya sendiri.
+        $this->actingAs($user)
+            ->get("/lead-measures?wig_id={$this->wig->id}&cabang_id={$lain->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('filter.cabang_id', $this->cabang->id)
+                ->where('terkunciCabang', true)
+            );
+    }
+}

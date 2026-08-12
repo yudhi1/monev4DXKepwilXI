@@ -2,14 +2,14 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CabangController;
+use App\Http\Controllers\LagMeasureController;
+use App\Http\Controllers\LeadMeasureController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WilayahController;
 use App\Livewire\Dashboard;
 use App\Livewire\IuranMonitoring;
 use App\Livewire\KepwilDashboard;
-use App\Livewire\LagManagement;
-use App\Livewire\LeadManagement;
 use App\Livewire\MonevIuran\MonevIuranInput;
 use App\Livewire\MonevIuran\SegmenManagement;
 use App\Livewire\MonitoringKinerja\ApcDashboard;
@@ -61,7 +61,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin,kedeputian_wilayah')->group(function () {
         Route::get('/wigs', WigManagement::class)->name('wigs');
         Route::get('/wig-targets', WigTargetManagement::class)->name('wig-targets');
-        Route::get('/lag-measures', LagManagement::class)->name('lags');
+        Route::get('/lag-measures', [LagMeasureController::class, 'index'])->name('lags');
+        Route::get('/lag-measures/kode', [LagMeasureController::class, 'kodeSaran'])->name('lags.kode');
+        Route::post('/lag-measures', [LagMeasureController::class, 'store'])->name('lags.store');
+        Route::put('/lag-measures/{lag_measure}', [LagMeasureController::class, 'update'])->name('lags.update');
+        Route::delete('/lag-measures/{lag_measure}', [LagMeasureController::class, 'destroy'])->name('lags.destroy');
     });
 
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
@@ -72,7 +76,12 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/panduan', fn () => view('panduan'))->name('panduan');
 
-    Route::get('/lead-measures', LeadManagement::class)->name('leads');
+    Route::get('/lead-measures', [LeadMeasureController::class, 'index'])->name('leads');
+    Route::get('/lead-measures/kode', [LeadMeasureController::class, 'kodeSaran'])->name('leads.kode');
+    Route::post('/lead-measures', [LeadMeasureController::class, 'store'])->name('leads.store');
+    Route::put('/lead-measures/{lead_measure}', [LeadMeasureController::class, 'update'])->name('leads.update');
+    Route::patch('/lead-measures/{lead_measure}/toggle', [LeadMeasureController::class, 'toggle'])->name('leads.toggle');
+    Route::delete('/lead-measures/{lead_measure}', [LeadMeasureController::class, 'destroy'])->name('leads.destroy');
     Route::get('/realisasi', RealisasiInput::class)->name('realisasi');
 
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
