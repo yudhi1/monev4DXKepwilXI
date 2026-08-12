@@ -75,6 +75,44 @@ class LagLeadInertiaTest extends TestCase
             );
     }
 
+    public function test_filter_bidang_menyaring_lag(): void
+    {
+        $this->buatLag();
+
+        $wigLain = Wig::create([
+            'kode_wig' => 'WIG-JPK',
+            'nama_wig' => 'WIG Bidang Lain',
+            'bidang' => 'JPK',
+            'tahun' => (int) date('Y'),
+            'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        $this->buatLag(['kode_lag' => 'BDG-09-'.date('Y'), 'wig_id' => $wigLain->id]);
+
+        $this->actingAs($this->admin())
+            ->get('/lag-measures?bidang=JPK')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('lags.data', 1)
+                ->where('lags.data.0.kode_lag', 'BDG-09-'.date('Y'))
+                ->where('lags.data.0.wig.bidang', 'JPK')
+                ->where('filter.bidang', 'JPK')
+            );
+    }
+
+    public function test_bidang_tidak_dikenal_diabaikan_pada_lag(): void
+    {
+        $this->buatLag();
+
+        $this->actingAs($this->admin())
+            ->get('/lag-measures?bidang=TIDAK-ADA')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('lags.data', 1)
+                ->where('filter.bidang', null)
+            );
+    }
+
     public function test_kode_lag_diusulkan_dari_kode_cabang_dan_tahun(): void
     {
         $tahun = (int) date('Y');

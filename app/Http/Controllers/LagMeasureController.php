@@ -21,6 +21,10 @@ class LagMeasureController extends Controller
         $cari = trim((string) $request->query('cari', ''));
         $wigId = $request->query('wig_id');
 
+        // Bidang melekat pada WIG, jadi disaring lewat relasinya.
+        $bidang = $request->query('bidang');
+        $bidang = in_array($bidang, Wig::BIDANG, true) ? $bidang : null;
+
         $lags = LagMeasure::query()
             ->with(['wig:id,kode_wig,nama_wig,bidang', 'cabang:id,kode,nama'])
             // Non-admin hanya melihat lag pada WIG di wilayahnya sendiri.
@@ -32,6 +36,7 @@ class LagMeasureController extends Controller
                     ->orWhere('nama_lag', 'like', "%{$cari}%")
             ))
             ->when($wigId, fn ($q) => $q->where('wig_id', $wigId))
+            ->when($bidang, fn ($q, $b) => $q->whereHas('wig', fn ($w) => $w->where('bidang', $b)))
             ->withCount('leadMeasures')
             ->latest()
             ->paginate(10)
@@ -47,7 +52,8 @@ class LagMeasureController extends Controller
                 ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
                 ->orderBy('nama')
                 ->get(['id', 'kode', 'nama']),
-            'filter' => ['cari' => $cari, 'wig_id' => $wigId],
+            'daftarBidang' => Wig::BIDANG,
+            'filter' => ['cari' => $cari, 'wig_id' => $wigId, 'bidang' => $bidang],
         ]);
     }
 

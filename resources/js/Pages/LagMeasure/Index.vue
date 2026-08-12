@@ -35,14 +35,18 @@ const props = defineProps({
     lags: { type: Object, required: true },
     wigs: { type: Array, required: true },
     cabangs: { type: Array, required: true },
+    daftarBidang: { type: Array, required: true },
     filter: { type: Object, required: true },
 });
 
 const tahunIni = new Date().getFullYear();
 
 /* --- Filter --- */
+const SEMUA = 'semua';
+
 const cari = ref(props.filter.cari);
-const wigFilter = ref(props.filter.wig_id ? String(props.filter.wig_id) : 'semua');
+const wigFilter = ref(props.filter.wig_id ? String(props.filter.wig_id) : SEMUA);
+const bidangFilter = ref(props.filter.bidang ?? SEMUA);
 let timer = null;
 
 const muatUlang = () =>
@@ -50,7 +54,8 @@ const muatUlang = () =>
         '/lag-measures',
         {
             cari: cari.value || undefined,
-            wig_id: wigFilter.value === 'semua' ? undefined : wigFilter.value,
+            wig_id: wigFilter.value === SEMUA ? undefined : wigFilter.value,
+            bidang: bidangFilter.value === SEMUA ? undefined : bidangFilter.value,
         },
         { preserveState: true, replace: true }
     );
@@ -60,7 +65,7 @@ watch(cari, () => {
     timer = setTimeout(muatUlang, 350);
 });
 
-watch(wigFilter, muatUlang);
+watch([wigFilter, bidangFilter], muatUlang);
 
 /* --- Form --- */
 const dialogTerbuka = ref(false);
@@ -169,12 +174,22 @@ const hapus = () => {
                     <Input v-model="cari" placeholder="Cari kode atau nama lag..." class="pl-9" />
                 </div>
 
+                <Select v-model="bidangFilter">
+                    <SelectTrigger class="w-44">
+                        <SelectValue placeholder="Semua bidang" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem :value="SEMUA">Semua bidang</SelectItem>
+                        <SelectItem v-for="b in daftarBidang" :key="b" :value="b">{{ b }}</SelectItem>
+                    </SelectContent>
+                </Select>
+
                 <Select v-model="wigFilter">
                     <SelectTrigger class="w-72">
                         <SelectValue placeholder="Semua WIG" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="semua">Semua WIG</SelectItem>
+                        <SelectItem :value="SEMUA">Semua WIG</SelectItem>
                         <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
                             {{ w.kode_wig }} — {{ w.nama_wig }}
                         </SelectItem>
@@ -192,7 +207,8 @@ const hapus = () => {
                                 <TableHead class="w-14 pl-4">#</TableHead>
                                 <TableHead class="w-44">Kode</TableHead>
                                 <TableHead class="w-[34rem] min-w-[20rem]">Nama Lag</TableHead>
-                                <TableHead>WIG</TableHead>
+                                <TableHead class="w-24">WIG</TableHead>
+                                <TableHead class="w-28">Bidang</TableHead>
                                 <TableHead>Cabang</TableHead>
                                 <TableHead class="w-28 text-center">Target</TableHead>
                                 <TableHead class="w-20 text-center">Lead</TableHead>
@@ -212,6 +228,10 @@ const hapus = () => {
                                 </TableCell>
                                 <TableCell class="text-muted-foreground text-sm">
                                     {{ lag.wig?.kode_wig ?? '—' }}
+                                </TableCell>
+                                <TableCell>
+                                    <Badge v-if="lag.wig?.bidang" variant="outline">{{ lag.wig.bidang }}</Badge>
+                                    <span v-else class="text-muted-foreground">—</span>
                                 </TableCell>
                                 <TableCell class="text-muted-foreground text-sm">{{ lag.cabang?.nama ?? '—' }}</TableCell>
                                 <TableCell class="text-muted-foreground text-center text-sm tabular-nums">
@@ -237,7 +257,7 @@ const hapus = () => {
                             </TableRow>
 
                             <TableRow v-if="lags.data.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="8" class="py-12">
+                                <TableCell colspan="9" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <TrendingDown class="size-8 opacity-40" />
                                         <p class="text-sm">Tidak ada Lag Measure yang cocok.</p>
