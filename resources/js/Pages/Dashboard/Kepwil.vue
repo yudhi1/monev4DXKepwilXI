@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Grafik from '@/components/grafik/Grafik.vue';
+import TabelDetailLead from '@/components/TabelDetailLead.vue';
 import { opsiDasar, warnaToken } from '@/components/grafik/pakaiTemaGrafik';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,25 +11,37 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Minus, TrendingDown, TrendingUp } from '@lucide/vue';
+import { Building2 } from '@lucide/vue';
 import { cn } from '@/lib/utils';
 
 const props = defineProps({
     cabangs: { type: Array, required: true },
     wigs: { type: Array, required: true },
+    lags: { type: Array, required: true },
     peringkat: { type: Array, required: true },
     ringkasan: { type: Object, required: true },
     detailLead: { type: Array, required: true },
+    detailLeadBanding: { type: [Array, null], default: null },
+    sasaran: { type: [Object, null], default: null },
     filter: { type: Object, required: true },
 });
 
 const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const BULAN_PANJANG = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+const SEMUA = 'semua';
+const TANPA = 'tanpa';
 
 /* ---------------- Filter ---------------- */
 const tahun = ref(props.filter.tahun);
 const bulan = ref(String(props.filter.bulan));
 const minggu = ref(String(props.filter.minggu));
-const wigId = ref(props.filter.wig_id ? String(props.filter.wig_id) : 'semua');
+const mingguBanding = ref(props.filter.minggu_banding ? String(props.filter.minggu_banding) : TANPA);
+const wigId = ref(props.filter.wig_id ? String(props.filter.wig_id) : SEMUA);
+const lagId = ref(props.filter.lag_id ? String(props.filter.lag_id) : SEMUA);
 const cabangId = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : '');
 
 const muatUlang = () =>
@@ -38,17 +51,26 @@ const muatUlang = () =>
             tahun: tahun.value,
             bulan: bulan.value,
             minggu: minggu.value,
-            wig_id: wigId.value === 'semua' ? undefined : wigId.value,
+            minggu_banding: mingguBanding.value === TANPA ? undefined : mingguBanding.value,
+            wig_id: wigId.value === SEMUA ? undefined : wigId.value,
+            lag_id: lagId.value === SEMUA ? undefined : lagId.value,
             cabang_id: cabangId.value || undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true }
     );
 
-watch([tahun, bulan, minggu, wigId, cabangId], muatUlang);
+watch([tahun, bulan, minggu, mingguBanding, wigId, lagId, cabangId], muatUlang);
+
+/* Mengganti WIG membuat pilihan LAG sebelumnya tidak relevan lagi. */
+watch(wigId, () => (lagId.value = SEMUA));
 
 const namaCabang = computed(
     () => props.cabangs.find((c) => c.id === props.filter.cabang_id)?.nama ?? '—'
 );
+
+const periode = (m) => `Minggu ${m} / ${BULAN_PANJANG[props.filter.bulan - 1]} ${props.filter.tahun}`;
+
+const membandingkan = computed(() => props.detailLeadBanding !== null);
 
 /* ---------------- Grafik peringkat ---------------- */
 const dataPeringkat = computed(() => ({
@@ -98,16 +120,6 @@ const KELAS_STATUS = {
 };
 
 const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
-
-const IKON_TREN = { naik: TrendingUp, turun: TrendingDown, stabil: Minus };
-const LABEL_TREN = { naik: 'Naik', turun: 'Turun', stabil: 'Stabil' };
-const KELAS_TREN = {
-    naik: 'text-success',
-    turun: 'text-destructive',
-    stabil: 'text-muted-foreground',
-};
-
-const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
 </script>
 
 <template>
@@ -119,52 +131,137 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">Dashboard Wilayah</h1>
                     <p class="text-muted-foreground mt-1 text-sm">
-                        Peringkat kantor cabang pada {{ BULAN[filter.bulan - 1] }} {{ filter.tahun }} — Minggu
-                        {{ filter.minggu }}.
+                        Peringkat kantor cabang pada {{ BULAN_PANJANG[filter.bulan - 1] }} {{ filter.tahun }} — Minggu
+                        {{ filter.minggu }}<template v-if="membandingkan">, dibandingkan dengan Minggu
+                        {{ filter.minggu_banding }}</template>.
                     </p>
-                </div>
-
-                <div class="flex flex-wrap items-end gap-2">
-                    <div class="space-y-1">
-                        <Label class="text-xs">WIG</Label>
-                        <Select v-model="wigId">
-                            <SelectTrigger class="w-56"><SelectValue placeholder="Semua WIG" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="semua">Semua WIG</SelectItem>
-                                <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
-                                    {{ w.kode_wig }} — {{ w.nama_wig }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div class="space-y-1">
-                        <Label class="text-xs">Tahun</Label>
-                        <Input v-model.number="tahun" type="number" class="w-24" />
-                    </div>
-
-                    <div class="space-y-1">
-                        <Label class="text-xs">Bulan</Label>
-                        <Select v-model="bulan">
-                            <SelectTrigger class="w-28"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="(b, i) in BULAN" :key="b" :value="String(i + 1)">{{ b }}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div class="space-y-1">
-                        <Label class="text-xs">Minggu</Label>
-                        <Select v-model="minggu">
-                            <SelectTrigger class="w-32"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="m in 4" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </div>
             </div>
         </template>
+
+        <!-- Filter -->
+        <Card class="mb-6">
+            <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <div class="space-y-2 xl:col-span-2">
+                    <Label>WIG</Label>
+                    <Select v-model="wigId">
+                        <SelectTrigger class="w-full"><SelectValue placeholder="Semua WIG" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem :value="SEMUA">Semua WIG</SelectItem>
+                            <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
+                                {{ w.kode_wig }} — {{ w.nama_wig }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="space-y-2 xl:col-span-2">
+                    <Label>LAG</Label>
+                    <Select v-model="lagId" :disabled="lags.length === 0">
+                        <SelectTrigger class="w-full">
+                            <SelectValue :placeholder="lags.length ? 'Semua LAG' : 'Pilih WIG dulu'" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem :value="SEMUA">Semua LAG</SelectItem>
+                            <SelectItem v-for="l in lags" :key="l.id" :value="String(l.id)">
+                                {{ l.kode_lag }} — {{ l.nama_lag }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="space-y-2">
+                    <Label for="tahun">Tahun</Label>
+                    <Input id="tahun" v-model.number="tahun" type="number" />
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Bulan</Label>
+                    <Select v-model="bulan">
+                        <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="(b, i) in BULAN_PANJANG" :key="b" :value="String(i + 1)">
+                                {{ b }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Minggu</Label>
+                    <Select v-model="minggu">
+                        <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="m in 4" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Bandingkan dengan</Label>
+                    <Select v-model="mingguBanding">
+                        <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem :value="TANPA">Tanpa pembanding</SelectItem>
+                            <SelectItem
+                                v-for="m in 4"
+                                :key="m"
+                                :value="String(m)"
+                                :disabled="String(m) === minggu"
+                            >
+                                Minggu {{ m }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="space-y-2 sm:col-span-2 xl:col-span-2">
+                    <Label>Kantor Cabang</Label>
+                    <Select v-model="cabangId">
+                        <SelectTrigger class="w-full"><SelectValue placeholder="Pilih cabang" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
+                                {{ c.nama }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </CardContent>
+        </Card>
+
+        <!-- Sasaran yang sedang ditinjau -->
+        <Card v-if="sasaran" class="mb-6 overflow-hidden py-0">
+            <div class="divide-y">
+                <div class="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
+                    <span class="w-32 shrink-0 text-sm font-semibold">WIG</span>
+                    <p class="text-sm">
+                        <Badge variant="secondary" class="mr-2 font-mono text-xs">{{ sasaran.wig.kode }}</Badge>
+                        {{ sasaran.wig.nama }}
+                    </p>
+                </div>
+
+                <div v-if="sasaran.lag" class="bg-muted/40 flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
+                    <span class="w-32 shrink-0 text-sm font-semibold">LAG</span>
+                    <p class="text-sm">
+                        <Badge variant="outline" class="mr-2 font-mono text-xs">{{ sasaran.lag.kode }}</Badge>
+                        {{ sasaran.lag.nama }}
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
+                    <span class="w-32 shrink-0 text-sm font-semibold">Lead Measure</span>
+                    <ol v-if="sasaran.leads.length" class="list-decimal space-y-1 pl-4 text-sm">
+                        <li v-for="lead in sasaran.leads" :key="lead.kode">
+                            {{ lead.nama }}
+                            <span class="text-muted-foreground text-xs">({{ lead.kode }})</span>
+                        </li>
+                    </ol>
+                    <p v-else class="text-muted-foreground text-sm">
+                        Belum ada Lead Measure aktif untuk kombinasi ini.
+                    </p>
+                </div>
+            </div>
+        </Card>
 
         <!-- Ringkasan -->
         <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -197,12 +294,29 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
             </Card>
         </div>
 
+        <!-- Detail Lead: satu atau dua minggu -->
+        <div :class="cn('mb-6 grid gap-4', membandingkan && '2xl:grid-cols-2')">
+            <TabelDetailLead
+                :judul="`Detail Lead Measure — ${namaCabang}`"
+                :periode="periode(filter.minggu)"
+                :baris="detailLead"
+            />
+
+            <TabelDetailLead
+                v-if="membandingkan"
+                :judul="`Detail Lead Measure — ${namaCabang}`"
+                :periode="periode(filter.minggu_banding)"
+                :baris="detailLeadBanding"
+            />
+        </div>
+
         <!-- Grafik peringkat -->
         <Card v-if="peringkat.length" class="mb-6">
             <CardHeader>
                 <CardTitle class="text-base">Peringkat Capaian Cabang</CardTitle>
                 <CardDescription>
-                    Rata-rata persentase Lead Measure pada periode terpilih. Hijau ≥100%, kuning ≥90%, merah di bawahnya.
+                    Rata-rata persentase Lead Measure pada Minggu {{ filter.minggu }}. Hijau ≥100%, kuning ≥90%,
+                    merah di bawahnya.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -211,7 +325,7 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
         </Card>
 
         <!-- Tabel peringkat -->
-        <Card class="mb-6 overflow-hidden py-0">
+        <Card class="overflow-hidden py-0">
             <div class="flex items-center gap-3 border-b px-4 py-3">
                 <h2 class="text-sm font-medium">Rincian Peringkat</h2>
                 <span class="text-muted-foreground ml-auto text-sm">Klik baris untuk melihat Lead Measure-nya</span>
@@ -280,77 +394,6 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <Building2 class="size-8 opacity-40" />
                                         <p class="text-sm">Belum ada kantor cabang pada wilayah ini.</p>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-
-        <!-- Detail Lead cabang terpilih -->
-        <Card class="overflow-hidden py-0">
-            <div class="flex flex-wrap items-center gap-3 border-b px-4 py-3">
-                <h2 class="text-sm font-medium">Lead Measure — {{ namaCabang }}</h2>
-                <span class="text-muted-foreground ml-auto text-sm">Diurutkan dari capaian terendah</span>
-            </div>
-
-            <CardContent class="p-0">
-                <div class="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow class="hover:bg-transparent">
-                                <TableHead class="w-14 pl-4">#</TableHead>
-                                <TableHead class="min-w-[18rem]">Lead Measure</TableHead>
-                                <TableHead class="w-24">WIG</TableHead>
-                                <TableHead class="w-32 text-right">Target</TableHead>
-                                <TableHead class="w-32 text-right">Realisasi</TableHead>
-                                <TableHead class="w-28 text-center">% Capaian</TableHead>
-                                <TableHead class="w-32 text-center">Status</TableHead>
-                                <TableHead class="w-28 text-center">Tren</TableHead>
-                                <TableHead class="min-w-[12rem] pr-4">Keterangan</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="(lead, i) in detailLead" :key="lead.id">
-                                <TableCell class="text-muted-foreground pl-4 tabular-nums">{{ i + 1 }}</TableCell>
-                                <TableCell class="text-sm">
-                                    {{ lead.nama_lead }}
-                                    <span class="text-muted-foreground block text-xs">{{ lead.kode_lead }}</span>
-                                </TableCell>
-                                <TableCell class="text-muted-foreground text-sm">{{ lead.wig ?? '—' }}</TableCell>
-                                <TableCell class="text-right text-sm tabular-nums">{{ angka(lead.target) }}</TableCell>
-                                <TableCell class="text-right text-sm tabular-nums">
-                                    {{ angka(lead.realisasi) }}
-                                </TableCell>
-                                <TableCell class="text-center text-sm font-medium tabular-nums">
-                                    {{ lead.pct }}%
-                                </TableCell>
-                                <TableCell class="text-center">
-                                    <Badge variant="outline" :class="KELAS_STATUS[lead.status]">
-                                        {{ LABEL_STATUS[lead.status] }}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell class="text-center">
-                                    <span
-                                        :class="cn('inline-flex items-center gap-1 text-sm', KELAS_TREN[lead.tren])"
-                                        :title="`Sebelumnya ${lead.pct_sebelumnya}%`"
-                                    >
-                                        <component :is="IKON_TREN[lead.tren]" class="size-4" />
-                                        {{ LABEL_TREN[lead.tren] }}
-                                    </span>
-                                </TableCell>
-                                <TableCell class="text-muted-foreground pr-4 text-sm whitespace-pre-wrap">
-                                    {{ lead.keterangan || '—' }}
-                                </TableCell>
-                            </TableRow>
-
-                            <TableRow v-if="detailLead.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="9" class="py-12">
-                                    <div class="text-muted-foreground flex flex-col items-center gap-2">
-                                        <Building2 class="size-8 opacity-40" />
-                                        <p class="text-sm">Tidak ada Lead Measure aktif untuk cabang ini.</p>
                                     </div>
                                 </TableCell>
                             </TableRow>

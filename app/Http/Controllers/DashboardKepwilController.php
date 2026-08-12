@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cabang;
+use App\Models\LagMeasure;
 use App\Models\LeadMeasure;
 use App\Models\LeadMeasureRealisasi;
 use App\Models\User;
@@ -15,6 +16,9 @@ use Inertia\Response;
  * Dashboard kedeputian wilayah: peringkat kantor cabang pada satu periode
  * mingguan, plus rincian Lead Measure untuk cabang yang dipilih.
  *
+ * Rincian dapat ditampilkan untuk dua minggu berdampingan agar perkembangan
+ * antar minggu terlihat langsung tanpa berpindah halaman.
+ *
  * Perhitungannya dipindahkan apa adanya dari App\Livewire\KepwilDashboard.
  */
 class DashboardKepwilController extends Controller
@@ -26,6 +30,14 @@ class DashboardKepwilController extends Controller
         $tahun = (int) $request->query('tahun', date('Y'));
         $bulan = min(max((int) $request->query('bulan', date('n')), 1), 12);
         $minggu = min(max((int) $request->query('minggu', (int) ceil(date('j') / 7)), 1), 4);
+
+        // Minggu pembanding bersifat opsional dan harus berbeda dari minggu utama.
+        $mingguBanding = $request->query('minggu_banding');
+        $mingguBanding = $mingguBanding ? min(max((int) $mingguBanding, 1), 4) : null;
+
+        if ($mingguBanding === $minggu) {
+            $mingguBanding = null;
+        }
 
         $cabangs = Cabang::query()
             ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
@@ -40,6 +52,10 @@ class DashboardKepwilController extends Controller
 
         $wigId = $request->query('wig_id') ? (int) $request->query('wig_id') : null;
 
+        if ($wigId && ! $wigs->contains('id', $wigId)) {
+            $wigId = null;
+        }
+
         $peringkat = $this->peringkatCabang($cabangs, $wigId, $tahun, $bulan, $minggu);
 
         // Bila belum ada pilihan, ambil cabang teratas.
@@ -49,9 +65,20 @@ class DashboardKepwilController extends Controller
             $cabangDipilih = $peringkat[0]['cabang_id'] ?? null;
         }
 
+        // Daftar LAG menyempit mengikuti WIG dan cabang yang sedang dipilih.
+        $lags = $this->lagTerpilih($wigId, $cabangDipilih);
+        $lagId = $request->query('lag_id') ? (int) $request->query('lag_id') : null;
+
+        if ($lagId && ! $lags->contains('id', $lagId)) {
+            $lagId = null;
+        }
+
+        $konteks = ['wig_id' => $wigId, 'lag_id' => $lagId];
+
         return Inertia::render('Dashboard/Kepwil', [
             'cabangs' => $cabangs,
             'wigs' => $wigs,
+            'lags' => $lags,
             'peringkat' => $peringkat,
             'ringkasan' => [
                 'total_cabang' => $cabangs->count(),
@@ -59,15 +86,67 @@ class DashboardKepwilController extends Controller
                 'rata_wilayah' => round(collect($peringkat)->avg('pct') ?: 0, 2),
                 'cabang_on_track' => collect($peringkat)->where('pct', '>=', 100)->count(),
             ],
-            'detailLead' => $this->detailLead($cabangDipilih, $cabangs, $wigs, $wigId, $tahun, $bulan, $minggu),
+            'detailLead' => $this->detailLead($cabangDipilih, $cabangs, $wigs, $konteks, $tahun, $bulan, $minggu),
+            'detailLeadBanding' => $mingguBanding
+                ? $this->detailLead($cabangDipilih, $cabangs, $wigs, $konteks, $tahun, $bulan, $mingguBanding)
+                : null,
+            'sasaran' => $this->sasaran($wigs, $wigId, $lagId, $cabangDipilih),
             'filter' => [
                 'tahun' => $tahun,
                 'bulan' => $bulan,
                 'minggu' => $minggu,
+                'minggu_banding' => $mingguBanding,
                 'wig_id' => $wigId,
+                'lag_id' => $lagId,
                 'cabang_id' => $cabangDipilih,
             ],
         ]);
+    }
+
+    /**
+     * Ringkasan sasaran yang sedang ditinjau: kalimat WIG, kalimat LAG, dan
+     * daftar Lead Measure-nya — meniru kepala tabel pada laporan cetak.
+     */
+    private function sasaran($wigs, ?int $wigId, ?int $lagId, ?int $cabangId): ?array
+    {
+        $wig = $wigId ? $wigs->firstWhere('id', $wigId) : null;
+
+        if (! $wig) {
+            return null;
+        }
+
+        $lag = $lagId ? LagMeasure::find($lagId) : null;
+
+        $leads = LeadMeasure::query()
+            ->where('wig_id', $wigId)
+            ->where('is_active', true)
+            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->when($lagId, fn ($q) => $q->where('lag_measure_id', $lagId))
+            ->orderBy('kode_lead')
+            ->get(['id', 'kode_lead', 'nama_lead']);
+
+        return [
+            'wig' => ['kode' => $wig->kode_wig, 'nama' => $wig->nama_wig],
+            'lag' => $lag ? ['kode' => $lag->kode_lag, 'nama' => $lag->nama_lag] : null,
+            'leads' => $leads->map(fn (LeadMeasure $l) => [
+                'kode' => $l->kode_lead,
+                'nama' => $l->nama_lead,
+            ])->all(),
+        ];
+    }
+
+    private function lagTerpilih(?int $wigId, ?int $cabangId)
+    {
+        if (! $wigId) {
+            return collect();
+        }
+
+        return LagMeasure::where('wig_id', $wigId)
+            ->when($cabangId, fn ($q) => $q->where(
+                fn ($sub) => $sub->whereNull('cabang_id')->orWhere('cabang_id', $cabangId)
+            ))
+            ->orderBy('kode_lag')
+            ->get(['id', 'kode_lag', 'nama_lag']);
     }
 
     private function peringkatCabang($cabangs, ?int $wigId, int $tahun, int $bulan, int $minggu): array
@@ -104,7 +183,7 @@ class DashboardKepwilController extends Controller
             ->all();
     }
 
-    private function detailLead(?int $cabangId, $cabangs, $wigs, ?int $wigId, int $tahun, int $bulan, int $minggu): array
+    private function detailLead(?int $cabangId, $cabangs, $wigs, array $konteks, int $tahun, int $bulan, int $minggu): array
     {
         if (! $cabangId || ! $cabangs->contains('id', $cabangId)) {
             return [];
@@ -112,11 +191,12 @@ class DashboardKepwilController extends Controller
 
         [$pTahun, $pBulan, $pMinggu] = $this->periodeSebelumnya($tahun, $bulan, $minggu);
 
-        $leads = LeadMeasure::with('wig:id,kode_wig,nama_wig')
+        $leads = LeadMeasure::with(['wig:id,kode_wig,nama_wig', 'lagMeasure:id,kode_lag'])
             ->where('cabang_id', $cabangId)
             ->where('is_active', true)
             ->whereIn('wig_id', $wigs->pluck('id'))
-            ->when($wigId, fn ($q) => $q->where('wig_id', $wigId))
+            ->when($konteks['wig_id'], fn ($q, $id) => $q->where('wig_id', $id))
+            ->when($konteks['lag_id'], fn ($q, $id) => $q->where('lag_measure_id', $id))
             ->get();
 
         $ambil = fn (int $t, int $b, int $m) => LeadMeasureRealisasi::whereIn('lead_measure_id', $leads->pluck('id'))
@@ -143,6 +223,8 @@ class DashboardKepwilController extends Controller
                     'kode_lead' => $lead->kode_lead,
                     'nama_lead' => $lead->nama_lead,
                     'wig' => $lead->wig?->kode_wig,
+                    'wig_nama' => $lead->wig?->nama_wig,
+                    'lag' => $lead->lagMeasure?->kode_lag,
                     'target' => (float) ($rNow?->target ?? 0),
                     'realisasi' => (float) ($rNow?->realisasi ?? 0),
                     'pct' => $pctNow,

@@ -135,6 +135,95 @@ class KepwilIuranInertiaTest extends TestCase
             );
     }
 
+    public function test_tanpa_pembanding_detail_kedua_kosong(): void
+    {
+        $this->buatRealisasi($this->buatLead($this->cabang), 100, 80);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=1")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('detailLeadBanding', null)
+                ->where('filter.minggu_banding', null)
+            );
+    }
+
+    public function test_membandingkan_dua_minggu(): void
+    {
+        $lead = $this->buatLead($this->cabang);
+        $this->buatRealisasi($lead, 100, 40, 3, 3);
+        $this->buatRealisasi($lead, 100, 145, 3, 4);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=4&minggu_banding=3")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('detailLead', 1)
+                ->has('detailLeadBanding', 1)
+                ->where('detailLead.0.pct', 145)
+                ->where('detailLead.0.status', 'on')
+                ->where('detailLeadBanding.0.pct', 40)
+                ->where('detailLeadBanding.0.status', 'awas')
+            );
+    }
+
+    public function test_minggu_pembanding_sama_dengan_minggu_utama_diabaikan(): void
+    {
+        $this->buatRealisasi($this->buatLead($this->cabang), 100, 80);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=1&minggu_banding=1")
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('detailLeadBanding', null));
+    }
+
+    public function test_filter_lag_menyaring_lead(): void
+    {
+        $leadA = $this->buatLead($this->cabang);
+        $this->buatRealisasi($leadA, 100, 80);
+
+        // Lead kedua di bawah Lag berbeda pada WIG yang sama.
+        $lagLain = LagMeasure::create([
+            'kode_lag' => 'LAG-LAIN',
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lag' => 'Lag Lain',
+            'tahun' => $this->tahun,
+        ]);
+
+        $leadB = LeadMeasure::create([
+            'kode_lead' => 'LEAD-LAIN',
+            'lag_measure_id' => $lagLain->id,
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead Lain',
+            'is_active' => true,
+            'tahun' => $this->tahun,
+        ]);
+
+        $this->buatRealisasi($leadB, 100, 20);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=1&wig_id={$this->wig->id}&lag_id={$lagLain->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('detailLead', 1)
+                ->where('detailLead.0.kode_lead', 'LEAD-LAIN')
+                ->has('lags', 2)
+                ->where('sasaran.lag.kode', 'LAG-LAIN')
+                ->has('sasaran.leads', 1)
+            );
+    }
+
+    public function test_sasaran_kosong_bila_wig_belum_dipilih(): void
+    {
+        $this->buatRealisasi($this->buatLead($this->cabang), 100, 80);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=1")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('sasaran', null)
+                ->has('lags', 0)
+            );
+    }
+
     public function test_kedeputian_wilayah_hanya_melihat_cabang_wilayahnya(): void
     {
         $lainWilayah = Wilayah::create(['kode' => 'W02', 'nama' => 'Wilayah Dua']);
