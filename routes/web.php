@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApcDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CabangController;
 use App\Http\Controllers\DashboardCabangController;
@@ -16,7 +17,6 @@ use App\Http\Controllers\WigController;
 use App\Http\Controllers\WigRealisasiController;
 use App\Http\Controllers\WigTargetController;
 use App\Http\Controllers\WilayahController;
-use App\Livewire\MonitoringKinerja\ApcDashboard;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -116,9 +116,14 @@ Route::middleware('auth')->group(function () {
 
     // Monitoring Kinerja (APC) — dashboard per indikator via upload Excel
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
-        Route::get('/monitoring-kinerja/{indikator}', ApcDashboard::class)
-            ->where('indikator', 'total|peserta-aktif|kepuasan|penerimaan-iuran|biaya-manfaat|biaya-operasional')
-            ->name('monitoring-kinerja.show');
+        Route::prefix('monitoring-kinerja/{indikator}')
+            ->where(['indikator' => 'total|peserta-aktif|kepuasan|penerimaan-iuran|biaya-manfaat|biaya-operasional'])
+            ->group(function () {
+                Route::get('/', [ApcDashboardController::class, 'index'])->name('monitoring-kinerja.show');
+                Route::post('/upload', [ApcDashboardController::class, 'upload'])->name('monitoring-kinerja.upload');
+                Route::get('/{upload}/unduh', [ApcDashboardController::class, 'unduh'])->name('monitoring-kinerja.unduh');
+                Route::delete('/{upload}', [ApcDashboardController::class, 'destroy'])->name('monitoring-kinerja.destroy');
+            });
     });
 });
 

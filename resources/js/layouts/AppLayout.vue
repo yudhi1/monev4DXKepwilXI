@@ -68,6 +68,7 @@ const RUTE_INERTIA = [
     '/monev-iuran/segmen',
     '/dashboard-kepwil',
     '/monitoring-prioritas/iuran',
+    '/monitoring-kinerja',
 ];
 
 const sudahInertia = (href) => RUTE_INERTIA.some((r) => href === r || href.startsWith(`${r}/`));
