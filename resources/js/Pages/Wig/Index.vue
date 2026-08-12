@@ -43,8 +43,11 @@ const props = defineProps({
 const tahunIni = new Date().getFullYear();
 
 /* --- Filter --- */
+const SEMUA = 'semua';
+
 const cari = ref(props.filter.cari);
-const tahunFilter = ref(props.filter.tahun ? String(props.filter.tahun) : 'semua');
+const tahunFilter = ref(props.filter.tahun ? String(props.filter.tahun) : SEMUA);
+const bidangFilter = ref(props.filter.bidang ?? SEMUA);
 let timer = null;
 
 const muatUlang = () =>
@@ -52,7 +55,8 @@ const muatUlang = () =>
         '/wigs',
         {
             cari: cari.value || undefined,
-            tahun: tahunFilter.value === 'semua' ? undefined : tahunFilter.value,
+            tahun: tahunFilter.value === SEMUA ? undefined : tahunFilter.value,
+            bidang: bidangFilter.value === SEMUA ? undefined : bidangFilter.value,
         },
         { preserveState: true, replace: true }
     );
@@ -62,7 +66,7 @@ watch(cari, () => {
     timer = setTimeout(muatUlang, 350);
 });
 
-watch(tahunFilter, muatUlang);
+watch([tahunFilter, bidangFilter], muatUlang);
 
 /* --- Form --- */
 const dialogTerbuka = ref(false);
@@ -151,10 +155,18 @@ const hapus = () => {
                     <Input v-model="cari" placeholder="Cari kode atau nama WIG..." class="pl-9" />
                 </div>
 
+                <Select v-model="bidangFilter">
+                    <SelectTrigger class="w-44"><SelectValue placeholder="Semua bidang" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem :value="SEMUA">Semua bidang</SelectItem>
+                        <SelectItem v-for="b in daftarBidang" :key="b" :value="b">{{ b }}</SelectItem>
+                    </SelectContent>
+                </Select>
+
                 <Select v-model="tahunFilter">
                     <SelectTrigger class="w-40"><SelectValue placeholder="Semua tahun" /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="semua">Semua tahun</SelectItem>
+                        <SelectItem :value="SEMUA">Semua tahun</SelectItem>
                         <SelectItem v-for="t in daftarTahun" :key="t" :value="String(t)">{{ t }}</SelectItem>
                     </SelectContent>
                 </Select>

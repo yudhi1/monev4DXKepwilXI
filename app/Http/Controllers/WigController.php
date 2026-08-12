@@ -19,6 +19,9 @@ class WigController extends Controller
         $cari = trim((string) $request->query('cari', ''));
         $tahun = $request->query('tahun');
 
+        $bidang = $request->query('bidang');
+        $bidang = in_array($bidang, Wig::BIDANG, true) ? $bidang : null;
+
         $wigs = Wig::query()
             ->with('wilayah:id,nama')
             ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
@@ -27,6 +30,7 @@ class WigController extends Controller
                     ->orWhere('nama_wig', 'like', "%{$cari}%")
             ))
             ->when($tahun, fn ($q) => $q->where('tahun', $tahun))
+            ->when($bidang, fn ($q, $b) => $q->where('bidang', $b))
             ->withCount('lagMeasures')
             ->latest()
             ->paginate(10)
@@ -41,7 +45,7 @@ class WigController extends Controller
                 ->distinct()
                 ->orderByDesc('tahun')
                 ->pluck('tahun'),
-            'filter' => ['cari' => $cari, 'tahun' => $tahun],
+            'filter' => ['cari' => $cari, 'tahun' => $tahun, 'bidang' => $bidang],
             'wilayahBawaan' => $user?->wilayah_id,
         ]);
     }

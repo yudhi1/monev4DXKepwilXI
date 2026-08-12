@@ -71,6 +71,34 @@ class WigInertiaTest extends TestCase
             );
     }
 
+    public function test_filter_bidang_menyaring_hasil(): void
+    {
+        $this->buatWig(['kode_wig' => 'WIG-JPK', 'bidang' => 'JPK']);
+        $this->buatWig(['kode_wig' => 'WIG-KML', 'bidang' => 'KML']);
+
+        $this->actingAs($this->admin())
+            ->get('/wigs?bidang=KML')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('wigs.data', 1)
+                ->where('wigs.data.0.kode_wig', 'WIG-KML')
+                ->where('filter.bidang', 'KML')
+            );
+    }
+
+    public function test_bidang_tidak_dikenal_diabaikan(): void
+    {
+        $this->buatWig();
+
+        $this->actingAs($this->admin())
+            ->get('/wigs?bidang=TIDAK-ADA')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('wigs.data', 1)
+                ->where('filter.bidang', null)
+            );
+    }
+
     public function test_menyimpan_wig_mencatat_pembuatnya(): void
     {
         $admin = $this->admin();
