@@ -64,6 +64,8 @@ const RUTE_INERTIA = [
     '/lag-measures',
     '/lead-measures',
     '/realisasi',
+    '/monev-iuran/input',
+    '/monev-iuran/segmen',
 ];
 
 const sudahInertia = (href) => RUTE_INERTIA.some((r) => href === r || href.startsWith(`${r}/`));

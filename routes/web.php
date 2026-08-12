@@ -5,6 +5,8 @@ use App\Http\Controllers\CabangController;
 use App\Http\Controllers\DashboardCabangController;
 use App\Http\Controllers\LagMeasureController;
 use App\Http\Controllers\LeadMeasureController;
+use App\Http\Controllers\MonevIuranController;
+use App\Http\Controllers\MonevSegmenController;
 use App\Http\Controllers\RealisasiLeadController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
@@ -14,8 +16,6 @@ use App\Http\Controllers\WigTargetController;
 use App\Http\Controllers\WilayahController;
 use App\Livewire\IuranMonitoring;
 use App\Livewire\KepwilDashboard;
-use App\Livewire\MonevIuran\MonevIuranInput;
-use App\Livewire\MonevIuran\SegmenManagement;
 use App\Livewire\MonitoringKinerja\ApcDashboard;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -95,12 +95,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/wig-realisasi', [WigRealisasiController::class, 'store'])->name('wig-realisasi.store');
         Route::get('/monitoring-prioritas/iuran', IuranMonitoring::class)->name('monitoring-prioritas.iuran');
 
-        Route::get('/monev-iuran/input', MonevIuranInput::class)->name('monev-iuran.input');
+        Route::get('/monev-iuran/input', [MonevIuranController::class, 'index'])->name('monev-iuran.input');
+        Route::post('/monev-iuran/input', [MonevIuranController::class, 'store'])->name('monev-iuran.store');
+        Route::post('/monev-iuran/kunci', [MonevIuranController::class, 'kunci'])->name('monev-iuran.kunci');
+        Route::post('/monev-iuran/buka-kunci', [MonevIuranController::class, 'bukaKunci'])->name('monev-iuran.buka-kunci');
     });
 
     // Master Segmen — hanya Admin Kepwil / Admin
     Route::middleware('role:admin,kedeputian_wilayah')->group(function () {
-        Route::get('/monev-iuran/segmen', SegmenManagement::class)->name('monev-iuran.segmen');
+        Route::get('/monev-iuran/segmen', [MonevSegmenController::class, 'index'])->name('monev-iuran.segmen');
+        Route::post('/monev-iuran/segmen', [MonevSegmenController::class, 'store'])->name('monev-iuran.segmen.store');
+        Route::put('/monev-iuran/segmen/{segmen}', [MonevSegmenController::class, 'update'])->name('monev-iuran.segmen.update');
+        Route::delete('/monev-iuran/segmen/{segmen}', [MonevSegmenController::class, 'destroy'])->name('monev-iuran.segmen.destroy');
     });
 
     // Monitoring Kinerja (APC) — dashboard per indikator via upload Excel
