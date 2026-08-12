@@ -207,9 +207,10 @@ const hapus = () => {
                                         <p class="font-medium">{{ wig.nama_wig }}</p>
                                         <p
                                             v-if="wig.indikator_output"
-                                            class="text-muted-foreground mt-0.5 line-clamp-2 whitespace-pre-wrap"
+                                            class="text-destructive mt-0.5 line-clamp-2 whitespace-pre-wrap"
                                             :title="wig.indikator_output"
                                         >
+                                            <span class="font-medium">Indikator :</span>
                                             {{ wig.indikator_output }}
                                         </p>
                                     </div>
