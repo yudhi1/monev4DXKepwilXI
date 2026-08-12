@@ -185,8 +185,11 @@ const hapus = () => {
                                 <TableCell>
                                     <Badge variant="secondary" class="font-mono text-xs">{{ wig.kode_wig }}</Badge>
                                 </TableCell>
-                                <TableCell class="align-top text-sm">
-                                    <!-- Lebar dikunci agar nama panjang membungkus ke bawah, bukan melebarkan tabel. -->
+                                <TableCell class="align-top text-sm whitespace-normal">
+                                    <!--
+                                      TableCell bawaan shadcn memakai whitespace-nowrap; tanpa whitespace-normal
+                                      teks panjang tidak membungkus dan meluber menembus kolom sebelahnya.
+                                    -->
                                     <div class="max-w-[34rem]">
                                         <p class="font-medium">{{ wig.nama_wig }}</p>
                                         <p

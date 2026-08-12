@@ -64,7 +64,7 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                             <TableCell class="text-muted-foreground pl-4 text-center tabular-nums">
                                 {{ i + 1 }}
                             </TableCell>
-                            <TableCell>
+                            <TableCell class="align-top whitespace-normal">
                                 <Badge v-if="lead.wig" variant="secondary" class="font-mono text-xs">
                                     {{ lead.wig }}
                                 </Badge>
@@ -72,7 +72,7 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                                     {{ lead.wig_nama }}
                                 </p>
                             </TableCell>
-                            <TableCell class="text-sm">
+                            <TableCell class="align-top text-sm whitespace-normal">
                                 {{ lead.nama_lead }}
                                 <span class="text-muted-foreground block text-xs">{{ lead.kode_lead }}</span>
                             </TableCell>

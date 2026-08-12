@@ -223,7 +223,7 @@ const warnaPersen = (nilai) =>
                                     </Badge>
                                     <span v-else class="text-muted-foreground">—</span>
                                 </TableCell>
-                                <TableCell class="text-sm">
+                                <TableCell class="align-top text-sm whitespace-normal">
                                     {{ baris.nama_lead ?? '—' }}
                                     <span class="text-muted-foreground block text-xs">{{ baris.kode_lead }}</span>
                                 </TableCell>

@@ -394,7 +394,9 @@ const toggleWig = (id) => (wigTerbuka.value[id] = ! wigTerbuka.value[id]);
                                         <Badge variant="secondary" class="font-mono text-xs">{{ item.kode_wig }}</Badge>
                                         <Badge v-if="item.bidang" variant="outline">{{ item.bidang }}</Badge>
                                     </div>
-                                    <p class="mt-1 text-sm font-medium">{{ item.nama_wig }}</p>
+                                    <p class="mt-1 max-w-[28rem] text-sm font-medium whitespace-normal">
+                                        {{ item.nama_wig }}
+                                    </p>
                                 </TableCell>
                                 <TableCell class="text-right text-sm">
                                     <span class="font-medium">{{ nilai(item.nilai_sekarang, item.satuan) }}</span>
@@ -529,7 +531,7 @@ const toggleWig = (id) => (wigTerbuka.value[id] = ! wigTerbuka.value[id]);
                                             <TableCell class="text-muted-foreground pl-3 text-center tabular-nums">
                                                 {{ i + 1 }}
                                             </TableCell>
-                                            <TableCell class="text-sm">
+                                            <TableCell class="align-top text-sm whitespace-normal">
                                                 {{ lead.nama_lead }}
                                                 <span class="text-muted-foreground">({{ lead.kode_lead }})</span>
                                             </TableCell>
