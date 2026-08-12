@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CabangController;
 use App\Http\Controllers\DashboardCabangController;
+use App\Http\Controllers\DashboardKepwilController;
+use App\Http\Controllers\IuranMonitoringController;
 use App\Http\Controllers\LagMeasureController;
 use App\Http\Controllers\LeadMeasureController;
 use App\Http\Controllers\MonevIuranController;
@@ -14,8 +16,6 @@ use App\Http\Controllers\WigController;
 use App\Http\Controllers\WigRealisasiController;
 use App\Http\Controllers\WigTargetController;
 use App\Http\Controllers\WilayahController;
-use App\Livewire\IuranMonitoring;
-use App\Livewire\KepwilDashboard;
 use App\Livewire\MonitoringKinerja\ApcDashboard;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     Route::get('/dashboard-cabang', [DashboardCabangController::class, 'index'])->name('dashboard.cabang');
-    Route::get('/dashboard-kepwil', KepwilDashboard::class)->name('dashboard.kepwil');
+    Route::get('/dashboard-kepwil', [DashboardKepwilController::class, 'index'])->name('dashboard.kepwil');
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users');
@@ -93,7 +93,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
         Route::get('/wig-realisasi', [WigRealisasiController::class, 'index'])->name('wig-realisasi');
         Route::post('/wig-realisasi', [WigRealisasiController::class, 'store'])->name('wig-realisasi.store');
-        Route::get('/monitoring-prioritas/iuran', IuranMonitoring::class)->name('monitoring-prioritas.iuran');
+        Route::get('/monitoring-prioritas/iuran', [IuranMonitoringController::class, 'index'])->name('monitoring-prioritas.iuran');
+        Route::get('/monitoring-prioritas/iuran/excel', [IuranMonitoringController::class, 'excel'])->name('monitoring-prioritas.iuran.excel');
+        Route::get('/monitoring-prioritas/iuran/pdf', [IuranMonitoringController::class, 'pdf'])->name('monitoring-prioritas.iuran.pdf');
+        Route::post('/monitoring-prioritas/iuran', [IuranMonitoringController::class, 'store'])->name('monitoring-prioritas.iuran.store');
+        Route::put('/monitoring-prioritas/iuran/{iuran}', [IuranMonitoringController::class, 'update'])->name('monitoring-prioritas.iuran.update');
+        Route::delete('/monitoring-prioritas/iuran/{iuran}', [IuranMonitoringController::class, 'destroy'])->name('monitoring-prioritas.iuran.destroy');
 
         Route::get('/monev-iuran/input', [MonevIuranController::class, 'index'])->name('monev-iuran.input');
         Route::post('/monev-iuran/input', [MonevIuranController::class, 'store'])->name('monev-iuran.store');
