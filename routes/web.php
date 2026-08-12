@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CabangController;
+use App\Http\Controllers\DashboardCabangController;
 use App\Http\Controllers\LagMeasureController;
 use App\Http\Controllers\LeadMeasureController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WilayahController;
-use App\Livewire\Dashboard;
 use App\Livewire\IuranMonitoring;
 use App\Livewire\KepwilDashboard;
 use App\Livewire\MonevIuran\MonevIuranInput;
@@ -38,7 +38,7 @@ Route::middleware('auth')->group(function () {
         return redirect('/dashboard-cabang');
     })->name('dashboard');
 
-    Route::get('/dashboard-cabang', Dashboard::class)->name('dashboard.cabang');
+    Route::get('/dashboard-cabang', [DashboardCabangController::class, 'index'])->name('dashboard.cabang');
     Route::get('/dashboard-kepwil', KepwilDashboard::class)->name('dashboard.kepwil');
 
     Route::middleware('role:admin')->group(function () {
