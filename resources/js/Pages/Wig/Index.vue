@@ -223,14 +223,28 @@ const hapus = () => {
                                     -->
                                     <div class="max-w-[34rem]">
                                         <p class="font-medium">{{ wig.nama_wig }}</p>
-                                        <p
+                                        <!--
+                                          Badge dipakai untuk labelnya saja; badge bawaan memakai
+                                          whitespace-nowrap sehingga teks panjang akan terpotong bila
+                                          dimasukkan ke dalamnya.
+                                        -->
+                                        <div
                                             v-if="wig.indikator_output"
-                                            class="text-destructive mt-0.5 line-clamp-2 whitespace-pre-wrap"
-                                            :title="wig.indikator_output"
+                                            class="mt-1.5 flex flex-wrap items-start gap-1.5"
                                         >
-                                            <span class="font-medium">Indikator :</span>
-                                            {{ wig.indikator_output }}
-                                        </p>
+                                            <Badge
+                                                variant="outline"
+                                                class="border-destructive/30 bg-destructive/10 text-destructive"
+                                            >
+                                                Indikator
+                                            </Badge>
+                                            <span
+                                                class="text-destructive line-clamp-2 whitespace-pre-wrap"
+                                                :title="wig.indikator_output"
+                                            >
+                                                {{ wig.indikator_output }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell>
