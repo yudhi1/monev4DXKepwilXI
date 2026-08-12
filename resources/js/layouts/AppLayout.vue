@@ -192,7 +192,9 @@ const logout = () => router.post('/logout');
             <!-- Brand -->
             <div class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
                 <Link href="/dashboard" class="flex items-center gap-2 overflow-hidden">
-                    <span class="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
+                    <span
+                        class="from-primary to-success flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
+                    >
                         <ChartNoAxesCombined class="size-4" />
                     </span>
                     <span v-if="!ciut" class="text-[15px] font-semibold tracking-tight whitespace-nowrap">
@@ -329,7 +331,7 @@ const logout = () => router.post('/logout');
                             "
                         >
                             <span
-                                class="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+                                class="from-primary to-success flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-semibold text-white"
                             >
                                 {{ initial }}
                             </span>
@@ -359,7 +361,9 @@ const logout = () => router.post('/logout');
         <Sheet v-model:open="laciTerbuka">
             <SheetContent side="left" class="w-72 p-0">
                 <div class="flex h-14 items-center gap-2 border-b px-4">
-                    <span class="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
+                    <span
+                        class="from-primary to-success flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
+                    >
                         <ChartNoAxesCombined class="size-4" />
                     </span>
                     <span class="text-[15px] font-semibold tracking-tight">

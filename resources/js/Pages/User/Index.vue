@@ -218,7 +218,14 @@ const hapus = () => {
                                     {{ user.cabang ?? user.wilayah ?? '—' }}
                                 </TableCell>
                                 <TableCell class="text-center">
-                                    <Badge :variant="user.is_active ? 'default' : 'outline'">
+                                    <Badge
+                                        variant="outline"
+                                        :class="
+                                            user.is_active
+                                                ? 'border-success/30 bg-success/10 text-success'
+                                                : 'text-muted-foreground'
+                                        "
+                                    >
                                         {{ user.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </Badge>
                                 </TableCell>
