@@ -169,7 +169,7 @@ const hapus = () => {
                             <TableRow class="hover:bg-transparent">
                                 <TableHead class="w-14 pl-4">#</TableHead>
                                 <TableHead class="w-36">Kode</TableHead>
-                                <TableHead class="min-w-[20rem]">Nama WIG</TableHead>
+                                <TableHead class="w-[34rem] min-w-[20rem]">Nama WIG</TableHead>
                                 <TableHead class="w-28">Bidang</TableHead>
                                 <TableHead>Wilayah</TableHead>
                                 <TableHead class="w-20 text-center">Tahun</TableHead>
@@ -185,11 +185,18 @@ const hapus = () => {
                                 <TableCell>
                                     <Badge variant="secondary" class="font-mono text-xs">{{ wig.kode_wig }}</Badge>
                                 </TableCell>
-                                <TableCell class="text-sm">
-                                    <p class="font-medium">{{ wig.nama_wig }}</p>
-                                    <p v-if="wig.indikator_output" class="text-muted-foreground mt-0.5 whitespace-pre-wrap">
-                                        {{ wig.indikator_output }}
-                                    </p>
+                                <TableCell class="align-top text-sm">
+                                    <!-- Lebar dikunci agar nama panjang membungkus ke bawah, bukan melebarkan tabel. -->
+                                    <div class="max-w-[34rem]">
+                                        <p class="font-medium">{{ wig.nama_wig }}</p>
+                                        <p
+                                            v-if="wig.indikator_output"
+                                            class="text-muted-foreground mt-0.5 line-clamp-2 whitespace-pre-wrap"
+                                            :title="wig.indikator_output"
+                                        >
+                                            {{ wig.indikator_output }}
+                                        </p>
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <Badge v-if="wig.bidang" variant="outline">{{ wig.bidang }}</Badge>

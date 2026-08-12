@@ -223,7 +223,7 @@ const hapus = () => {
                             <TableRow class="hover:bg-transparent">
                                 <TableHead class="w-14 pl-4">#</TableHead>
                                 <TableHead class="w-64">Kode</TableHead>
-                                <TableHead class="min-w-[22rem]">Nama Lead</TableHead>
+                                <TableHead class="w-[34rem] min-w-[20rem]">Nama Lead</TableHead>
                                 <TableHead>Lag Measure</TableHead>
                                 <TableHead class="w-24 text-center">Status</TableHead>
                                 <TableHead class="w-32 pr-4 text-right">Aksi</TableHead>
@@ -235,7 +235,9 @@ const hapus = () => {
                                 <TableCell>
                                     <Badge variant="secondary" class="font-mono text-xs">{{ lead.kode_lead }}</Badge>
                                 </TableCell>
-                                <TableCell class="text-sm whitespace-pre-wrap">{{ lead.nama_lead }}</TableCell>
+                                <TableCell class="align-top text-sm">
+                                    <div class="max-w-[34rem] whitespace-pre-wrap">{{ lead.nama_lead }}</div>
+                                </TableCell>
                                 <TableCell class="text-muted-foreground text-sm">
                                     {{ lead.lag_measure?.kode_lag ?? '—' }}
                                 </TableCell>

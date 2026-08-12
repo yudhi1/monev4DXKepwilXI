@@ -191,7 +191,7 @@ const hapus = () => {
                             <TableRow class="hover:bg-transparent">
                                 <TableHead class="w-14 pl-4">#</TableHead>
                                 <TableHead class="w-44">Kode</TableHead>
-                                <TableHead class="min-w-[22rem]">Nama Lag</TableHead>
+                                <TableHead class="w-[34rem] min-w-[20rem]">Nama Lag</TableHead>
                                 <TableHead>WIG</TableHead>
                                 <TableHead>Cabang</TableHead>
                                 <TableHead class="w-28 text-center">Target</TableHead>
@@ -207,7 +207,9 @@ const hapus = () => {
                                 <TableCell>
                                     <Badge variant="secondary" class="font-mono text-xs">{{ lag.kode_lag }}</Badge>
                                 </TableCell>
-                                <TableCell class="text-sm whitespace-pre-wrap">{{ lag.nama_lag }}</TableCell>
+                                <TableCell class="align-top text-sm">
+                                    <div class="max-w-[34rem] whitespace-pre-wrap">{{ lag.nama_lag }}</div>
+                                </TableCell>
                                 <TableCell class="text-muted-foreground text-sm">
                                     {{ lag.wig?.kode_wig ?? '—' }}
                                 </TableCell>
