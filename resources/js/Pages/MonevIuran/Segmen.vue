@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ListOrdered, Pencil, Plus, Trash2 } from '@lucide/vue';
+import { kelasAktif } from '@/lib/status';
 
 const props = defineProps({
     segmens: { type: Array, required: true },
@@ -127,14 +128,7 @@ const hapus = () => {
                                 {{ segmen.realisasis_count }}
                             </TableCell>
                             <TableCell class="text-center">
-                                <Badge
-                                    variant="outline"
-                                    :class="
-                                        segmen.is_active
-                                            ? 'border-success/30 bg-success/10 text-success'
-                                            : 'text-muted-foreground'
-                                    "
-                                >
+                                <Badge variant="outline" :class="kelasAktif(segmen.is_active)">
                                     {{ segmen.is_active ? 'Aktif' : 'Nonaktif' }}
                                 </Badge>
                             </TableCell>

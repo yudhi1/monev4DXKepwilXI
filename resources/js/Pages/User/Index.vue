@@ -30,6 +30,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Plus, Search, Trash2, Users } from '@lucide/vue';
+import { kelasAktif } from '@/lib/status';
 
 const props = defineProps({
     users: { type: Object, required: true },
@@ -218,14 +219,7 @@ const hapus = () => {
                                     {{ user.cabang ?? user.wilayah ?? '—' }}
                                 </TableCell>
                                 <TableCell class="text-center">
-                                    <Badge
-                                        variant="outline"
-                                        :class="
-                                            user.is_active
-                                                ? 'border-success/30 bg-success/10 text-success'
-                                                : 'text-muted-foreground'
-                                        "
-                                    >
+                                    <Badge variant="outline" :class="kelasAktif(user.is_active)">
                                         {{ user.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </Badge>
                                 </TableCell>

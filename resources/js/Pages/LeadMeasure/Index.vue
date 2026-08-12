@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeftRight, Pencil, Plus, Power, TrendingUp, Trash2 } from '@lucide/vue';
 import { kelasBidang } from '@/lib/bidang';
+import { kelasAktif } from '@/lib/status';
 
 const props = defineProps({
     leads: { type: Array, required: true },
@@ -296,14 +297,7 @@ const hapus = () => {
                                     {{ lead.lag_measure?.kode_lag ?? '—' }}
                                 </TableCell>
                                 <TableCell class="text-center">
-                                    <Badge
-                                        variant="outline"
-                                        :class="
-                                            lead.is_active
-                                                ? 'border-success/30 bg-success/10 text-success'
-                                                : 'border-destructive/30 bg-destructive/10 text-destructive'
-                                        "
-                                    >
+                                    <Badge variant="outline" :class="kelasAktif(lead.is_active)">
                                         {{ lead.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </Badge>
                                 </TableCell>
