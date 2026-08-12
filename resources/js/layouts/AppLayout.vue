@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { toast, Toaster } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -205,13 +205,7 @@ watch(
     { immediate: true, deep: true }
 );
 
-/*
- | Logout mengarah ke /login yang masih Blade, jadi dikirim sebagai form
- | biasa — bukan router.post milik Inertia.
- */
-const formLogout = ref(null);
-const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-const logout = () => formLogout.value?.submit();
+const logout = () => router.post('/logout');
 </script>
 
 <template>
@@ -451,11 +445,6 @@ const logout = () => formLogout.value?.submit();
                 </nav>
             </SheetContent>
         </Sheet>
-
-        <!-- Logout dikirim sebagai form biasa; tujuannya /login yang masih Blade -->
-        <form ref="formLogout" method="POST" action="/logout" class="hidden">
-            <input type="hidden" name="_token" :value="csrf" />
-        </form>
 
         <!-- ============ Konten ============ -->
         <div :class="cn('transition-[padding] duration-200', ciut ? 'lg:pl-[4.5rem]' : 'lg:pl-64')">
