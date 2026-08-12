@@ -189,6 +189,41 @@ class LagLeadInertiaTest extends TestCase
         $this->assertDatabaseHas('lag_measures', ['kode_lag' => 'BDG-09-'.date('Y')]);
     }
 
+    public function test_pesan_penolakan_hapus_sampai_ke_halaman(): void
+    {
+        $lag = $this->buatLag();
+        LeadMeasure::create([
+            'kode_lead' => 'LEAD-KEPESERTAAN-BDG-01-'.date('Y'),
+            'lag_measure_id' => $lag->id,
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead Pertama',
+            'tahun' => (int) date('Y'),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->delete("/lag-measures/{$lag->id}")
+            ->assertRedirect();
+
+        // Pesan harus ikut terkirim sebagai prop supaya bisa ditampilkan sebagai toast.
+        $this->actingAs($this->admin())
+            ->get('/lag-measures')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('flash.error', 'Lag Measure tidak dapat dihapus karena masih memiliki Lead Measure.')
+            );
+    }
+
+    public function test_lag_tanpa_lead_bisa_dihapus(): void
+    {
+        $lag = $this->buatLag();
+
+        $this->actingAs($this->admin())
+            ->delete("/lag-measures/{$lag->id}")
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('lag_measures', ['id' => $lag->id]);
+    }
+
     public function test_lag_dengan_lead_tidak_bisa_dihapus(): void
     {
         $lag = $this->buatLag();

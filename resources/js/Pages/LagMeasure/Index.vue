@@ -254,11 +254,20 @@ const hapus = () => {
                                         <Button variant="ghost" size="icon" title="Edit" @click="bukaEdit(lag)">
                                             <Pencil class="size-4" />
                                         </Button>
+                                        <!--
+                                          Lag yang masih punya Lead memang ditolak server. Tombolnya
+                                          dimatikan sejak awal supaya alasannya terbaca sebelum diklik.
+                                        -->
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            title="Hapus"
                                             class="text-destructive hover:text-destructive"
+                                            :disabled="lag.lead_measures_count > 0"
+                                            :title="
+                                                lag.lead_measures_count > 0
+                                                    ? `Tidak dapat dihapus — masih punya ${lag.lead_measures_count} Lead Measure`
+                                                    : 'Hapus'
+                                            "
                                             @click="lagDihapus = lag"
                                         >
                                             <Trash2 class="size-4" />
