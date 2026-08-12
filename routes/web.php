@@ -18,6 +18,7 @@ use App\Livewire\WigRealisasiInput;
 use App\Livewire\WigTargetManagement;
 use App\Livewire\WilayahManagement;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', fn () => redirect('/dashboard'));
 
@@ -82,3 +83,8 @@ Route::middleware('auth')->group(function () {
             ->name('monitoring-kinerja.show');
     });
 });
+
+// Fase 1 — halaman uji rakitan Inertia + Vue + shadcn-vue.
+// Tidak tertaut di navigasi; hapus setelah migrasi berjalan.
+Route::middleware('auth')->get('/_inertia-check', fn () => Inertia::render('InertiaCheck'))
+    ->name('inertia.check');
