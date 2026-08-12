@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChevronDown, Minus, Target, TrendingDown, TrendingUp } from '@lucide/vue';
 import { cn } from '@/lib/utils';
+import { kelasBidang } from '@/lib/bidang';
 
 const props = defineProps({
     cabangs: { type: Array, required: true },
@@ -392,7 +393,7 @@ const toggleWig = (id) => (wigTerbuka.value[id] = ! wigTerbuka.value[id]);
                                 <TableCell>
                                     <div class="flex flex-wrap items-center gap-1.5">
                                         <Badge variant="secondary" class="font-mono text-xs">{{ item.kode_wig }}</Badge>
-                                        <Badge v-if="item.bidang" variant="outline">{{ item.bidang }}</Badge>
+                                        <Badge v-if="item.bidang" variant="outline" :class="kelasBidang(item.bidang)">{{ item.bidang }}</Badge>
                                     </div>
                                     <p class="mt-1 max-w-[28rem] text-sm font-medium whitespace-normal">
                                         {{ item.nama_wig }}
@@ -498,7 +499,7 @@ const toggleWig = (id) => (wigTerbuka.value[id] = ! wigTerbuka.value[id]);
                     >
                         <Badge variant="secondary" class="font-mono text-xs">{{ wig.kode_wig }}</Badge>
                         <span class="min-w-0 flex-1 text-sm font-medium">{{ wig.nama_wig }}</span>
-                        <Badge v-if="wig.bidang" variant="outline">{{ wig.bidang }}</Badge>
+                        <Badge v-if="wig.bidang" variant="outline" :class="kelasBidang(wig.bidang)">{{ wig.bidang }}</Badge>
                         <ChevronDown :class="cn('size-4 shrink-0 opacity-60 transition-transform', wigTerbuka[wig.id] && 'rotate-180')" />
                     </button>
 

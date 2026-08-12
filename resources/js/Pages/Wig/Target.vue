@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Flag, Save } from '@lucide/vue';
+import { kelasBidang } from '@/lib/bidang';
 
 const props = defineProps({
     wigs: { type: Array, required: true },
@@ -85,7 +86,7 @@ const jumlahTerisi = computed(() => form.baris.filter((b) => Number(b.nilai_targ
 
                 <div v-if="wig" class="bg-accent/40 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
                     <Badge variant="secondary" class="font-mono">{{ wig.kode_wig }}</Badge>
-                    <Badge v-if="wig.bidang" variant="outline">{{ wig.bidang }}</Badge>
+                    <Badge v-if="wig.bidang" variant="outline" :class="kelasBidang(wig.bidang)">{{ wig.bidang }}</Badge>
                     <Badge variant="outline">{{ wig.tahun }}</Badge>
                     <span class="text-muted-foreground">{{ wig.nama_wig }}</span>
                 </div>

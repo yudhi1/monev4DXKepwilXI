@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ClipboardList, Save } from '@lucide/vue';
+import { kelasBidang } from '@/lib/bidang';
 
 const props = defineProps({
     wigs: { type: Array, required: true },
@@ -142,7 +143,7 @@ const siap = computed(() => !! props.filter.wig_id && !! props.filter.cabang_id)
         <div v-if="wigTerpilih && siap" class="bg-accent/40 mb-4 rounded-lg border p-3 text-sm">
             <div class="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary" class="font-mono">{{ wigTerpilih.kode_wig }}</Badge>
-                <Badge v-if="wigTerpilih.bidang" variant="outline">{{ wigTerpilih.bidang }}</Badge>
+                <Badge v-if="wigTerpilih.bidang" variant="outline" :class="kelasBidang(wigTerpilih.bidang)">{{ wigTerpilih.bidang }}</Badge>
             </div>
             <p class="text-muted-foreground mt-1.5">{{ wigTerpilih.nama_wig }}</p>
         </div>

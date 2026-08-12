@@ -62,6 +62,16 @@
     --input: oklch(0.9 0.018 230);
     --ring: oklch(0.53 0.16 248);
 
+    /*
+     | Warna per bidang. Hue-nya sengaja dijauhkan satu sama lain agar
+     | keempatnya tetap terbedakan, termasuk oleh mata yang sulit
+     | membedakan merah-hijau.
+     */
+    --bidang-jpk: oklch(0.52 0.16 250);
+    --bidang-kml: oklch(0.5 0.13 160);
+    --bidang-pikeu: oklch(0.55 0.13 65);
+    --bidang-sdmuk: oklch(0.52 0.17 300);
+
     /* Deret warna grafik: biru → hijau, dipakai bergantian antar seri */
     --chart-1: oklch(0.53 0.16 248);
     --chart-2: oklch(0.64 0.14 162);
@@ -104,6 +114,11 @@
     --input: oklch(1 0 0 / 16%);
     --ring: oklch(0.68 0.14 248);
 
+    --bidang-jpk: oklch(0.74 0.13 250);
+    --bidang-kml: oklch(0.76 0.12 160);
+    --bidang-pikeu: oklch(0.8 0.12 65);
+    --bidang-sdmuk: oklch(0.76 0.14 300);
+
     --chart-1: oklch(0.68 0.14 248);
     --chart-2: oklch(0.72 0.13 162);
     --chart-3: oklch(0.74 0.11 215);
@@ -135,6 +150,11 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+
+    --color-bidang-jpk: var(--bidang-jpk);
+    --color-bidang-kml: var(--bidang-kml);
+    --color-bidang-pikeu: var(--bidang-pikeu);
+    --color-bidang-sdmuk: var(--bidang-sdmuk);
 
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);

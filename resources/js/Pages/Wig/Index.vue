@@ -30,6 +30,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Plus, Search, Target, Trash2 } from '@lucide/vue';
+import { kelasBidang } from '@/lib/bidang';
 
 const props = defineProps({
     wigs: { type: Object, required: true },
@@ -214,7 +215,7 @@ const hapus = () => {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge v-if="wig.bidang" variant="outline">{{ wig.bidang }}</Badge>
+                                    <Badge v-if="wig.bidang" variant="outline" :class="kelasBidang(wig.bidang)">{{ wig.bidang }}</Badge>
                                     <span v-else class="text-muted-foreground">—</span>
                                 </TableCell>
                                 <TableCell class="text-muted-foreground text-sm">{{ wig.wilayah?.nama ?? '—' }}</TableCell>

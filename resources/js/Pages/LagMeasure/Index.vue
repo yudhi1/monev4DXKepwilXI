@@ -30,6 +30,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Plus, Search, Trash2, TrendingDown } from '@lucide/vue';
+import { kelasBidang } from '@/lib/bidang';
 
 const props = defineProps({
     lags: { type: Object, required: true },
@@ -240,7 +241,7 @@ const hapus = () => {
                                     <div class="max-w-[34rem] whitespace-pre-wrap">{{ lag.nama_lag }}</div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge v-if="lag.wig?.bidang" variant="outline">{{ lag.wig.bidang }}</Badge>
+                                    <Badge v-if="lag.wig?.bidang" variant="outline" :class="kelasBidang(lag.wig.bidang)">{{ lag.wig.bidang }}</Badge>
                                     <span v-else class="text-muted-foreground">—</span>
                                 </TableCell>
                                 <TableCell class="text-muted-foreground text-sm">{{ lag.cabang?.nama ?? '—' }}</TableCell>

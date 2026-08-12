@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ClipboardCheck, Pencil, Save, X } from '@lucide/vue';
 import { cn } from '@/lib/utils';
+import { kelasBidang } from '@/lib/bidang';
 
 const props = defineProps({
     wigs: { type: Array, required: true },
@@ -166,7 +167,7 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
         <div v-if="wigTerpilih && siap" class="bg-accent/40 mb-4 rounded-lg border p-3 text-sm">
             <div class="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary" class="font-mono">{{ wigTerpilih.kode_wig }}</Badge>
-                <Badge v-if="wigTerpilih.bidang" variant="outline">{{ wigTerpilih.bidang }}</Badge>
+                <Badge v-if="wigTerpilih.bidang" variant="outline" :class="kelasBidang(wigTerpilih.bidang)">{{ wigTerpilih.bidang }}</Badge>
             </div>
             <p class="text-muted-foreground mt-1.5 whitespace-pre-wrap">{{ wigTerpilih.nama_wig }}</p>
         </div>
