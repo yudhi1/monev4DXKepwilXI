@@ -221,7 +221,6 @@ const hapus = () => {
                                 <TableHead class="w-14 pl-4">#</TableHead>
                                 <TableHead class="w-44">Kode</TableHead>
                                 <TableHead class="w-[34rem] min-w-[20rem]">Nama Lag</TableHead>
-                                <TableHead class="w-24">WIG</TableHead>
                                 <TableHead class="w-28">Bidang</TableHead>
                                 <TableHead>Cabang</TableHead>
                                 <TableHead class="w-28 text-center">Target</TableHead>
@@ -239,9 +238,6 @@ const hapus = () => {
                                 </TableCell>
                                 <TableCell class="align-top text-sm">
                                     <div class="max-w-[34rem] whitespace-pre-wrap">{{ lag.nama_lag }}</div>
-                                </TableCell>
-                                <TableCell class="text-muted-foreground text-sm">
-                                    {{ lag.wig?.kode_wig ?? '—' }}
                                 </TableCell>
                                 <TableCell>
                                     <Badge v-if="lag.wig?.bidang" variant="outline">{{ lag.wig.bidang }}</Badge>
@@ -271,7 +267,7 @@ const hapus = () => {
                             </TableRow>
 
                             <TableRow v-if="lags.data.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="9" class="py-12">
+                                <TableCell colspan="8" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <TrendingDown class="size-8 opacity-40" />
                                         <p class="text-sm">Tidak ada Lag Measure yang cocok.</p>
