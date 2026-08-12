@@ -9,10 +9,16 @@ use App\Models\LeadMeasureRealisasi;
 use App\Models\Wig;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
+    private const BULAN = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    ];
+
     private function buildQuery(Request $request)
     {
         $u = $request->user();
@@ -75,13 +81,46 @@ class ReportController extends Controller
         }
         $cabangs = $cabangsQ->get();
 
-        return view('laporan.index', [
-            'realisasis' => $this->buildQuery($request)->paginate(25)->withQueryString(),
-            'tahun' => $tahun,
-            'wigs' => $wigs,
-            'leads' => $leads,
-            'cabangs' => $cabangs,
-            'filters' => $request->only(['wig_id', 'lead_measure_id', 'cabang_id', 'bulan', 'minggu', 'tahun']),
+        $realisasis = $this->buildQuery($request)
+            ->paginate(25)
+            ->withQueryString()
+            ->through(fn (LeadMeasureRealisasi $r) => [
+                'id' => $r->id,
+                'cabang' => $r->cabang?->nama,
+                'wig' => $r->leadMeasure?->lagMeasure?->wig?->kode_wig,
+                'lag' => $r->leadMeasure?->lagMeasure?->kode_lag,
+                'kode_lead' => $r->leadMeasure?->kode_lead,
+                'nama_lead' => $r->leadMeasure?->nama_lead,
+                'bulan' => $r->bulan,
+                'minggu_ke' => $r->minggu_ke,
+                'target' => (float) $r->target,
+                'realisasi' => (float) $r->realisasi,
+                'persentase' => (float) $r->persentase,
+                'catatan' => (string) ($r->catatan ?? ''),
+            ]);
+
+        return Inertia::render('Laporan/Index', [
+            'realisasis' => $realisasis,
+            'wigs' => $wigs->map(fn (Wig $w) => [
+                'id' => $w->id,
+                'kode_wig' => $w->kode_wig,
+                'nama_wig' => $w->nama_wig,
+            ]),
+            'leads' => $leads->map(fn (LeadMeasure $l) => [
+                'id' => $l->id,
+                'kode_lead' => $l->kode_lead,
+                'nama_lead' => $l->nama_lead,
+            ]),
+            'cabangs' => $cabangs->map(fn (Cabang $c) => ['id' => $c->id, 'nama' => $c->nama]),
+            'namaBulan' => self::BULAN,
+            'filter' => [
+                'tahun' => $tahun,
+                'wig_id' => $request->query('wig_id'),
+                'lead_measure_id' => $request->query('lead_measure_id'),
+                'cabang_id' => $request->query('cabang_id'),
+                'bulan' => $request->query('bulan'),
+                'minggu' => $request->query('minggu'),
+            ],
         ]);
     }
 

@@ -79,7 +79,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan/pdf', [ReportController::class, 'pdf'])->name('laporan.pdf');
     });
 
-    Route::get('/panduan', fn () => view('panduan'))->name('panduan');
+    Route::get('/panduan', fn () => Inertia::render('Panduan'))->name('panduan');
 
     Route::get('/lead-measures', [LeadMeasureController::class, 'index'])->name('leads');
     Route::get('/lead-measures/kode', [LeadMeasureController::class, 'kodeSaran'])->name('leads.kode');
