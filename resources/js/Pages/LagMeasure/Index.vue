@@ -47,6 +47,7 @@ const SEMUA = 'semua';
 const cari = ref(props.filter.cari);
 const wigFilter = ref(props.filter.wig_id ? String(props.filter.wig_id) : SEMUA);
 const bidangFilter = ref(props.filter.bidang ?? SEMUA);
+const cabangFilter = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : SEMUA);
 let timer = null;
 
 const muatUlang = () =>
@@ -56,6 +57,7 @@ const muatUlang = () =>
             cari: cari.value || undefined,
             wig_id: wigFilter.value === SEMUA ? undefined : wigFilter.value,
             bidang: bidangFilter.value === SEMUA ? undefined : bidangFilter.value,
+            cabang_id: cabangFilter.value === SEMUA ? undefined : cabangFilter.value,
         },
         { preserveState: true, replace: true }
     );
@@ -65,7 +67,7 @@ watch(cari, () => {
     timer = setTimeout(muatUlang, 350);
 });
 
-watch([wigFilter, bidangFilter], muatUlang);
+watch([wigFilter, bidangFilter, cabangFilter], muatUlang);
 
 /* --- Form --- */
 const dialogTerbuka = ref(false);
@@ -192,6 +194,18 @@ const hapus = () => {
                         <SelectItem :value="SEMUA">Semua WIG</SelectItem>
                         <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
                             {{ w.kode_wig }} — {{ w.nama_wig }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select v-model="cabangFilter">
+                    <SelectTrigger class="w-56">
+                        <SelectValue placeholder="Semua cabang" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem :value="SEMUA">Semua cabang</SelectItem>
+                        <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
+                            {{ c.nama }}
                         </SelectItem>
                     </SelectContent>
                 </Select>

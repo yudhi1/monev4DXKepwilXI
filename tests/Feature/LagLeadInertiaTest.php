@@ -100,6 +100,46 @@ class LagLeadInertiaTest extends TestCase
             );
     }
 
+    public function test_filter_cabang_menyaring_lag(): void
+    {
+        $this->buatLag();
+
+        $cabangLain = Cabang::create([
+            'kode' => 'KC-JKT', 'nama' => 'Cabang Jakarta', 'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        $this->buatLag(['kode_lag' => 'JKT-01-'.date('Y'), 'cabang_id' => $cabangLain->id]);
+
+        $this->actingAs($this->admin())
+            ->get("/lag-measures?cabang_id={$cabangLain->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('lags.data', 1)
+                ->where('lags.data.0.kode_lag', 'JKT-01-'.date('Y'))
+                ->where('filter.cabang_id', $cabangLain->id)
+            );
+    }
+
+    public function test_filter_cabang_di_luar_wilayah_diabaikan(): void
+    {
+        $this->buatLag();
+
+        $wilayahLain = Wilayah::create(['kode' => 'W02', 'nama' => 'Wilayah Dua']);
+        $cabangLuar = Cabang::create([
+            'kode' => 'KC-SBY', 'nama' => 'Cabang Surabaya', 'wilayah_id' => $wilayahLain->id,
+        ]);
+
+        $user = User::factory()->create(['wilayah_id' => $this->wilayah->id])->assignRole('kedeputian_wilayah');
+
+        $this->actingAs($user)
+            ->get("/lag-measures?cabang_id={$cabangLuar->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('lags.data', 1)
+                ->where('filter.cabang_id', null)
+            );
+    }
+
     public function test_bidang_tidak_dikenal_diabaikan_pada_lag(): void
     {
         $this->buatLag();

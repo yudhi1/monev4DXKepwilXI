@@ -25,6 +25,15 @@ class LagMeasureController extends Controller
         $bidang = $request->query('bidang');
         $bidang = in_array($bidang, Wig::BIDANG, true) ? $bidang : null;
 
+        $cabangs = Cabang::query()
+            ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
+            ->orderBy('nama')
+            ->get(['id', 'kode', 'nama']);
+
+        // Hanya cabang yang boleh diakses user yang diterima sebagai filter.
+        $cabangId = $request->query('cabang_id');
+        $cabangId = ($cabangId && $cabangs->contains('id', (int) $cabangId)) ? (int) $cabangId : null;
+
         $lags = LagMeasure::query()
             ->with(['wig:id,kode_wig,nama_wig,bidang', 'cabang:id,kode,nama'])
             // Non-admin hanya melihat lag pada WIG di wilayahnya sendiri.
@@ -37,6 +46,7 @@ class LagMeasureController extends Controller
             ))
             ->when($wigId, fn ($q) => $q->where('wig_id', $wigId))
             ->when($bidang, fn ($q, $b) => $q->whereHas('wig', fn ($w) => $w->where('bidang', $b)))
+            ->when($cabangId, fn ($q, $id) => $q->where('cabang_id', $id))
             ->withCount('leadMeasures')
             ->latest()
             ->paginate(10)
@@ -48,12 +58,14 @@ class LagMeasureController extends Controller
                 ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
                 ->orderBy('kode_wig')
                 ->get(['id', 'kode_wig', 'nama_wig', 'bidang']),
-            'cabangs' => Cabang::query()
-                ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
-                ->orderBy('nama')
-                ->get(['id', 'kode', 'nama']),
+            'cabangs' => $cabangs,
             'daftarBidang' => Wig::BIDANG,
-            'filter' => ['cari' => $cari, 'wig_id' => $wigId, 'bidang' => $bidang],
+            'filter' => [
+                'cari' => $cari,
+                'wig_id' => $wigId,
+                'bidang' => $bidang,
+                'cabang_id' => $cabangId,
+            ],
         ]);
     }
 
