@@ -1,7 +1,8 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import Paginasi from '@/components/Paginasi.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -184,32 +185,7 @@ const hapus = () => {
                 </Table>
             </CardContent>
 
-            <div v-if="wilayahs.last_page > 1" class="flex items-center justify-between border-t px-4 py-3">
-                <p class="text-muted-foreground text-sm">
-                    Menampilkan {{ wilayahs.from }}–{{ wilayahs.to }} dari {{ wilayahs.total }}
-                </p>
-                <div class="flex gap-1">
-                    <template v-for="tautan in wilayahs.links" :key="tautan.label">
-                        <Link
-                            v-if="tautan.url"
-                            :href="tautan.url"
-                            preserve-scroll
-                            :class="[
-                                'rounded-md border px-3 py-1.5 text-sm transition-colors',
-                                tautan.active
-                                    ? 'bg-primary text-primary-foreground border-primary'
-                                    : 'hover:bg-secondary',
-                            ]"
-                            v-html="tautan.label"
-                        />
-                        <span
-                            v-else
-                            class="text-muted-foreground rounded-md border px-3 py-1.5 text-sm opacity-50"
-                            v-html="tautan.label"
-                        />
-                    </template>
-                </div>
-            </div>
+            <Paginasi :data="wilayahs" />
         </Card>
 
         <!-- Dialog tambah / edit -->

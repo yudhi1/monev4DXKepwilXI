@@ -1,9 +1,10 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CabangController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\WilayahController;
-use App\Livewire\CabangManagement;
 use App\Livewire\Dashboard;
 use App\Livewire\IuranMonitoring;
 use App\Livewire\KepwilDashboard;
@@ -13,7 +14,6 @@ use App\Livewire\MonevIuran\MonevIuranInput;
 use App\Livewire\MonevIuran\SegmenManagement;
 use App\Livewire\MonitoringKinerja\ApcDashboard;
 use App\Livewire\RealisasiInput;
-use App\Livewire\UserManagement;
 use App\Livewire\WigManagement;
 use App\Livewire\WigRealisasiInput;
 use App\Livewire\WigTargetManagement;
@@ -42,14 +42,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard-kepwil', KepwilDashboard::class)->name('dashboard.kepwil');
 
     Route::middleware('role:admin')->group(function () {
-        Route::get('/users', UserManagement::class)->name('users');
+        Route::get('/users', [UserController::class, 'index'])->name('users');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         // Fase 2 — dimigrasi ke Inertia + Vue. Komponen Livewire lama
         // (App\Livewire\WilayahManagement) sengaja belum dihapus agar mudah dibalik.
         Route::get('/wilayahs', [WilayahController::class, 'index'])->name('wilayahs');
         Route::post('/wilayahs', [WilayahController::class, 'store'])->name('wilayahs.store');
         Route::put('/wilayahs/{wilayah}', [WilayahController::class, 'update'])->name('wilayahs.update');
         Route::delete('/wilayahs/{wilayah}', [WilayahController::class, 'destroy'])->name('wilayahs.destroy');
-        Route::get('/cabangs', CabangManagement::class)->name('cabangs');
+        Route::get('/cabangs', [CabangController::class, 'index'])->name('cabangs');
+        Route::post('/cabangs', [CabangController::class, 'store'])->name('cabangs.store');
+        Route::put('/cabangs/{cabang}', [CabangController::class, 'update'])->name('cabangs.update');
+        Route::delete('/cabangs/{cabang}', [CabangController::class, 'destroy'])->name('cabangs.destroy');
     });
 
     Route::middleware('role:admin,kedeputian_wilayah')->group(function () {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { toast, Toaster } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,24 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChartNoAxesCombined, ChevronDown, LogOut, Menu, X } from '@lucide/vue';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    BookOpen,
+    ChartNoAxesCombined,
+    ChevronDown,
+    Database,
+    FileText,
+    Gauge,
+    LayoutDashboard,
+    LogOut,
+    Menu,
+    PanelLeft,
+    Star,
+    Target,
+    TrendingDown,
+    TrendingUp,
+} from '@lucide/vue';
 import { cn } from '@/lib/utils';
 
 const page = usePage();
@@ -30,15 +47,16 @@ const initial = computed(() => (user.value?.name ?? '?').charAt(0).toUpperCase()
 const bisa = (...izin) => izin.some((r) => roles.value.includes(r));
 
 /*
- | Struktur menu mengikuti navbar Blade lama (layouts/app.blade.php)
- | supaya informasi arsitekturnya tidak berubah bagi user — hanya tampilannya
- | yang pindah ke shadcn. `roles: null` berarti terbuka untuk semua role.
+ | Struktur menu mengikuti navbar Blade lama (layouts/app.blade.php) supaya
+ | arsitektur informasinya tidak berubah bagi user — hanya tampilannya yang
+ | pindah ke sidebar shadcn. `roles: null` berarti terbuka untuk semua role.
  */
 const menu = computed(() =>
     [
-        { label: 'Dashboard', href: '/dashboard', roles: null },
+        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: null },
         {
             label: 'Master',
+            icon: Database,
             roles: ['admin'],
             items: [
                 { label: 'User', href: '/users' },
@@ -48,49 +66,50 @@ const menu = computed(() =>
         },
         {
             label: 'WIG',
+            icon: Target,
             roles: ['admin', 'kedeputian_wilayah'],
             items: [
                 { label: 'Input Data WIG', href: '/wigs' },
                 { label: 'Input Target WIG', href: '/wig-targets' },
-                { label: 'Input Realisasi WIG Bulanan', href: '/wig-realisasi' },
+                { label: 'Input Realisasi Bulanan', href: '/wig-realisasi' },
             ],
         },
-        { label: 'Lag', href: '/lag-measures', roles: ['admin', 'kedeputian_wilayah'] },
-        { label: 'Realisasi WIG', href: '/wig-realisasi', roles: ['kantor_cabang'] },
+        { label: 'Lag Measure', href: '/lag-measures', icon: TrendingDown, roles: ['admin', 'kedeputian_wilayah'] },
+        { label: 'Realisasi WIG', href: '/wig-realisasi', icon: Target, roles: ['kantor_cabang'] },
         {
             label: 'Lead Measure',
+            icon: TrendingUp,
             roles: null,
             items: [
                 { label: 'Input Data Lead Measure', href: '/lead-measures' },
-                { label: 'Input Realisasi Lead Measure', href: '/realisasi' },
+                { label: 'Input Realisasi', href: '/realisasi' },
             ],
         },
         {
             label: 'Prioritas',
+            icon: Star,
             roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'],
             items: [
                 { label: 'Iuran', href: '/monitoring-prioritas/iuran' },
-                { separator: true },
-                { heading: 'Monev Iuran' },
                 { label: 'Master Segmen', href: '/monev-iuran/segmen', roles: ['admin', 'kedeputian_wilayah'] },
-                { label: 'Input Realisasi', href: '/monev-iuran/input' },
+                { label: 'Input Realisasi Iuran', href: '/monev-iuran/input' },
             ],
         },
         {
             label: 'Monitoring Kinerja',
+            icon: Gauge,
             roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'],
             items: [
                 { label: 'Capaian Total APC', href: '/monitoring-kinerja/total' },
-                { separator: true },
-                { heading: 'Indikator APC' },
                 { label: 'Peserta Aktif', href: '/monitoring-kinerja/peserta-aktif' },
-                { label: 'Tingkat Kepuasan Peserta', href: '/monitoring-kinerja/kepuasan' },
-                { label: 'Jumlah Penerimaan Iuran', href: '/monitoring-kinerja/penerimaan-iuran' },
+                { label: 'Tingkat Kepuasan', href: '/monitoring-kinerja/kepuasan' },
+                { label: 'Penerimaan Iuran', href: '/monitoring-kinerja/penerimaan-iuran' },
                 { label: 'Realisasi Biaya Manfaat', href: '/monitoring-kinerja/biaya-manfaat' },
                 { label: 'Biaya Operasional', href: '/monitoring-kinerja/biaya-operasional' },
             ],
         },
-        { label: 'Laporan', href: '/laporan', roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'] },
+        { label: 'Laporan', href: '/laporan', icon: FileText, roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'] },
+        { label: 'Panduan', href: '/panduan', icon: BookOpen, roles: null },
     ]
         .filter((m) => m.roles === null || bisa(...m.roles))
         .map((m) => ({
@@ -101,19 +120,45 @@ const menu = computed(() =>
 
 const currentPath = computed(() => page.url.split('?')[0]);
 
-const aktif = (menuItem) => {
-    if (menuItem.href) {
-        return currentPath.value.startsWith(menuItem.href);
+const aktif = (item) => {
+    if (item.href) {
+        return currentPath.value === item.href || currentPath.value.startsWith(item.href + '/');
     }
 
-    return (menuItem.items ?? []).some((i) => i.href && currentPath.value.startsWith(i.href));
+    return (item.items ?? []).some((i) => aktif(i));
 };
 
-const menuMobileTerbuka = ref(false);
+/* --- Ciut / lebar, diingat antar kunjungan --- */
+const KUNCI_CIUT = 'monev4dx.sidebar.ciut';
+const ciut = ref(false);
 
-watch(currentPath, () => {
-    menuMobileTerbuka.value = false;
+onMounted(() => {
+    ciut.value = localStorage.getItem(KUNCI_CIUT) === '1';
 });
+
+watch(ciut, (nilai) => localStorage.setItem(KUNCI_CIUT, nilai ? '1' : '0'));
+
+/* --- Grup yang terbuka; grup yang sedang aktif otomatis terbuka --- */
+const grupTerbuka = ref({});
+
+watch(
+    menu,
+    (daftar) => {
+        daftar.forEach((m) => {
+            if (m.items && aktif(m) && grupTerbuka.value[m.label] === undefined) {
+                grupTerbuka.value[m.label] = true;
+            }
+        });
+    },
+    { immediate: true }
+);
+
+const toggleGrup = (label) => (grupTerbuka.value[label] = !grupTerbuka.value[label]);
+
+/* --- Mobile --- */
+const laciTerbuka = ref(false);
+
+watch(currentPath, () => (laciTerbuka.value = false));
 
 /*
  | Halaman Livewire lama merender flash sendiri lewat Blade. Halaman Inertia
@@ -135,149 +180,262 @@ const logout = () => router.post('/logout');
     <div class="bg-muted/30 min-h-screen">
         <Toaster position="top-right" rich-colors close-button />
 
-        <header class="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
-            <div class="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4">
-                <Link href="/dashboard" class="flex shrink-0 items-center gap-2">
+        <!-- ============ Sidebar desktop ============ -->
+        <aside
+            :class="
+                cn(
+                    'bg-background fixed inset-y-0 left-0 z-40 hidden flex-col border-r transition-[width] duration-200 lg:flex',
+                    ciut ? 'w-[4.5rem]' : 'w-64'
+                )
+            "
+        >
+            <!-- Brand -->
+            <div class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+                <Link href="/dashboard" class="flex items-center gap-2 overflow-hidden">
+                    <span class="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
+                        <ChartNoAxesCombined class="size-4" />
+                    </span>
+                    <span v-if="!ciut" class="text-[15px] font-semibold tracking-tight whitespace-nowrap">
+                        Monev <span class="text-muted-foreground font-normal">4DX</span>
+                    </span>
+                </Link>
+            </div>
+
+            <!-- Navigasi -->
+            <TooltipProvider :delay-duration="0">
+                <nav class="flex-1 space-y-1 overflow-y-auto p-3">
+                    <template v-for="item in menu" :key="item.label">
+                        <!-- Tautan tunggal -->
+                        <template v-if="item.href">
+                            <Tooltip v-if="ciut">
+                                <TooltipTrigger as-child>
+                                    <Link
+                                        :href="item.href"
+                                        :class="
+                                            cn(
+                                                'flex h-10 items-center justify-center rounded-md transition-colors',
+                                                aktif(item)
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            )
+                                        "
+                                    >
+                                        <component :is="item.icon" class="size-[18px]" />
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="right">{{ item.label }}</TooltipContent>
+                            </Tooltip>
+
+                            <Link
+                                v-else
+                                :href="item.href"
+                                :class="
+                                    cn(
+                                        'flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
+                                        aktif(item)
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                    )
+                                "
+                            >
+                                <component :is="item.icon" class="size-[18px] shrink-0" />
+                                <span class="truncate">{{ item.label }}</span>
+                            </Link>
+                        </template>
+
+                        <!-- Grup: saat ciut jadi dropdown, saat lebar jadi accordion -->
+                        <template v-else>
+                            <DropdownMenu v-if="ciut">
+                                <DropdownMenuTrigger as-child>
+                                    <button
+                                        :class="
+                                            cn(
+                                                'flex h-10 w-full items-center justify-center rounded-md transition-colors',
+                                                aktif(item)
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            )
+                                        "
+                                    >
+                                        <component :is="item.icon" class="size-[18px]" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="right" align="start" class="w-60">
+                                    <DropdownMenuLabel>{{ item.label }}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem v-for="sub in item.items" :key="sub.href" as-child>
+                                        <Link :href="sub.href" class="w-full cursor-pointer">{{ sub.label }}</Link>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            <div v-else>
+                                <button
+                                    :class="
+                                        cn(
+                                            'flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
+                                            aktif(item)
+                                                ? 'text-foreground'
+                                                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                        )
+                                    "
+                                    @click="toggleGrup(item.label)"
+                                >
+                                    <component :is="item.icon" class="size-[18px] shrink-0" />
+                                    <span class="truncate">{{ item.label }}</span>
+                                    <ChevronDown
+                                        :class="
+                                            cn(
+                                                'ml-auto size-4 shrink-0 opacity-60 transition-transform',
+                                                grupTerbuka[item.label] && 'rotate-180'
+                                            )
+                                        "
+                                    />
+                                </button>
+
+                                <div v-if="grupTerbuka[item.label]" class="border-border mt-1 ml-[1.4rem] space-y-0.5 border-l pl-3">
+                                    <Link
+                                        v-for="sub in item.items"
+                                        :key="sub.href"
+                                        :href="sub.href"
+                                        :class="
+                                            cn(
+                                                'block rounded-md px-3 py-2 text-sm transition-colors',
+                                                aktif(sub)
+                                                    ? 'bg-secondary text-foreground font-medium'
+                                                    : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+                                            )
+                                        "
+                                    >
+                                        {{ sub.label }}
+                                    </Link>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </nav>
+            </TooltipProvider>
+
+            <!-- Kaki: identitas user -->
+            <div class="shrink-0 border-t p-3">
+                <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                        <button
+                            :class="
+                                cn(
+                                    'hover:bg-secondary flex w-full items-center gap-2 rounded-md p-2 transition-colors',
+                                    ciut && 'justify-center'
+                                )
+                            "
+                        >
+                            <span
+                                class="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+                            >
+                                {{ initial }}
+                            </span>
+                            <span v-if="!ciut" class="min-w-0 flex-1 text-left leading-tight">
+                                <span class="block truncate text-sm font-medium">{{ user?.name }}</span>
+                                <span class="text-muted-foreground block text-xs">{{ roleLabel }}</span>
+                            </span>
+                            <ChevronDown v-if="!ciut" class="size-4 shrink-0 opacity-60" />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="top" align="start" class="w-56">
+                        <DropdownMenuLabel>
+                            <p class="text-sm font-medium">{{ user?.name }}</p>
+                            <p class="text-muted-foreground text-xs font-normal">{{ user?.email }}</p>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem class="cursor-pointer" @select="logout">
+                            <LogOut class="mr-2 size-4" />
+                            Keluar
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </aside>
+
+        <!-- ============ Laci mobile ============ -->
+        <Sheet v-model:open="laciTerbuka">
+            <SheetContent side="left" class="w-72 p-0">
+                <div class="flex h-14 items-center gap-2 border-b px-4">
                     <span class="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
                         <ChartNoAxesCombined class="size-4" />
                     </span>
                     <span class="text-[15px] font-semibold tracking-tight">
                         Monev <span class="text-muted-foreground font-normal">4DX</span>
                     </span>
-                </Link>
-
-                <!-- Navigasi desktop -->
-                <nav class="ml-2 hidden items-center gap-0.5 xl:flex">
+                </div>
+                <nav class="h-[calc(100vh-3.5rem)] space-y-1 overflow-y-auto p-3">
                     <template v-for="item in menu" :key="item.label">
                         <Link
                             v-if="item.href"
                             :href="item.href"
                             :class="
                                 cn(
-                                    'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                    aktif(item)
-                                        ? 'bg-secondary text-secondary-foreground'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                                    'flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium',
+                                    aktif(item) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
                                 )
                             "
                         >
+                            <component :is="item.icon" class="size-[18px] shrink-0" />
                             {{ item.label }}
                         </Link>
-
-                        <DropdownMenu v-else>
-                            <DropdownMenuTrigger as-child>
-                                <button
-                                    :class="
-                                        cn(
-                                            'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                            aktif(item)
-                                                ? 'bg-secondary text-secondary-foreground'
-                                                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
-                                        )
-                                    "
-                                >
-                                    {{ item.label }}
-                                    <ChevronDown class="size-3.5 opacity-60" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" class="w-60">
-                                <template v-for="(sub, i) in item.items" :key="i">
-                                    <DropdownMenuSeparator v-if="sub.separator" />
-                                    <DropdownMenuLabel v-else-if="sub.heading" class="text-muted-foreground text-xs">
-                                        {{ sub.heading }}
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuItem v-else as-child>
-                                        <Link :href="sub.href" class="w-full cursor-pointer">{{ sub.label }}</Link>
-                                    </DropdownMenuItem>
-                                </template>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </template>
-                </nav>
-
-                <div class="ml-auto flex items-center gap-2">
-                    <Link
-                        href="/panduan"
-                        class="text-muted-foreground hover:text-foreground hidden rounded-md px-3 py-1.5 text-sm font-medium xl:block"
-                    >
-                        Panduan
-                    </Link>
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <button class="hover:bg-secondary/60 flex items-center gap-2 rounded-full py-1 pr-2 pl-1 transition-colors">
-                                <span
-                                    class="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-full text-sm font-semibold"
-                                >
-                                    {{ initial }}
-                                </span>
-                                <span class="hidden text-left leading-tight sm:block">
-                                    <span class="block text-sm font-medium">{{ user?.name }}</span>
-                                    <span class="text-muted-foreground block text-xs">{{ roleLabel }}</span>
-                                </span>
-                                <ChevronDown class="size-3.5 opacity-60" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" class="w-56">
-                            <DropdownMenuLabel>
-                                <p class="text-sm font-medium">{{ user?.name }}</p>
-                                <p class="text-muted-foreground text-xs font-normal">{{ user?.email }}</p>
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem class="cursor-pointer" @select="logout">
-                                <LogOut class="mr-2 size-4" />
-                                Keluar
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Button variant="ghost" size="icon" class="xl:hidden" @click="menuMobileTerbuka = !menuMobileTerbuka">
-                        <component :is="menuMobileTerbuka ? X : Menu" class="size-5" />
-                    </Button>
-                </div>
-            </div>
-
-            <!-- Navigasi mobile -->
-            <nav v-if="menuMobileTerbuka" class="bg-background max-h-[70vh] overflow-y-auto border-t px-4 py-3 xl:hidden">
-                <template v-for="item in menu" :key="item.label">
-                    <Link
-                        v-if="item.href"
-                        :href="item.href"
-                        :class="
-                            cn(
-                                'block rounded-md px-3 py-2 text-sm font-medium',
-                                aktif(item) ? 'bg-secondary' : 'text-muted-foreground'
-                            )
-                        "
-                    >
-                        {{ item.label }}
-                    </Link>
-                    <div v-else class="py-1">
-                        <p class="text-muted-foreground px-3 py-1 text-xs font-semibold tracking-wide uppercase">
-                            {{ item.label }}
-                        </p>
-                        <template v-for="(sub, i) in item.items" :key="i">
+                        <div v-else class="py-1">
+                            <p class="text-muted-foreground flex items-center gap-3 px-3 py-2 text-xs font-semibold tracking-wide uppercase">
+                                <component :is="item.icon" class="size-4 shrink-0" />
+                                {{ item.label }}
+                            </p>
                             <Link
-                                v-if="sub.href"
+                                v-for="sub in item.items"
+                                :key="sub.href"
                                 :href="sub.href"
-                                class="text-muted-foreground hover:text-foreground block rounded-md px-3 py-2 text-sm"
+                                :class="
+                                    cn(
+                                        'ml-[1.9rem] block rounded-md px-3 py-2 text-sm',
+                                        aktif(sub) ? 'bg-secondary font-medium' : 'text-muted-foreground'
+                                    )
+                                "
                             >
                                 {{ sub.label }}
                             </Link>
-                        </template>
-                    </div>
-                </template>
-                <Link href="/panduan" class="text-muted-foreground block rounded-md px-3 py-2 text-sm font-medium">
-                    Panduan
-                </Link>
-            </nav>
-        </header>
+                        </div>
+                    </template>
+                </nav>
+            </SheetContent>
+        </Sheet>
 
-        <main class="mx-auto max-w-[1600px] px-4 py-6">
-            <div v-if="$slots.header" class="mb-6">
-                <slot name="header" />
-            </div>
-            <slot />
-        </main>
+        <!-- ============ Konten ============ -->
+        <div :class="cn('transition-[padding] duration-200', ciut ? 'lg:pl-[4.5rem]' : 'lg:pl-64')">
+            <header
+                class="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-4 backdrop-blur"
+            >
+                <Button variant="ghost" size="icon" class="lg:hidden" @click="laciTerbuka = true">
+                    <Menu class="size-5" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    class="hidden lg:inline-flex"
+                    :title="ciut ? 'Lebarkan sidebar' : 'Ciutkan sidebar'"
+                    @click="ciut = !ciut"
+                >
+                    <PanelLeft class="size-5" />
+                </Button>
+
+                <div class="min-w-0 flex-1">
+                    <slot name="judul" />
+                </div>
+
+                <slot name="aksi-header" />
+            </header>
+
+            <main class="p-4 lg:p-6">
+                <div v-if="$slots.header" class="mb-6">
+                    <slot name="header" />
+                </div>
+                <slot />
+            </main>
+        </div>
     </div>
 </template>
