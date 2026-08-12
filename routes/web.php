@@ -5,6 +5,7 @@ use App\Http\Controllers\CabangController;
 use App\Http\Controllers\DashboardCabangController;
 use App\Http\Controllers\LagMeasureController;
 use App\Http\Controllers\LeadMeasureController;
+use App\Http\Controllers\RealisasiLeadController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WigController;
@@ -16,7 +17,6 @@ use App\Livewire\KepwilDashboard;
 use App\Livewire\MonevIuran\MonevIuranInput;
 use App\Livewire\MonevIuran\SegmenManagement;
 use App\Livewire\MonitoringKinerja\ApcDashboard;
-use App\Livewire\RealisasiInput;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -87,7 +87,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/lead-measures/{lead_measure}', [LeadMeasureController::class, 'update'])->name('leads.update');
     Route::patch('/lead-measures/{lead_measure}/toggle', [LeadMeasureController::class, 'toggle'])->name('leads.toggle');
     Route::delete('/lead-measures/{lead_measure}', [LeadMeasureController::class, 'destroy'])->name('leads.destroy');
-    Route::get('/realisasi', RealisasiInput::class)->name('realisasi');
+    Route::get('/realisasi', [RealisasiLeadController::class, 'index'])->name('realisasi');
+    Route::post('/realisasi', [RealisasiLeadController::class, 'store'])->name('realisasi.store');
 
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
         Route::get('/wig-realisasi', [WigRealisasiController::class, 'index'])->name('wig-realisasi');

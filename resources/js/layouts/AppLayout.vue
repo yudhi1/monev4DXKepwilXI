@@ -63,6 +63,7 @@ const RUTE_INERTIA = [
     '/wig-realisasi',
     '/lag-measures',
     '/lead-measures',
+    '/realisasi',
 ];
 
 const sudahInertia = (href) => RUTE_INERTIA.some((r) => href === r || href.startsWith(`${r}/`));
