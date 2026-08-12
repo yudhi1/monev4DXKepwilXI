@@ -175,10 +175,28 @@ const simpan = () => {
 };
 
 /* ---------------- Hapus ---------------- */
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari data sasarannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau sasarannya ikut dikosongkan saat menutup,
+ | fungsi hapus() menerima null dan permintaan tak pernah terkirim.
+ */
 const itemDihapus = ref(null);
+const dialogHapusTerbuka = ref(false);
+
+const konfirmasiHapus = (sasaran) => {
+    itemDihapus.value = sasaran;
+    dialogHapusTerbuka.value = true;
+};
 
 const hapus = () => {
-    router.delete(`/monitoring-prioritas/iuran/${itemDihapus.value.id}`, {
+    const sasaran = itemDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete(`/monitoring-prioritas/iuran/${sasaran.id}`, {
         preserveScroll: true,
         onFinish: () => (itemDihapus.value = null),
     });
@@ -354,7 +372,7 @@ const rupiah = (n) => 'Rp ' + Number(n ?? 0).toLocaleString('id-ID', { maximumFr
                                             size="icon"
                                             title="Hapus"
                                             class="text-destructive hover:text-destructive"
-                                            @click="itemDihapus = item"
+                                            @click="konfirmasiHapus(item)"
                                         >
                                             <Trash2 class="size-4" />
                                         </Button>
@@ -493,7 +511,7 @@ const rupiah = (n) => 'Rp ' + Number(n ?? 0).toLocaleString('id-ID', { maximumFr
         </Dialog>
 
         <!-- Konfirmasi hapus -->
-        <AlertDialog :open="!!itemDihapus" @update:open="(v) => !v && (itemDihapus = null)">
+        <AlertDialog v-model:open="dialogHapusTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus data iuran ini?</AlertDialogTitle>

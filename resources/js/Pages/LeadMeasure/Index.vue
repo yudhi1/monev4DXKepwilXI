@@ -189,10 +189,28 @@ const simpan = () => {
 const toggleAktif = (lead) => router.patch(`/lead-measures/${lead.id}/toggle`, {}, { preserveScroll: true });
 
 /* --- Hapus --- */
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari data sasarannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau sasarannya ikut dikosongkan saat menutup,
+ | fungsi hapus() menerima null dan permintaan tak pernah terkirim.
+ */
 const leadDihapus = ref(null);
+const dialogHapusTerbuka = ref(false);
+
+const konfirmasiHapus = (sasaran) => {
+    leadDihapus.value = sasaran;
+    dialogHapusTerbuka.value = true;
+};
 
 const hapus = () => {
-    router.delete(`/lead-measures/${leadDihapus.value.id}`, {
+    const sasaran = leadDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete(`/lead-measures/${sasaran.id}`, {
         preserveScroll: true,
         onFinish: () => (leadDihapus.value = null),
     });
@@ -319,7 +337,7 @@ const hapus = () => {
                                             size="icon"
                                             title="Hapus"
                                             class="text-destructive hover:text-destructive"
-                                            @click="leadDihapus = lead"
+                                            @click="konfirmasiHapus(lead)"
                                         >
                                             <Trash2 class="size-4" />
                                         </Button>
@@ -462,7 +480,7 @@ const hapus = () => {
         </Dialog>
 
         <!-- Konfirmasi hapus -->
-        <AlertDialog :open="!!leadDihapus" @update:open="(v) => !v && (leadDihapus = null)">
+        <AlertDialog v-model:open="dialogHapusTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus Lead Measure ini?</AlertDialogTitle>

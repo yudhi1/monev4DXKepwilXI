@@ -120,10 +120,28 @@ const simpan = () => {
 };
 
 /* --- Hapus --- */
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari data sasarannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau sasarannya ikut dikosongkan saat menutup,
+ | fungsi hapus() menerima null dan permintaan tak pernah terkirim.
+ */
 const wigDihapus = ref(null);
+const dialogHapusTerbuka = ref(false);
+
+const konfirmasiHapus = (sasaran) => {
+    wigDihapus.value = sasaran;
+    dialogHapusTerbuka.value = true;
+};
 
 const hapus = () => {
-    router.delete(`/wigs/${wigDihapus.value.id}`, {
+    const sasaran = wigDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete(`/wigs/${sasaran.id}`, {
         preserveScroll: true,
         onFinish: () => (wigDihapus.value = null),
     });
@@ -232,7 +250,7 @@ const hapus = () => {
                                             size="icon"
                                             title="Hapus"
                                             class="text-destructive hover:text-destructive"
-                                            @click="wigDihapus = wig"
+                                            @click="konfirmasiHapus(wig)"
                                         >
                                             <Trash2 class="size-4" />
                                         </Button>
@@ -332,7 +350,7 @@ const hapus = () => {
         </Dialog>
 
         <!-- Konfirmasi hapus -->
-        <AlertDialog :open="!!wigDihapus" @update:open="(v) => !v && (wigDihapus = null)">
+        <AlertDialog v-model:open="dialogHapusTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus WIG ini?</AlertDialogTitle>

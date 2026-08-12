@@ -141,10 +141,28 @@ const simpan = () => {
 };
 
 /* --- Hapus --- */
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari data sasarannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau sasarannya ikut dikosongkan saat menutup,
+ | fungsi hapus() menerima null dan permintaan tak pernah terkirim.
+ */
 const lagDihapus = ref(null);
+const dialogHapusTerbuka = ref(false);
+
+const konfirmasiHapus = (sasaran) => {
+    lagDihapus.value = sasaran;
+    dialogHapusTerbuka.value = true;
+};
 
 const hapus = () => {
-    router.delete(`/lag-measures/${lagDihapus.value.id}`, {
+    const sasaran = lagDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete(`/lag-measures/${sasaran.id}`, {
         preserveScroll: true,
         onFinish: () => (lagDihapus.value = null),
     });
@@ -268,7 +286,7 @@ const hapus = () => {
                                                     ? `Tidak dapat dihapus — masih punya ${lag.lead_measures_count} Lead Measure`
                                                     : 'Hapus'
                                             "
-                                            @click="lagDihapus = lag"
+                                            @click="konfirmasiHapus(lag)"
                                         >
                                             <Trash2 class="size-4" />
                                         </Button>
@@ -378,7 +396,7 @@ const hapus = () => {
         </Dialog>
 
         <!-- Konfirmasi hapus -->
-        <AlertDialog :open="!!lagDihapus" @update:open="(v) => !v && (lagDihapus = null)">
+        <AlertDialog v-model:open="dialogHapusTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus Lag Measure ini?</AlertDialogTitle>

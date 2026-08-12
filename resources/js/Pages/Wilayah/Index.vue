@@ -88,10 +88,28 @@ const simpan = () => {
 };
 
 /* --- Hapus --- */
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari data sasarannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau sasarannya ikut dikosongkan saat menutup,
+ | fungsi hapus() menerima null dan permintaan tak pernah terkirim.
+ */
 const wilayahDihapus = ref(null);
+const dialogHapusTerbuka = ref(false);
+
+const konfirmasiHapus = (sasaran) => {
+    wilayahDihapus.value = sasaran;
+    dialogHapusTerbuka.value = true;
+};
 
 const hapus = () => {
-    router.delete(`/wilayahs/${wilayahDihapus.value.id}`, {
+    const sasaran = wilayahDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete(`/wilayahs/${sasaran.id}`, {
         preserveScroll: true,
         onFinish: () => (wilayahDihapus.value = null),
     });
@@ -163,7 +181,7 @@ const hapus = () => {
                                         size="icon"
                                         title="Hapus"
                                         class="text-destructive hover:text-destructive"
-                                        @click="wilayahDihapus = wilayah"
+                                        @click="konfirmasiHapus(wilayah)"
                                     >
                                         <Trash2 class="size-4" />
                                     </Button>
@@ -230,7 +248,7 @@ const hapus = () => {
         </Dialog>
 
         <!-- Konfirmasi hapus -->
-        <AlertDialog :open="!!wilayahDihapus" @update:open="(v) => !v && (wilayahDihapus = null)">
+        <AlertDialog v-model:open="dialogHapusTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus wilayah ini?</AlertDialogTitle>

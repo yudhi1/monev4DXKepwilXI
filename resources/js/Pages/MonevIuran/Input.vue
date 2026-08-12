@@ -126,13 +126,29 @@ const totalSemua = computed(() => ({
 const rupiah = (n) => 'Rp ' + Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 0 });
 
 /* ---------------- Kunci periode ---------------- */
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari jenis tindakannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau `konfirmasi` ikut dikosongkan saat menutup,
+ | tombol "Ya, Kunci" justru mengirim permintaan buka kunci.
+ */
 const konfirmasi = ref(null);
+const dialogKunciTerbuka = ref(false);
+
+const mintaKonfirmasi = (jenis) => {
+    konfirmasi.value = jenis;
+    dialogKunciTerbuka.value = true;
+};
 
 const kirimKunci = () => {
-    const tujuan = konfirmasi.value === 'kunci' ? '/monev-iuran/kunci' : '/monev-iuran/buka-kunci';
+    const jenis = konfirmasi.value;
+
+    if (! jenis) {
+        return;
+    }
 
     router.post(
-        tujuan,
+        jenis === 'kunci' ? '/monev-iuran/kunci' : '/monev-iuran/buka-kunci',
         { cabang_id: props.filter.cabang_id, tahun: props.filter.tahun, bulan: props.filter.bulan },
         { preserveScroll: true, onFinish: () => (konfirmasi.value = null) }
     );
@@ -156,7 +172,7 @@ const kirimKunci = () => {
                     <Button
                         v-if="!periodeTerkunci"
                         variant="outline"
-                        @click="konfirmasi = 'kunci'"
+                        @click="mintaKonfirmasi('kunci')"
                     >
                         <Lock class="mr-1.5 size-4" />
                         Kunci Periode
@@ -164,7 +180,7 @@ const kirimKunci = () => {
                     <Button
                         v-else-if="bisaBukaKunci"
                         variant="outline"
-                        @click="konfirmasi = 'buka'"
+                        @click="mintaKonfirmasi('buka')"
                     >
                         <LockOpen class="mr-1.5 size-4" />
                         Buka Kunci
@@ -378,7 +394,7 @@ const kirimKunci = () => {
         </Card>
 
         <!-- Konfirmasi kunci / buka kunci -->
-        <AlertDialog :open="!!konfirmasi" @update:open="(v) => !v && (konfirmasi = null)">
+        <AlertDialog v-model:open="dialogKunciTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>

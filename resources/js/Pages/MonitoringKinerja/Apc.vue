@@ -58,10 +58,28 @@ const unggah = () => {
 };
 
 /* ---------------- Hapus ---------------- */
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari data sasarannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau sasarannya ikut dikosongkan saat menutup,
+ | fungsi hapus() menerima null dan permintaan tak pernah terkirim.
+ */
 const unggahanDihapus = ref(null);
+const dialogHapusTerbuka = ref(false);
+
+const konfirmasiHapus = (sasaran) => {
+    unggahanDihapus.value = sasaran;
+    dialogHapusTerbuka.value = true;
+};
 
 const hapus = () => {
-    router.delete(`/monitoring-kinerja/${props.indikator}/${unggahanDihapus.value.id}`, {
+    const sasaran = unggahanDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete(`/monitoring-kinerja/${props.indikator}/${sasaran.id}`, {
         preserveScroll: true,
         onFinish: () => (unggahanDihapus.value = null),
     });
@@ -239,7 +257,7 @@ const isiBaris = computed(() => props.terbaru?.baris?.slice(1) ?? []);
                                             size="icon"
                                             title="Hapus"
                                             class="text-destructive hover:text-destructive"
-                                            @click="unggahanDihapus = item"
+                                            @click="konfirmasiHapus(item)"
                                         >
                                             <Trash2 class="size-4" />
                                         </Button>
@@ -262,7 +280,7 @@ const isiBaris = computed(() => props.terbaru?.baris?.slice(1) ?? []);
         </Card>
 
         <!-- Konfirmasi hapus -->
-        <AlertDialog :open="!!unggahanDihapus" @update:open="(v) => !v && (unggahanDihapus = null)">
+        <AlertDialog v-model:open="dialogHapusTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus data upload ini?</AlertDialogTitle>

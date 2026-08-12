@@ -77,10 +77,28 @@ const simpan = () => {
     }
 };
 
+/*
+ | Keadaan buka/tutup dialog dipisahkan dari data sasarannya. AlertDialogAction
+ | punya penangan klik bawaan yang menutup dialog, dan Vue menjalankannya lebih
+ | dulu daripada @click kita — kalau sasarannya ikut dikosongkan saat menutup,
+ | fungsi hapus() menerima null dan permintaan tak pernah terkirim.
+ */
 const segmenDihapus = ref(null);
+const dialogHapusTerbuka = ref(false);
+
+const konfirmasiHapus = (sasaran) => {
+    segmenDihapus.value = sasaran;
+    dialogHapusTerbuka.value = true;
+};
 
 const hapus = () => {
-    router.delete(`/monev-iuran/segmen/${segmenDihapus.value.id}`, {
+    const sasaran = segmenDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete(`/monev-iuran/segmen/${sasaran.id}`, {
         preserveScroll: true,
         onFinish: () => (segmenDihapus.value = null),
     });
@@ -142,7 +160,7 @@ const hapus = () => {
                                         size="icon"
                                         title="Hapus"
                                         class="text-destructive hover:text-destructive"
-                                        @click="segmenDihapus = segmen"
+                                        @click="konfirmasiHapus(segmen)"
                                     >
                                         <Trash2 class="size-4" />
                                     </Button>
@@ -203,7 +221,7 @@ const hapus = () => {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog :open="!!segmenDihapus" @update:open="(v) => !v && (segmenDihapus = null)">
+        <AlertDialog v-model:open="dialogHapusTerbuka">
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus segmen ini?</AlertDialogTitle>
