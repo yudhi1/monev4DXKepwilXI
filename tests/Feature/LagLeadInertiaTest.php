@@ -171,14 +171,52 @@ class LagLeadInertiaTest extends TestCase
             );
     }
 
-    public function test_kode_lead_memakai_bidang_wig_dan_kode_cabang(): void
+    public function test_konteks_memberi_kode_dan_daftar_lag(): void
     {
         $tahun = (int) date('Y');
+        $this->buatLag();
 
         $this->actingAs($this->admin())
-            ->getJson("/lead-measures/kode?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}&tahun={$tahun}")
+            ->getJson("/lead-measures/konteks?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}&tahun={$tahun}")
             ->assertOk()
-            ->assertJson(['kode' => "LEAD-KEPESERTAAN-BDG-01-{$tahun}"]);
+            ->assertJson(['kode' => "LEAD-KEPESERTAAN-BDG-01-{$tahun}"])
+            ->assertJsonCount(1, 'lags')
+            ->assertJsonPath('lags.0.kode_lag', 'BDG-01-'.$tahun);
+    }
+
+    public function test_konteks_kosong_bila_wig_atau_cabang_belum_dipilih(): void
+    {
+        $this->actingAs($this->admin())
+            ->getJson("/lead-measures/konteks?wig_id={$this->wig->id}")
+            ->assertOk()
+            ->assertJson(['kode' => '', 'lags' => []]);
+    }
+
+    public function test_konteks_hanya_memuat_lag_milik_wig_dan_cabang_itu(): void
+    {
+        $this->buatLag();
+
+        $wigLain = Wig::create([
+            'kode_wig' => 'WIG-02',
+            'nama_wig' => 'WIG Kedua',
+            'bidang' => 'JPK',
+            'tahun' => (int) date('Y'),
+            'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        LagMeasure::create([
+            'kode_lag' => 'BDG-99-'.date('Y'),
+            'wig_id' => $wigLain->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lag' => 'Lag WIG Lain',
+            'tahun' => (int) date('Y'),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->getJson("/lead-measures/konteks?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'lags')
+            ->assertJsonPath('lags.0.kode_lag', 'BDG-01-'.date('Y'));
     }
 
     public function test_toggle_membalik_status_aktif(): void

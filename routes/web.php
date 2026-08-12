@@ -82,7 +82,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/panduan', fn () => Inertia::render('Panduan'))->name('panduan');
 
     Route::get('/lead-measures', [LeadMeasureController::class, 'index'])->name('leads');
-    Route::get('/lead-measures/kode', [LeadMeasureController::class, 'kodeSaran'])->name('leads.kode');
+    Route::get('/lead-measures/konteks', [LeadMeasureController::class, 'konteks'])->name('leads.konteks');
     Route::post('/lead-measures', [LeadMeasureController::class, 'store'])->name('leads.store');
     Route::put('/lead-measures/{lead_measure}', [LeadMeasureController::class, 'update'])->name('leads.update');
     Route::patch('/lead-measures/{lead_measure}/toggle', [LeadMeasureController::class, 'toggle'])->name('leads.toggle');

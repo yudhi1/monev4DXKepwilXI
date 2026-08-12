@@ -61,17 +61,28 @@ class LeadMeasureController extends Controller
         ]);
     }
 
-    public function kodeSaran(Request $request): JsonResponse
+    /**
+     * Konteks untuk form tambah/edit: usulan kode dan daftar Lag Measure
+     * yang tersedia pada kombinasi WIG + cabang. Dikirim sekaligus supaya
+     * memilih WIG/cabang di dalam dialog hanya perlu satu permintaan.
+     */
+    public function konteks(Request $request): JsonResponse
     {
         $cabang = Cabang::find($request->query('cabang_id'));
         $wig = Wig::find($request->query('wig_id'));
         $tahun = (int) $request->query('tahun', date('Y'));
 
         if (! $cabang || ! $wig) {
-            return response()->json(['kode' => '']);
+            return response()->json(['kode' => '', 'lags' => []]);
         }
 
-        return response()->json(['kode' => $this->buatKode($cabang, $wig, $tahun)]);
+        return response()->json([
+            'kode' => $this->buatKode($cabang, $wig, $tahun),
+            'lags' => LagMeasure::where('wig_id', $wig->id)
+                ->where(fn ($q) => $q->whereNull('cabang_id')->orWhere('cabang_id', $cabang->id))
+                ->orderBy('kode_lag')
+                ->get(['id', 'kode_lag', 'nama_lag']),
+        ]);
     }
 
     public function store(LeadMeasureRequest $request): RedirectResponse

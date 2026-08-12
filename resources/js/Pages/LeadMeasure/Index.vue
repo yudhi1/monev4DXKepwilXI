@@ -75,31 +75,73 @@ const form = useForm({
     tahun: props.filter.tahun,
 });
 
-const ambilSaranKode = async () => {
-    const params = new URLSearchParams({
-        cabang_id: cabangId.value,
-        wig_id: wigId.value,
-        tahun: tahun.value,
-    });
+/*
+ | Daftar Lag di dalam dialog berdiri sendiri dari daftar halaman, supaya
+ | WIG dan cabang bisa dipilih langsung di form tanpa harus memuat ulang
+ | daftar di belakangnya.
+ */
+const lagPilihan = ref([]);
+const memuatKonteks = ref(false);
 
-    const respons = await fetch(`/lead-measures/kode?${params}`, {
-        headers: { Accept: 'application/json' },
-    });
+const ambilKonteks = async () => {
+    if (! form.wig_id || ! form.cabang_id) {
+        lagPilihan.value = [];
 
-    if (respons.ok) {
-        form.kode_lead = (await respons.json()).kode;
+        return;
+    }
+
+    memuatKonteks.value = true;
+
+    try {
+        const params = new URLSearchParams({
+            wig_id: form.wig_id,
+            cabang_id: form.cabang_id,
+            tahun: form.tahun,
+        });
+
+        const respons = await fetch(`/lead-measures/konteks?${params}`, {
+            headers: { Accept: 'application/json' },
+        });
+
+        if (! respons.ok) {
+            return;
+        }
+
+        const data = await respons.json();
+        lagPilihan.value = data.lags;
+
+        // Kode hanya diusulkan saat membuat baru; kode yang sudah dipakai
+        // tidak boleh berubah sendiri ketika diedit.
+        if (! leadDiedit.value) {
+            form.kode_lead = data.kode;
+        }
+
+        // Lag yang tak lagi tersedia pada kombinasi baru dilepas.
+        if (form.lag_measure_id && ! data.lags.some((l) => String(l.id) === String(form.lag_measure_id))) {
+            form.lag_measure_id = '';
+        }
+    } finally {
+        memuatKonteks.value = false;
     }
 };
+
+watch([() => form.wig_id, () => form.cabang_id, () => form.tahun], ambilKonteks);
 
 const bukaTambah = async () => {
     leadDiedit.value = null;
     form.reset();
     form.clearErrors();
+    lagPilihan.value = [];
+
+    // Mengikuti pilihan di halaman bila ada, tapi tidak mewajibkannya.
     form.wig_id = wigId.value;
-    form.cabang_id = cabangId.value;
+    form.cabang_id = props.terkunciCabang && props.filter.cabang_id
+        ? String(props.filter.cabang_id)
+        : cabangId.value;
     form.tahun = tahun.value;
+
     dialogTerbuka.value = true;
-    await ambilSaranKode();
+    await ambilKonteks();
 };
 
 const bukaEdit = (lead) => {
@@ -119,7 +161,18 @@ const simpan = () => {
     const opsi = {
         preserveScroll: true,
         onSuccess: () => {
+            const konteksBaru = form.wig_id !== wigId.value || form.cabang_id !== cabangId.value;
+
             dialogTerbuka.value = false;
+
+            // Bila menyimpan untuk kombinasi lain, pindahkan halaman ke sana
+            // supaya data yang baru dibuat langsung terlihat.
+            if (konteksBaru) {
+                wigId.value = form.wig_id;
+                cabangId.value = form.cabang_id;
+                tahun.value = form.tahun;
+            }
+
             form.reset();
         },
     };
@@ -156,7 +209,7 @@ const hapus = () => {
                         Aktivitas pendorong per WIG dan cabang. Kode dibuat otomatis dari bidang WIG dan kode cabang.
                     </p>
                 </div>
-                <Button :disabled="!konteksLengkap" @click="bukaTambah">
+                <Button @click="bukaTambah">
                     <Plus class="mr-1.5 size-4" />
                     Tambah Lead
                 </Button>
@@ -309,23 +362,73 @@ const hapus = () => {
                 <DialogHeader>
                     <DialogTitle>{{ leadDiedit ? 'Edit Lead Measure' : 'Tambah Lead Measure' }}</DialogTitle>
                     <DialogDescription>
-                        Lead Measure mengikuti WIG dan cabang yang sedang dipilih di atas.
+                        Pilih WIG dan cabang di sini — kode Lead dan daftar Lag Measure akan menyesuaikan.
                     </DialogDescription>
                 </DialogHeader>
 
                 <form class="space-y-4" @submit.prevent="simpan">
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="space-y-2 sm:col-span-2">
+                            <Label>WIG</Label>
+                            <Select v-model="form.wig_id">
+                                <SelectTrigger class="w-full"><SelectValue placeholder="Pilih WIG" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
+                                        {{ w.kode_wig }} — {{ w.nama_wig }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p v-if="form.errors.wig_id" class="text-destructive text-sm">{{ form.errors.wig_id }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="tahun_form">Tahun</Label>
+                            <Input id="tahun_form" v-model.number="form.tahun" type="number" />
+                            <p v-if="form.errors.tahun" class="text-destructive text-sm">{{ form.errors.tahun }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label>Cabang</Label>
+                        <Select v-model="form.cabang_id" :disabled="terkunciCabang">
+                            <SelectTrigger class="w-full"><SelectValue placeholder="Pilih cabang" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
+                                    {{ c.nama }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="form.errors.cabang_id" class="text-destructive text-sm">
+                            {{ form.errors.cabang_id }}
+                        </p>
+                    </div>
+
                     <div class="space-y-2">
                         <Label>Lag Measure</Label>
-                        <Select v-model="form.lag_measure_id">
+                        <Select v-model="form.lag_measure_id" :disabled="lagPilihan.length === 0">
                             <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Pilih Lag Measure" />
+                                <SelectValue
+                                    :placeholder="
+                                        memuatKonteks
+                                            ? 'Memuat...'
+                                            : lagPilihan.length
+                                              ? 'Pilih Lag Measure'
+                                              : 'Pilih WIG dan cabang dulu'
+                                    "
+                                />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem v-for="lag in lags" :key="lag.id" :value="String(lag.id)">
+                                <SelectItem v-for="lag in lagPilihan" :key="lag.id" :value="String(lag.id)">
                                     {{ lag.kode_lag }} — {{ lag.nama_lag }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
+                        <p
+                            v-if="form.wig_id && form.cabang_id && !memuatKonteks && lagPilihan.length === 0"
+                            class="text-muted-foreground text-sm"
+                        >
+                            Kombinasi ini belum punya Lag Measure. Buat dulu di menu Lag Measure.
+                        </p>
                         <p v-if="form.errors.lag_measure_id" class="text-destructive text-sm">
                             {{ form.errors.lag_measure_id }}
                         </p>
