@@ -249,6 +249,34 @@ class LagLeadInertiaTest extends TestCase
             );
     }
 
+    public function test_lead_aktif_diurutkan_lebih_dulu(): void
+    {
+        $lag = $this->buatLag();
+
+        $buat = fn (string $kode, bool $aktif) => LeadMeasure::create([
+            'kode_lead' => $kode,
+            'lag_measure_id' => $lag->id,
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead '.$kode,
+            'is_active' => $aktif,
+            'tahun' => (int) date('Y'),
+        ]);
+
+        // Kode A nonaktif sengaja dibuat lebih dulu secara abjad.
+        $buat('LEAD-A', false);
+        $buat('LEAD-B', true);
+
+        $this->actingAs($this->admin())
+            ->get("/lead-measures?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('leads', 2)
+                ->where('leads.0.kode_lead', 'LEAD-B')
+                ->where('leads.1.kode_lead', 'LEAD-A')
+            );
+    }
+
     public function test_konteks_memberi_kode_dan_daftar_lag(): void
     {
         $tahun = (int) date('Y');

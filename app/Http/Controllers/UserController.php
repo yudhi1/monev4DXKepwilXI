@@ -24,6 +24,8 @@ class UserController extends Controller
             ->with(['roles:id,name', 'wilayah:id,nama', 'cabang:id,nama'])
             ->when($cari !== '', fn ($q) => $q->where('name', 'like', "%{$cari}%"))
             ->when($role, fn ($q) => $q->whereHas('roles', fn ($sub) => $sub->where('name', $role)))
+            // Yang aktif didahulukan; user nonaktif turun ke bawah.
+            ->orderByDesc('is_active')
             ->latest()
             ->paginate(10)
             ->withQueryString()

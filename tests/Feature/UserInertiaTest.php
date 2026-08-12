@@ -39,6 +39,21 @@ class UserInertiaTest extends TestCase
             );
     }
 
+    public function test_user_aktif_diurutkan_lebih_dulu(): void
+    {
+        // Dibuat paling akhir, tapi nonaktif — harus turun di bawah admin.
+        User::factory()->create(['name' => 'User Nonaktif', 'is_active' => false])->assignRole('kantor_cabang');
+
+        $this->actingAs($this->admin())
+            ->get('/users')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('users.data', 2)
+                ->where('users.data.0.is_active', true)
+                ->where('users.data.1.name', 'User Nonaktif')
+            );
+    }
+
     public function test_filter_role_menyaring_hasil(): void
     {
         User::factory()->create(['name' => 'Petugas Cabang'])->assignRole('kantor_cabang');

@@ -35,6 +35,8 @@ class LeadMeasureController extends Controller
             $leads = LeadMeasure::with('lagMeasure:id,kode_lag,nama_lag')
                 ->where('wig_id', $wigId)
                 ->where('cabang_id', $cabangId)
+                // Yang aktif didahulukan; Lead nonaktif turun ke bawah.
+                ->orderByDesc('is_active')
                 ->orderBy('kode_lead')
                 ->get();
 
