@@ -36,15 +36,18 @@ class LeadMeasureController extends Controller
             $wigId = null;
         }
 
-        // Pilihan Lag menyempit mengikuti WIG dan cabang yang sedang disaring.
-        $lags = LagMeasure::query()
-            ->whereIn('wig_id', $wigs->pluck('id'))
-            ->when($wigId, fn ($q, $id) => $q->where('wig_id', $id))
-            ->when($cabangId, fn ($q, $id) => $q->where(
-                fn ($sub) => $sub->whereNull('cabang_id')->orWhere('cabang_id', $id)
-            ))
-            ->orderBy('kode_lag')
-            ->get(['id', 'kode_lag', 'nama_lag', 'wig_id']);
+        /*
+         | Pilihan Lag baru tersedia setelah WIG dan cabang ditentukan — Lag
+         | memang melekat pada kombinasi keduanya, jadi menawarkannya lebih
+         | awal hanya memunculkan pilihan yang tidak relevan.
+         */
+        $lags = ($wigId && $cabangId)
+            ? LagMeasure::query()
+                ->where('wig_id', $wigId)
+                ->where(fn ($q) => $q->whereNull('cabang_id')->orWhere('cabang_id', $cabangId))
+                ->orderBy('kode_lag')
+                ->get(['id', 'kode_lag', 'nama_lag', 'wig_id'])
+            : collect();
 
         $lagId = $request->query('lag_id');
 

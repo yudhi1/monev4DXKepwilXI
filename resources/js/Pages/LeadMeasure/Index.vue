@@ -64,8 +64,13 @@ const muatUlang = () =>
 
 watch([wigId, lagId, cabangId, tahun], muatUlang);
 
-/* Mengganti WIG membuat pilihan Lag sebelumnya tidak relevan lagi. */
-watch(wigId, () => (lagId.value = SEMUA));
+/*
+ | Lag melekat pada kombinasi WIG + cabang, jadi pilihannya baru terbuka
+ | setelah keduanya ditentukan, dan direset bila salah satunya berubah.
+ */
+const lagSiap = computed(() => wigId.value !== SEMUA && cabangId.value !== SEMUA);
+
+watch([wigId, cabangId], () => (lagId.value = SEMUA));
 
 const wigTerpilih = computed(() => props.wigs.find((w) => String(w.id) === wigId.value));
 const lagTerpilih = computed(() => props.lags.find((l) => String(l.id) === lagId.value));
@@ -251,21 +256,6 @@ const hapus = () => {
                         </Select>
                     </div>
 
-                    <div class="min-w-72 flex-1 space-y-2">
-                        <Label>Lag Measure</Label>
-                        <Select v-model="lagId">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Semua Lag" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem :value="SEMUA">Semua Lag</SelectItem>
-                                <SelectItem v-for="l in lags" :key="l.id" :value="String(l.id)">
-                                    {{ l.kode_lag }} — {{ l.nama_lag }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                     <div class="min-w-56 flex-1 space-y-2">
                         <Label>Cabang</Label>
                         <Select v-model="cabangId" :disabled="terkunciCabang">
@@ -279,6 +269,24 @@ const hapus = () => {
                                 </SelectItem>
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div class="min-w-72 flex-1 space-y-2">
+                        <Label>Lag Measure</Label>
+                        <Select v-model="lagId" :disabled="!lagSiap">
+                            <SelectTrigger class="w-full">
+                                <SelectValue :placeholder="lagSiap ? 'Semua Lag' : 'Pilih WIG dan cabang dulu'" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="SEMUA">Semua Lag</SelectItem>
+                                <SelectItem v-for="l in lags" :key="l.id" :value="String(l.id)">
+                                    {{ l.kode_lag }} — {{ l.nama_lag }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="lagSiap && lags.length === 0" class="text-muted-foreground text-sm">
+                            Kombinasi ini belum punya Lag Measure.
+                        </p>
                     </div>
 
                     <div class="w-28 space-y-2">
@@ -338,6 +346,7 @@ const hapus = () => {
                                 <TableHead class="w-14 pl-4">#</TableHead>
                                 <TableHead class="w-64">Kode</TableHead>
                                 <TableHead class="w-[34rem] min-w-[20rem]">Nama Lead</TableHead>
+                                <TableHead class="w-28">Bidang</TableHead>
                                 <TableHead class="w-24 text-center">Status</TableHead>
                                 <TableHead class="w-32 pr-4 text-right">Aksi</TableHead>
                             </TableRow>
@@ -350,6 +359,16 @@ const hapus = () => {
                                 </TableCell>
                                 <TableCell class="align-top text-sm">
                                     <div class="max-w-[34rem] whitespace-pre-wrap">{{ lead.nama_lead }}</div>
+                                </TableCell>
+                                <TableCell class="align-top">
+                                    <Badge
+                                        v-if="lead.wig?.bidang"
+                                        variant="outline"
+                                        :class="kelasBidang(lead.wig.bidang)"
+                                    >
+                                        {{ lead.wig.bidang }}
+                                    </Badge>
+                                    <span v-else class="text-muted-foreground">—</span>
                                 </TableCell>
                                 <TableCell class="text-center">
                                     <Badge variant="outline" :class="kelasAktif(lead.is_active)">
@@ -383,7 +402,7 @@ const hapus = () => {
                             </TableRow>
 
                             <TableRow v-if="leads.data.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="5" class="py-12">
+                                <TableCell colspan="6" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <TrendingUp class="size-8 opacity-40" />
                                         <p class="text-sm">Tidak ada Lead Measure yang cocok.</p>
