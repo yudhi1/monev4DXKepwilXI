@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Building2, CircleCheckBig, Gauge, Target } from '@lucide/vue';
 import { cn } from '@/lib/utils';
 
 const props = defineProps({
@@ -69,6 +70,71 @@ const namaCabang = computed(
 
 /* Kolom unit kerja hanya berguna saat rinciannya mencakup lebih dari satu. */
 const semuaUnitKerja = computed(() => props.filter.cabang_id === null);
+
+
+/* ---------------- Kartu ringkasan ---------------- */
+/*
+ | Rata-rata wilayah diwarnai mengikuti ambang status yang sama dengan
+ | tabel peringkat, sehingga warnanya membawa arti — bukan sekadar hiasan.
+ */
+const nadaRata = computed(() => {
+    const nilai = props.ringkasan.rata_wilayah;
+
+    return nilai >= 100 ? 'success' : nilai >= 90 ? 'warning' : 'destructive';
+});
+
+const NADA = {
+    primary: {
+        kartu: 'border-l-primary',
+        angka: 'text-primary',
+        ikon: 'bg-primary/10 text-primary',
+    },
+    ungu: {
+        kartu: 'border-l-bidang-sdmuk',
+        angka: 'text-bidang-sdmuk',
+        ikon: 'bg-bidang-sdmuk/10 text-bidang-sdmuk',
+    },
+    success: {
+        kartu: 'border-l-success',
+        angka: 'text-success',
+        ikon: 'bg-success/10 text-success',
+    },
+    warning: {
+        kartu: 'border-l-warning',
+        angka: 'text-warning-foreground',
+        ikon: 'bg-warning/15 text-warning-foreground',
+    },
+    destructive: {
+        kartu: 'border-l-destructive',
+        angka: 'text-destructive',
+        ikon: 'bg-destructive/10 text-destructive',
+    },
+};
+
+const kartuRingkasan = computed(() => {
+    const susun = (nada, label, nilai, ikon, satuan = null) => ({
+        label,
+        nilai,
+        satuan,
+        ikon,
+        kelasKartu: NADA[nada].kartu,
+        kelasAngka: NADA[nada].angka,
+        kelasIkon: NADA[nada].ikon,
+    });
+
+    return [
+        susun('primary', 'Total Unit Kerja', props.ringkasan.total_cabang, Building2),
+        susun('ungu', 'Total WIG', props.ringkasan.total_wig, Target),
+        susun(nadaRata.value, 'Rata-rata Wilayah', `${props.ringkasan.rata_wilayah}%`, Gauge),
+        susun(
+            'success',
+            'Unit Kerja On Track',
+            props.ringkasan.cabang_on_track,
+            CircleCheckBig,
+            `/${props.ringkasan.total_cabang}`
+        ),
+    ];
+});
 
 const periode = (m) => `Minggu ${m} / ${BULAN_PANJANG[props.filter.bulan - 1]} ${props.filter.tahun}`;
 
@@ -219,31 +285,17 @@ const membandingkan = computed(() => props.detailLeadBanding !== null);
 
         <!-- Ringkasan -->
         <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-                <CardContent>
-                    <p class="text-muted-foreground text-sm">Total Unit Kerja</p>
-                    <p class="mt-1 text-3xl font-semibold tabular-nums">{{ ringkasan.total_cabang }}</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardContent>
-                    <p class="text-muted-foreground text-sm">Total WIG</p>
-                    <p class="mt-1 text-3xl font-semibold tabular-nums">{{ ringkasan.total_wig }}</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardContent>
-                    <p class="text-muted-foreground text-sm">Rata-rata Wilayah</p>
-                    <p class="mt-1 text-3xl font-semibold tabular-nums">{{ ringkasan.rata_wilayah }}%</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardContent>
-                    <p class="text-muted-foreground text-sm">Cabang On Track</p>
-                    <p class="mt-1 text-3xl font-semibold tabular-nums">
-                        {{ ringkasan.cabang_on_track
-                        }}<span class="text-muted-foreground text-lg">/{{ ringkasan.total_cabang }}</span>
-                    </p>
+            <Card v-for="k in kartuRingkasan" :key="k.label" :class="cn('border-l-4', k.kelasKartu)">
+                <CardContent class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-muted-foreground text-sm">{{ k.label }}</p>
+                        <p :class="cn('mt-1 text-3xl font-semibold tabular-nums', k.kelasAngka)">
+                            {{ k.nilai }}<span v-if="k.satuan" class="text-muted-foreground text-lg">{{ k.satuan }}</span>
+                        </p>
+                    </div>
+                    <span :class="cn('flex size-9 shrink-0 items-center justify-center rounded-lg', k.kelasIkon)">
+                        <component :is="k.ikon" class="size-[18px]" />
+                    </span>
                 </CardContent>
             </Card>
         </div>
