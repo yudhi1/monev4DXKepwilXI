@@ -257,26 +257,8 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
             </Card>
         </div>
 
-        <!-- Detail Lead: satu atau dua minggu -->
-        <div :class="cn('mb-6 grid gap-4', membandingkan && '2xl:grid-cols-2')">
-            <TabelDetailLead
-                :judul="`Detail Lead Measure — ${namaCabang}`"
-                :periode="periode(filter.minggu)"
-                :baris="detailLead"
-                :tampilkan-cabang="semuaUnitKerja"
-            />
-
-            <TabelDetailLead
-                v-if="membandingkan"
-                :judul="`Detail Lead Measure — ${namaCabang}`"
-                :periode="periode(filter.minggu_banding)"
-                :baris="detailLeadBanding"
-                :tampilkan-cabang="semuaUnitKerja"
-            />
-        </div>
-
         <!-- Tabel peringkat -->
-        <Card class="overflow-hidden py-0">
+        <Card class="mb-6 overflow-hidden py-0">
             <div class="flex items-center gap-3 border-b px-4 py-3">
                 <h2 class="text-sm font-medium">Rincian Peringkat</h2>
                 <span class="text-muted-foreground ml-auto text-sm">Klik baris untuk melihat Lead Measure-nya</span>
@@ -353,5 +335,23 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
                 </div>
             </CardContent>
         </Card>
+
+        <!-- Detail Lead: satu atau dua minggu -->
+        <div :class="cn('grid gap-4', membandingkan && '2xl:grid-cols-2')">
+            <TabelDetailLead
+                :judul="`Detail Lead Measure — ${namaCabang}`"
+                :periode="periode(filter.minggu)"
+                :baris="detailLead"
+                :tampilkan-cabang="semuaUnitKerja"
+            />
+
+            <TabelDetailLead
+                v-if="membandingkan"
+                :judul="`Detail Lead Measure — ${namaCabang}`"
+                :periode="periode(filter.minggu_banding)"
+                :baris="detailLeadBanding"
+                :tampilkan-cabang="semuaUnitKerja"
+            />
+        </div>
     </AppLayout>
 </template>
