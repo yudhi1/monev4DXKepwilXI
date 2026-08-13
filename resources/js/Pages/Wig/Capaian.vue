@@ -184,34 +184,34 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
         -->
         <Card v-if="wig" class="overflow-hidden py-0">
             <CardContent class="p-0">
-                <div class="overflow-x-auto">
+                <div class="gulir-terlihat max-h-[70vh] overflow-auto">
                     <table class="w-max border-separate border-spacing-0 text-sm">
                         <thead>
                             <tr class="bg-muted/60">
-                                <th class="bg-muted/60 sticky left-0 z-20 min-w-[11rem] border-b border-r px-3 py-2 text-left font-medium">
+                                <th class="bg-muted/60 sticky top-0 left-0 z-40 min-w-[11rem] border-b border-r px-3 py-2 text-left font-medium">
                                     Unit Kerja
                                 </th>
-                                <th class="bg-muted/60 sticky left-[11rem] z-20 min-w-[6.5rem] border-b border-r px-3 py-2 text-left font-medium">
+                                <th class="bg-muted/60 sticky top-0 left-[11rem] z-40 min-w-[6.5rem] border-b border-r px-3 py-2 text-left font-medium">
                                     Baris
                                 </th>
                                 <th
                                     v-for="(b, i) in namaBulan"
                                     :key="b"
-                                    :class="cn('min-w-[7rem] border-b border-r px-3 py-2 text-right font-medium', sudahLewat(i) && 'bg-accent/40')"
+                                    :class="cn('bg-muted/60 sticky top-0 z-30 min-w-[7rem] border-b border-r px-3 py-2 text-right font-medium', sudahLewat(i) && 'bg-accent/60')"
                                 >
                                     {{ b.slice(0, 3) }}
                                 </th>
-                                <th class="min-w-[9rem] border-b border-r px-3 py-2 text-right font-medium">
+                                <th class="bg-muted/60 sticky top-0 z-30 min-w-[9rem] border-b border-r px-3 py-2 text-right font-medium">
                                     Target {{ filter.tahun }}
                                 </th>
-                                <th class="min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
+                                <th class="bg-muted/60 sticky top-0 z-30 min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
                                     % thd Target
                                 </th>
-                                <th class="min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
+                                <th class="bg-muted/60 sticky top-0 z-30 min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
                                     % Bulan Berjalan
                                 </th>
-                                <th class="min-w-[7rem] border-b border-r px-3 py-2 text-left font-medium">Satuan</th>
-                                <th class="min-w-[9rem] border-b px-3 py-2 text-left font-medium">Tanggal Target</th>
+                                <th class="bg-muted/60 sticky top-0 z-30 min-w-[7rem] border-b border-r px-3 py-2 text-left font-medium">Satuan</th>
+                                <th class="bg-muted/60 sticky top-0 z-30 min-w-[9rem] border-b px-3 py-2 text-left font-medium">Tanggal Target</th>
                             </tr>
                         </thead>
 

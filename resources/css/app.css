@@ -167,3 +167,33 @@
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
 }
+
+/*
+ | Bilah gulir yang selalu terlihat. Tabel lebar seperti Target & Realisasi WIG
+ | mengandalkan gulir mendatar, dan bilah yang hanya muncul saat digulir sulit
+ | ditemukan — terutama di Windows.
+ */
+.gulir-terlihat {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.gulir-terlihat::-webkit-scrollbar {
+    height: 12px;
+    width: 12px;
+}
+
+.gulir-terlihat::-webkit-scrollbar-track {
+    background: var(--muted);
+    border-radius: 999px;
+}
+
+.gulir-terlihat::-webkit-scrollbar-thumb {
+    background: var(--muted-foreground);
+    border: 3px solid var(--muted);
+    border-radius: 999px;
+}
+
+.gulir-terlihat::-webkit-scrollbar-thumb:hover {
+    background: var(--foreground);
+}
