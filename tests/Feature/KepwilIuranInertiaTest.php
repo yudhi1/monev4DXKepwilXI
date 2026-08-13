@@ -170,6 +170,32 @@ class KepwilIuranInertiaTest extends TestCase
             );
     }
 
+    public function test_peringkat_ikut_dibandingkan_antar_minggu(): void
+    {
+        $lead = $this->buatLead($this->cabang);
+        $this->buatRealisasi($lead, 100, 40, 3, 3);
+        $this->buatRealisasi($lead, 100, 145, 3, 4);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=4&minggu_banding=3")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('peringkat.0.pct', 145)
+                ->where('peringkat.0.status', 'on')
+                ->where('peringkatBanding.0.pct', 40)
+                ->where('peringkatBanding.0.status', 'awas')
+            );
+    }
+
+    public function test_peringkat_pembanding_kosong_tanpa_minggu_pembanding(): void
+    {
+        $this->buatRealisasi($this->buatLead($this->cabang), 100, 80);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=1")
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('peringkatBanding', null));
+    }
+
     public function test_membandingkan_dua_minggu(): void
     {
         $lead = $this->buatLead($this->cabang);

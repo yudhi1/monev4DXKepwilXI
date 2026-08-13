@@ -85,6 +85,9 @@ class DashboardKepwilController extends Controller
             'lags' => $lags,
             'jumlahMinggu' => LeadMeasureRealisasi::JUMLAH_MINGGU,
             'peringkat' => $peringkat,
+            'peringkatBanding' => $mingguBanding
+                ? $this->peringkatCabang($cabangs, $wigId, $tahun, $bulan, $mingguBanding)
+                : null,
             'ringkasan' => [
                 'total_cabang' => $cabangs->count(),
                 'total_wig' => $wigs->count(),

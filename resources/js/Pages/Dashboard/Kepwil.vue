@@ -3,13 +3,12 @@ import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import TabelDetailLead from '@/components/TabelDetailLead.vue';
+import TabelPeringkat from '@/components/TabelPeringkat.vue';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2 } from '@lucide/vue';
 import { cn } from '@/lib/utils';
 
 const props = defineProps({
@@ -17,6 +16,7 @@ const props = defineProps({
     wigs: { type: Array, required: true },
     lags: { type: Array, required: true },
     peringkat: { type: Array, required: true },
+    peringkatBanding: { type: [Array, null], default: null },
     ringkasan: { type: Object, required: true },
     detailLead: { type: Array, required: true },
     detailLeadBanding: { type: [Array, null], default: null },
@@ -73,15 +73,6 @@ const semuaUnitKerja = computed(() => props.filter.cabang_id === null);
 const periode = (m) => `Minggu ${m} / ${BULAN_PANJANG[props.filter.bulan - 1]} ${props.filter.tahun}`;
 
 const membandingkan = computed(() => props.detailLeadBanding !== null);
-
-/* ---------------- Gaya status ---------------- */
-const KELAS_STATUS = {
-    on: 'border-success/30 bg-success/10 text-success',
-    waspada: 'border-warning/40 bg-warning/10 text-warning-foreground',
-    awas: 'border-destructive/30 bg-destructive/10 text-destructive',
-};
-
-const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
 </script>
 
 <template>
@@ -257,84 +248,23 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
             </Card>
         </div>
 
-        <!-- Tabel peringkat -->
-        <Card class="mb-6 overflow-hidden py-0">
-            <div class="flex items-center gap-3 border-b px-4 py-3">
-                <h2 class="text-sm font-medium">Rincian Peringkat</h2>
-                <span class="text-muted-foreground ml-auto text-sm">Klik baris untuk melihat Lead Measure-nya</span>
-            </div>
+        <!-- Peringkat: satu atau dua minggu -->
+        <div :class="cn('mb-6 grid gap-4', membandingkan && '2xl:grid-cols-2')">
+            <TabelPeringkat
+                :periode="periode(filter.minggu)"
+                :baris="peringkat"
+                :cabang-dipilih="filter.cabang_id"
+                @pilih="(id) => (cabangId = String(id))"
+            />
 
-            <CardContent class="p-0">
-                <div class="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow class="hover:bg-transparent">
-                                <TableHead class="w-16 pl-4 text-center">#</TableHead>
-                                <TableHead>Cabang</TableHead>
-                                <TableHead class="w-32 text-center">Jumlah Lead</TableHead>
-                                <TableHead class="w-48">Capaian</TableHead>
-                                <TableHead class="w-32 text-center">Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow
-                                v-for="(baris, i) in peringkat"
-                                :key="baris.cabang_id"
-                                :class="cn('cursor-pointer', baris.cabang_id === filter.cabang_id && 'bg-secondary')"
-                                @click="cabangId = String(baris.cabang_id)"
-                            >
-                                <TableCell class="pl-4 text-center">
-                                    <span
-                                        :class="
-                                            cn(
-                                                'inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold',
-                                                i < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                                            )
-                                        "
-                                    >
-                                        {{ i + 1 }}
-                                    </span>
-                                </TableCell>
-                                <TableCell class="text-sm font-medium">{{ baris.nama }}</TableCell>
-                                <TableCell class="text-center text-sm tabular-nums">{{ baris.jumlah_lead }}</TableCell>
-                                <TableCell>
-                                    <div class="flex items-center gap-2">
-                                        <div class="bg-muted h-2 flex-1 overflow-hidden rounded-full">
-                                            <div
-                                                class="h-full rounded-full"
-                                                :class="{
-                                                    'bg-success': baris.status === 'on',
-                                                    'bg-warning': baris.status === 'waspada',
-                                                    'bg-destructive': baris.status === 'awas',
-                                                }"
-                                                :style="{ width: `${Math.min(baris.pct, 100)}%` }"
-                                            />
-                                        </div>
-                                        <span class="w-16 text-right text-sm font-medium tabular-nums">
-                                            {{ baris.pct }}%
-                                        </span>
-                                    </div>
-                                </TableCell>
-                                <TableCell class="text-center">
-                                    <Badge variant="outline" :class="KELAS_STATUS[baris.status]">
-                                        {{ LABEL_STATUS[baris.status] }}
-                                    </Badge>
-                                </TableCell>
-                            </TableRow>
-
-                            <TableRow v-if="peringkat.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="5" class="py-12">
-                                    <div class="text-muted-foreground flex flex-col items-center gap-2">
-                                        <Building2 class="size-8 opacity-40" />
-                                        <p class="text-sm">Belum ada kantor cabang pada wilayah ini.</p>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+            <TabelPeringkat
+                v-if="membandingkan"
+                :periode="periode(filter.minggu_banding)"
+                :baris="peringkatBanding"
+                :cabang-dipilih="filter.cabang_id"
+                @pilih="(id) => (cabangId = String(id))"
+            />
+        </div>
 
         <!-- Detail Lead: satu atau dua minggu -->
         <div :class="cn('grid gap-4', membandingkan && '2xl:grid-cols-2')">
