@@ -25,6 +25,22 @@ class LagMeasureController extends Controller
         $bidang = $request->query('bidang');
         $bidang = in_array($bidang, Wig::BIDANG, true) ? $bidang : null;
 
+        $wigs = Wig::query()
+            ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
+            ->orderBy('kode_wig')
+            ->get(['id', 'kode_wig', 'nama_wig', 'bidang']);
+
+        /*
+         | Pilihan WIG pada penyaringan menyempit mengikuti bidang, dan baru
+         | tersedia setelah bidang ditentukan. Daftar penuh tetap dikirim
+         | terpisah untuk dropdown di dialog tambah/edit.
+         */
+        $wigPilihan = $bidang ? $wigs->where('bidang', $bidang)->values() : collect();
+
+        if ($wigId && ! $wigPilihan->contains('id', (int) $wigId)) {
+            $wigId = null;
+        }
+
         $cabangs = Cabang::query()
             ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
             ->orderBy('nama')
@@ -54,15 +70,13 @@ class LagMeasureController extends Controller
 
         return Inertia::render('LagMeasure/Index', [
             'lags' => $lags,
-            'wigs' => Wig::query()
-                ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
-                ->orderBy('kode_wig')
-                ->get(['id', 'kode_wig', 'nama_wig', 'bidang']),
+            'wigs' => $wigs,
+            'wigPilihan' => $wigPilihan,
             'cabangs' => $cabangs,
             'daftarBidang' => Wig::BIDANG,
             'filter' => [
                 'cari' => $cari,
-                'wig_id' => $wigId,
+                'wig_id' => $wigId ? (int) $wigId : null,
                 'bidang' => $bidang,
                 'cabang_id' => $cabangId,
             ],

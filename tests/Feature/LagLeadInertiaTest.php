@@ -75,6 +75,61 @@ class LagLeadInertiaTest extends TestCase
             );
     }
 
+    public function test_pilihan_wig_kosong_sebelum_bidang_dipilih(): void
+    {
+        $this->buatLag();
+
+        $this->actingAs($this->admin())
+            ->get('/lag-measures')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('wigPilihan', 0)
+                ->has('wigs', 1)
+            );
+    }
+
+    public function test_pilihan_wig_mengikuti_bidang(): void
+    {
+        $this->buatLag();
+
+        $wigJpk = Wig::create([
+            'kode_wig' => 'WIG-JPK',
+            'nama_wig' => 'WIG Bidang JPK',
+            'bidang' => 'JPK',
+            'tahun' => (int) date('Y'),
+            'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get('/lag-measures?bidang=JPK')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('wigPilihan', 1)
+                ->where('wigPilihan.0.id', $wigJpk->id)
+                // Daftar penuh tetap dikirim untuk dropdown pada dialog tambah/edit.
+                ->has('wigs', 2)
+            );
+    }
+
+    public function test_wig_di_luar_bidang_diabaikan_sebagai_filter(): void
+    {
+        $this->buatLag();
+
+        Wig::create([
+            'kode_wig' => 'WIG-JPK',
+            'nama_wig' => 'WIG Bidang JPK',
+            'bidang' => 'JPK',
+            'tahun' => (int) date('Y'),
+            'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        // WIG milik bidang lain tidak boleh lolos sebagai penyaring.
+        $this->actingAs($this->admin())
+            ->get("/lag-measures?bidang=JPK&wig_id={$this->wig->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('filter.wig_id', null));
+    }
+
     public function test_filter_bidang_menyaring_lag(): void
     {
         $this->buatLag();

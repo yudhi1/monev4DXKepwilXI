@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Paginasi from '@/components/Paginasi.vue';
@@ -35,6 +35,7 @@ import { kelasBidang } from '@/lib/bidang';
 const props = defineProps({
     lags: { type: Object, required: true },
     wigs: { type: Array, required: true },
+    wigPilihan: { type: Array, required: true },
     cabangs: { type: Array, required: true },
     daftarBidang: { type: Array, required: true },
     filter: { type: Object, required: true },
@@ -69,6 +70,14 @@ watch(cari, () => {
 });
 
 watch([wigFilter, bidangFilter, cabangFilter], muatUlang);
+
+/*
+ | Penyaringan berjenjang: WIG baru bisa dipilih setelah bidang ditentukan,
+ | dan pilihannya direset bila bidangnya berganti.
+ */
+const wigSiap = computed(() => bidangFilter.value !== SEMUA);
+
+watch(bidangFilter, () => (wigFilter.value = SEMUA));
 
 /* --- Form --- */
 const dialogTerbuka = ref(false);
@@ -205,13 +214,13 @@ const hapus = () => {
                     </SelectContent>
                 </Select>
 
-                <Select v-model="wigFilter">
+                <Select v-model="wigFilter" :disabled="!wigSiap">
                     <SelectTrigger class="w-72">
-                        <SelectValue placeholder="Semua WIG" />
+                        <SelectValue :placeholder="wigSiap ? 'Semua WIG' : 'Pilih bidang dulu'" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="SEMUA">Semua WIG</SelectItem>
-                        <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
+                        <SelectItem v-for="w in wigPilihan" :key="w.id" :value="String(w.id)">
                             {{ w.kode_wig }} — {{ w.nama_wig }}
                         </SelectItem>
                     </SelectContent>
