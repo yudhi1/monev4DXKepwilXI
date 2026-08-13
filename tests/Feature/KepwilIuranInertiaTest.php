@@ -121,17 +121,40 @@ class KepwilIuranInertiaTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->where('peringkat.0.status', 'waspada'));
     }
 
-    public function test_cabang_teratas_dipilih_otomatis(): void
+    public function test_rincian_menampilkan_semua_unit_kerja_secara_bawaan(): void
     {
-        $lead = $this->buatLead($this->cabang);
-        $this->buatRealisasi($lead, 100, 80);
+        $lain = Cabang::create([
+            'kode' => 'KC-JKT', 'nama' => 'Cabang Jakarta', 'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        $this->buatRealisasi($this->buatLead($this->cabang), 100, 80);
+        $this->buatRealisasi($this->buatLead($lain), 100, 40);
 
         $this->actingAs($this->admin())
             ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=1")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('filter.cabang_id', $this->cabang->id)
+                // Tidak ada cabang yang dipilih otomatis.
+                ->where('filter.cabang_id', null)
+                ->has('detailLead', 2)
+            );
+    }
+
+    public function test_rincian_menyempit_saat_unit_kerja_dipilih(): void
+    {
+        $lain = Cabang::create([
+            'kode' => 'KC-JKT', 'nama' => 'Cabang Jakarta', 'wilayah_id' => $this->wilayah->id,
+        ]);
+
+        $this->buatRealisasi($this->buatLead($this->cabang), 100, 80);
+        $this->buatRealisasi($this->buatLead($lain), 100, 40);
+
+        $this->actingAs($this->admin())
+            ->get("/dashboard-kepwil?tahun={$this->tahun}&bulan=3&minggu=1&cabang_id={$lain->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('filter.cabang_id', $lain->id)
                 ->has('detailLead', 1)
-                ->where('detailLead.0.pct', 80)
+                ->where('detailLead.0.cabang', 'Cabang Jakarta')
+                ->where('detailLead.0.pct', 40)
             );
     }
 

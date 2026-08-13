@@ -58,11 +58,15 @@ class DashboardKepwilController extends Controller
 
         $peringkat = $this->peringkatCabang($cabangs, $wigId, $tahun, $bulan, $minggu);
 
-        // Bila belum ada pilihan, ambil cabang teratas.
+        /*
+         | Tanpa pilihan, rincian menampilkan seluruh unit kerja. Sebelumnya
+         | cabang peringkat teratas dipilih otomatis, sehingga terlihat seakan
+         | hanya satu unit kerja yang punya Lead Measure.
+         */
         $cabangDipilih = $request->query('cabang_id') ? (int) $request->query('cabang_id') : null;
 
-        if (! $cabangDipilih || ! $cabangs->contains('id', $cabangDipilih)) {
-            $cabangDipilih = $peringkat[0]['cabang_id'] ?? null;
+        if ($cabangDipilih && ! $cabangs->contains('id', $cabangDipilih)) {
+            $cabangDipilih = null;
         }
 
         // Daftar LAG menyempit mengikuti WIG dan cabang yang sedang dipilih.
@@ -186,14 +190,17 @@ class DashboardKepwilController extends Controller
 
     private function detailLead(?int $cabangId, $cabangs, $wigs, array $konteks, int $tahun, int $bulan, int $minggu): array
     {
-        if (! $cabangId || ! $cabangs->contains('id', $cabangId)) {
+        // Tanpa cabang tertentu, seluruh unit kerja dalam jangkauan user ikut ditampilkan.
+        $cabangIds = $cabangId ? [$cabangId] : $cabangs->pluck('id')->all();
+
+        if ($cabangIds === []) {
             return [];
         }
 
         [$pTahun, $pBulan, $pMinggu] = $this->periodeSebelumnya($tahun, $bulan, $minggu);
 
-        $leads = LeadMeasure::with(['wig:id,kode_wig,nama_wig', 'lagMeasure:id,kode_lag'])
-            ->where('cabang_id', $cabangId)
+        $leads = LeadMeasure::with(['wig:id,kode_wig,nama_wig', 'lagMeasure:id,kode_lag', 'cabang:id,nama'])
+            ->whereIn('cabang_id', $cabangIds)
             ->where('is_active', true)
             ->whereIn('wig_id', $wigs->pluck('id'))
             ->when($konteks['wig_id'], fn ($q, $id) => $q->where('wig_id', $id))
@@ -201,7 +208,7 @@ class DashboardKepwilController extends Controller
             ->get();
 
         $ambil = fn (int $t, int $b, int $m) => LeadMeasureRealisasi::whereIn('lead_measure_id', $leads->pluck('id'))
-            ->where('cabang_id', $cabangId)
+            ->whereIn('cabang_id', $cabangIds)
             ->where('tahun', $t)
             ->where('bulan', $b)
             ->where('minggu_ke', $m)
@@ -223,6 +230,7 @@ class DashboardKepwilController extends Controller
                     'id' => $lead->id,
                     'kode_lead' => $lead->kode_lead,
                     'nama_lead' => $lead->nama_lead,
+                    'cabang' => $lead->cabang?->nama,
                     'wig' => $lead->wig?->kode_wig,
                     'wig_nama' => $lead->wig?->nama_wig,
                     'lag' => $lead->lagMeasure?->kode_lag,

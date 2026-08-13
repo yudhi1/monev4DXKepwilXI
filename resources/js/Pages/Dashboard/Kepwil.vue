@@ -43,7 +43,7 @@ const minggu = ref(String(props.filter.minggu));
 const mingguBanding = ref(props.filter.minggu_banding ? String(props.filter.minggu_banding) : TANPA);
 const wigId = ref(props.filter.wig_id ? String(props.filter.wig_id) : SEMUA);
 const lagId = ref(props.filter.lag_id ? String(props.filter.lag_id) : SEMUA);
-const cabangId = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : '');
+const cabangId = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : SEMUA);
 
 const muatUlang = () =>
     router.get(
@@ -55,7 +55,7 @@ const muatUlang = () =>
             minggu_banding: mingguBanding.value === TANPA ? undefined : mingguBanding.value,
             wig_id: wigId.value === SEMUA ? undefined : wigId.value,
             lag_id: lagId.value === SEMUA ? undefined : lagId.value,
-            cabang_id: cabangId.value || undefined,
+            cabang_id: cabangId.value === SEMUA ? undefined : cabangId.value,
         },
         { preserveState: true, preserveScroll: true, replace: true }
     );
@@ -66,8 +66,11 @@ watch([tahun, bulan, minggu, mingguBanding, wigId, lagId, cabangId], muatUlang);
 watch(wigId, () => (lagId.value = SEMUA));
 
 const namaCabang = computed(
-    () => props.cabangs.find((c) => c.id === props.filter.cabang_id)?.nama ?? '—'
+    () => props.cabangs.find((c) => c.id === props.filter.cabang_id)?.nama ?? 'Semua Unit Kerja'
 );
+
+/* Kolom unit kerja hanya berguna saat rinciannya mencakup lebih dari satu. */
+const semuaUnitKerja = computed(() => props.filter.cabang_id === null);
 
 const periode = (m) => `Minggu ${m} / ${BULAN_PANJANG[props.filter.bulan - 1]} ${props.filter.tahun}`;
 
@@ -217,10 +220,11 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
                 </div>
 
                 <div class="space-y-2 sm:col-span-2 xl:col-span-2">
-                    <Label>Kantor Cabang</Label>
+                    <Label>Unit Kerja</Label>
                     <Select v-model="cabangId">
-                        <SelectTrigger class="w-full"><SelectValue placeholder="Pilih cabang" /></SelectTrigger>
+                        <SelectTrigger class="w-full"><SelectValue placeholder="Semua unit kerja" /></SelectTrigger>
                         <SelectContent>
+                            <SelectItem :value="SEMUA">Semua unit kerja</SelectItem>
                             <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
                                 {{ c.nama }}
                             </SelectItem>
@@ -301,6 +305,7 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
                 :judul="`Detail Lead Measure — ${namaCabang}`"
                 :periode="periode(filter.minggu)"
                 :baris="detailLead"
+                :tampilkan-cabang="semuaUnitKerja"
             />
 
             <TabelDetailLead
@@ -308,6 +313,7 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
                 :judul="`Detail Lead Measure — ${namaCabang}`"
                 :periode="periode(filter.minggu_banding)"
                 :baris="detailLeadBanding"
+                :tampilkan-cabang="semuaUnitKerja"
             />
         </div>
 

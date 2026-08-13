@@ -13,6 +13,8 @@ defineProps({
     judul: { type: String, required: true },
     periode: { type: String, required: true },
     baris: { type: Array, required: true },
+    /** Kolom unit kerja hanya ditampilkan bila rinciannya mencakup lebih dari satu. */
+    tampilkanCabang: { type: Boolean, default: false },
 });
 
 const KELAS_STATUS = {
@@ -49,6 +51,7 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                     <TableHeader>
                         <TableRow class="hover:bg-transparent">
                             <TableHead class="w-12 pl-4 text-center">No</TableHead>
+                            <TableHead v-if="tampilkanCabang" class="w-40">Unit Kerja</TableHead>
                             <TableHead class="w-44">WIG</TableHead>
                             <TableHead class="min-w-[18rem]">Lead Measure</TableHead>
                             <TableHead class="w-28 text-right">Target</TableHead>
@@ -63,6 +66,12 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                         <TableRow v-for="(lead, i) in baris" :key="lead.id">
                             <TableCell class="text-muted-foreground pl-4 text-center tabular-nums">
                                 {{ i + 1 }}
+                            </TableCell>
+                            <TableCell
+                                v-if="tampilkanCabang"
+                                class="text-muted-foreground align-top text-sm whitespace-normal"
+                            >
+                                {{ lead.cabang ?? '—' }}
                             </TableCell>
                             <TableCell class="align-top whitespace-normal">
                                 <Badge v-if="lead.wig" variant="secondary" class="font-mono text-xs">
@@ -101,7 +110,7 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                         </TableRow>
 
                         <TableRow v-if="baris.length === 0" class="hover:bg-transparent">
-                            <TableCell colspan="9" class="py-10">
+                            <TableCell :colspan="tampilkanCabang ? 10 : 9" class="py-10">
                                 <div class="text-muted-foreground flex flex-col items-center gap-2">
                                     <Building2 class="size-8 opacity-40" />
                                     <p class="text-sm">Tidak ada Lead Measure untuk konteks ini.</p>
