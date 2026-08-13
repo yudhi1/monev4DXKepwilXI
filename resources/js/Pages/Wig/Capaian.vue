@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Save } from '@lucide/vue';
+import { Save, Target } from '@lucide/vue';
 import { kelasBidang } from '@/lib/bidang';
 import { cn } from '@/lib/utils';
 
@@ -60,7 +60,7 @@ const simpan = () => form.post('/wig-capaian', { preserveScroll: true });
 /* ---------------- Perhitungan ---------------- */
 const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 0 });
 
-/** Jumlah nilai bulan 1..n; dipakai untuk kolom mode "s.d. Bulan". */
+/** Jumlah nilai bulan 1..n; dipakai untuk mode "s.d. Bulan". */
 const akumulasi = (bulan, sampai, kunci) =>
     bulan.slice(0, sampai).reduce((jml, m) => jml + Number(m[kunci] || 0), 0);
 
@@ -72,14 +72,16 @@ const nilaiSel = (baris, indeks, kunci) =>
 const persen = (pembilang, penyebut) =>
     Number(penyebut) > 0 ? Math.round((pembilang / penyebut) * 10000) / 100 : 0;
 
-/* Kedua persentase mengacu pada bulan yang dipilih di filter. */
+/** Capaian tiap kolom bulan, mengikuti mode tampilan yang sedang aktif. */
+const persenSel = (baris, indeks) =>
+    persen(nilaiSel(baris, indeks, 'realisasi'), nilaiSel(baris, indeks, 'target'));
+
+/* Kedua kolom ringkasan mengacu pada bulan yang dipilih di filter. */
 const indeksAcuan = computed(() => Number(props.filter.bulan) - 1);
 
-const realisasiSdAcuan = (baris) => akumulasi(baris.bulan, indeksAcuan.value + 1, 'realisasi');
-const targetSdAcuan = (baris) => akumulasi(baris.bulan, indeksAcuan.value + 1, 'target');
-
 /** Realisasi s.d. bulan acuan dibanding target tahunan. */
-const persenTahunan = (baris) => persen(realisasiSdAcuan(baris), baris.nilai_target);
+const persenTahunan = (baris) =>
+    persen(akumulasi(baris.bulan, indeksAcuan.value + 1, 'realisasi'), baris.nilai_target);
 
 /** Realisasi bulan acuan dibanding target bulan acuan. */
 const persenBulanan = (baris) =>
@@ -91,7 +93,7 @@ const persenBulanan = (baris) =>
 const warnaPersen = (nilai) =>
     nilai >= 100 ? 'text-success' : nilai >= 90 ? 'text-warning-foreground' : 'text-destructive';
 
-/** Bulan yang sudah lewat diberi latar berbeda agar mudah dibedakan dari rencana ke depan. */
+/** Bulan yang sudah berjalan diberi latar berbeda agar terpisah dari rencana ke depan. */
 const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
 </script>
 
@@ -167,7 +169,7 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                 </div>
 
                 <p v-if="!bisaUbahTarget" class="text-muted-foreground text-sm">
-                    Kolom target ditetapkan oleh Kedeputian Wilayah, jadi hanya realisasi yang dapat kamu isi.
+                    Baris target ditetapkan oleh Kedeputian Wilayah, jadi hanya realisasi yang dapat kamu isi.
                 </p>
 
                 <p v-if="mode === 'sd'" class="text-muted-foreground text-sm">
@@ -176,77 +178,62 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
             </CardContent>
         </Card>
 
-        <!-- Tabel lebar: kolom unit kerja dibekukan agar tetap terlihat saat digulir -->
+        <!--
+          Target dan realisasi ditumpuk sebagai sub-baris, sehingga tiap bulan
+          cukup satu kolom — lebar tabel berkurang sekitar separuh.
+        -->
         <Card v-if="wig" class="overflow-hidden py-0">
             <CardContent class="p-0">
                 <div class="overflow-x-auto">
                     <table class="w-max border-separate border-spacing-0 text-sm">
                         <thead>
                             <tr class="bg-muted/60">
-                                <th
-                                    rowspan="2"
-                                    class="bg-muted/60 sticky left-0 z-20 min-w-[12rem] border-b border-r px-3 py-2 text-left font-medium"
-                                >
+                                <th class="bg-muted/60 sticky left-0 z-20 min-w-[11rem] border-b border-r px-3 py-2 text-left font-medium">
                                     Unit Kerja
                                 </th>
-                                <th rowspan="2" class="min-w-[9rem] border-b border-r px-3 py-2 text-right font-medium">
-                                    Target {{ filter.tahun }}
+                                <th class="bg-muted/60 sticky left-[11rem] z-20 min-w-[6.5rem] border-b border-r px-3 py-2 text-left font-medium">
+                                    Baris
                                 </th>
                                 <th
                                     v-for="(b, i) in namaBulan"
                                     :key="b"
-                                    colspan="2"
-                                    :class="cn('border-b border-r px-3 py-1.5 text-center font-medium', sudahLewat(i) && 'bg-accent/40')"
+                                    :class="cn('min-w-[7rem] border-b border-r px-3 py-2 text-right font-medium', sudahLewat(i) && 'bg-accent/40')"
                                 >
-                                    {{ b }}
+                                    {{ b.slice(0, 3) }}
                                 </th>
-                                <th rowspan="2" class="min-w-[8rem] border-b border-r px-3 py-2 text-center font-medium">
-                                    % thd Target {{ filter.tahun }}
+                                <th class="min-w-[9rem] border-b border-r px-3 py-2 text-right font-medium">
+                                    Target {{ filter.tahun }}
                                 </th>
-                                <th rowspan="2" class="min-w-[8rem] border-b border-r px-3 py-2 text-center font-medium">
+                                <th class="min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
+                                    % thd Target
+                                </th>
+                                <th class="min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
                                     % Bulan Berjalan
                                 </th>
-                                <th rowspan="2" class="min-w-[7rem] border-b border-r px-3 py-2 text-left font-medium">
-                                    Satuan
-                                </th>
-                                <th rowspan="2" class="min-w-[9rem] border-b px-3 py-2 text-left font-medium">
-                                    Tanggal Target
-                                </th>
-                            </tr>
-                            <tr class="bg-muted/60">
-                                <template v-for="(b, i) in namaBulan" :key="`sub-${b}`">
-                                    <th
-                                        :class="cn('text-muted-foreground min-w-[7rem] border-b px-3 py-1.5 text-right text-xs font-normal', sudahLewat(i) && 'bg-accent/40')"
-                                    >
-                                        Target
-                                    </th>
-                                    <th
-                                        :class="cn('text-muted-foreground min-w-[7rem] border-b border-r px-3 py-1.5 text-right text-xs font-normal', sudahLewat(i) && 'bg-accent/40')"
-                                    >
-                                        Realisasi
-                                    </th>
-                                </template>
+                                <th class="min-w-[7rem] border-b border-r px-3 py-2 text-left font-medium">Satuan</th>
+                                <th class="min-w-[9rem] border-b px-3 py-2 text-left font-medium">Tanggal Target</th>
                             </tr>
                         </thead>
 
                         <tbody>
-                            <tr v-for="baris in form.baris" :key="baris.cabang_id" class="hover:bg-muted/30">
-                                <td class="bg-background sticky left-0 z-10 border-b border-r px-3 py-2 font-medium">
-                                    {{ baris.cabang_nama }}
-                                </td>
+                            <template v-for="b in form.baris" :key="b.cabang_id">
+                                <!-- Sub-baris 1: target bulanan, sekaligus memuat kolom yang menaungi ketiganya -->
+                                <tr class="hover:bg-muted/20">
+                                    <td
+                                        rowspan="3"
+                                        class="bg-background sticky left-0 z-10 border-b-2 border-r px-3 py-2 align-top font-medium"
+                                    >
+                                        {{ b.cabang_nama }}
+                                    </td>
+                                    <td class="bg-background text-muted-foreground sticky left-[11rem] z-10 border-b border-r px-3 py-1.5">
+                                        Target
+                                    </td>
 
-                                <td class="border-b border-r px-2 py-1.5">
-                                    <Input
-                                        v-model.number="baris.nilai_target"
-                                        type="number"
-                                        step="any"
-                                        class="h-8 text-right"
-                                        :disabled="!bisaUbahTarget"
-                                    />
-                                </td>
-
-                                <template v-for="(m, i) in baris.bulan" :key="m.bulan">
-                                    <td :class="cn('border-b px-2 py-1.5', sudahLewat(i) && 'bg-accent/20')">
+                                    <td
+                                        v-for="(m, i) in b.bulan"
+                                        :key="`t-${m.bulan}`"
+                                        :class="cn('border-b border-r px-2 py-1.5', sudahLewat(i) && 'bg-accent/20')"
+                                    >
                                         <Input
                                             v-if="mode === 'bulan'"
                                             v-model.number="m.target"
@@ -257,10 +244,61 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                                             :disabled="!bisaUbahTarget"
                                         />
                                         <span v-else class="block text-right tabular-nums">
-                                            {{ angka(nilaiSel(baris, i, 'target')) }}
+                                            {{ angka(nilaiSel(b, i, 'target')) }}
                                         </span>
                                     </td>
-                                    <td :class="cn('border-b border-r px-2 py-1.5', sudahLewat(i) && 'bg-accent/20')">
+
+                                    <td rowspan="3" class="border-b-2 border-r px-2 py-1.5 align-top">
+                                        <Input
+                                            v-model.number="b.nilai_target"
+                                            type="number"
+                                            step="any"
+                                            class="h-8 text-right"
+                                            :disabled="!bisaUbahTarget"
+                                        />
+                                    </td>
+                                    <td
+                                        rowspan="3"
+                                        :class="cn('border-b-2 border-r px-3 text-center align-middle text-base font-semibold tabular-nums', warnaPersen(persenTahunan(b)))"
+                                    >
+                                        {{ persenTahunan(b) }}%
+                                    </td>
+                                    <td
+                                        rowspan="3"
+                                        :class="cn('border-b-2 border-r px-3 text-center align-middle text-base font-semibold tabular-nums', warnaPersen(persenBulanan(b)))"
+                                    >
+                                        {{ persenBulanan(b) }}%
+                                    </td>
+                                    <td rowspan="3" class="border-b-2 border-r px-2 py-1.5 align-top">
+                                        <Select v-model="b.satuan" :disabled="!bisaUbahTarget">
+                                            <SelectTrigger class="h-8 w-full"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem v-for="s in daftarSatuan" :key="s" :value="s">
+                                                    {{ s }}
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </td>
+                                    <td rowspan="3" class="border-b-2 px-2 py-1.5 align-top">
+                                        <Input
+                                            v-model="b.tanggal_target"
+                                            type="date"
+                                            class="h-8"
+                                            :disabled="!bisaUbahTarget"
+                                        />
+                                    </td>
+                                </tr>
+
+                                <!-- Sub-baris 2: realisasi bulanan -->
+                                <tr class="hover:bg-muted/20">
+                                    <td class="bg-background text-muted-foreground sticky left-[11rem] z-10 border-b border-r px-3 py-1.5">
+                                        Realisasi
+                                    </td>
+                                    <td
+                                        v-for="(m, i) in b.bulan"
+                                        :key="`r-${m.bulan}`"
+                                        :class="cn('border-b border-r px-2 py-1.5', sudahLewat(i) && 'bg-accent/20')"
+                                    >
                                         <Input
                                             v-if="mode === 'bulan'"
                                             v-model.number="m.realisasi"
@@ -270,38 +308,34 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                                             class="h-8 text-right"
                                         />
                                         <span v-else class="block text-right tabular-nums">
-                                            {{ angka(nilaiSel(baris, i, 'realisasi')) }}
+                                            {{ angka(nilaiSel(b, i, 'realisasi')) }}
                                         </span>
                                     </td>
-                                </template>
+                                </tr>
 
-                                <td :class="cn('border-b border-r px-3 py-2 text-center font-medium tabular-nums', warnaPersen(persenTahunan(baris)))">
-                                    {{ persenTahunan(baris) }}%
-                                </td>
-                                <td :class="cn('border-b border-r px-3 py-2 text-center font-medium tabular-nums', warnaPersen(persenBulanan(baris)))">
-                                    {{ persenBulanan(baris) }}%
-                                </td>
-
-                                <td class="border-b border-r px-2 py-1.5">
-                                    <Select v-model="baris.satuan" :disabled="!bisaUbahTarget">
-                                        <SelectTrigger class="h-8 w-full"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem v-for="s in daftarSatuan" :key="s" :value="s">{{ s }}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </td>
-                                <td class="border-b px-2 py-1.5">
-                                    <Input
-                                        v-model="baris.tanggal_target"
-                                        type="date"
-                                        class="h-8"
-                                        :disabled="!bisaUbahTarget"
-                                    />
-                                </td>
-                            </tr>
+                                <!-- Sub-baris 3: capaian, dihitung dari dua sub-baris di atasnya -->
+                                <tr class="hover:bg-muted/20">
+                                    <td class="bg-background text-muted-foreground sticky left-[11rem] z-10 border-b-2 border-r px-3 py-1.5">
+                                        % Capaian
+                                    </td>
+                                    <td
+                                        v-for="(m, i) in b.bulan"
+                                        :key="`p-${m.bulan}`"
+                                        :class="
+                                            cn(
+                                                'border-b-2 border-r px-3 py-1.5 text-right font-medium tabular-nums',
+                                                sudahLewat(i) && 'bg-accent/20',
+                                                warnaPersen(persenSel(b, i))
+                                            )
+                                        "
+                                    >
+                                        {{ persenSel(b, i) }}%
+                                    </td>
+                                </tr>
+                            </template>
 
                             <tr v-if="form.baris.length === 0">
-                                <td colspan="30" class="py-12">
+                                <td colspan="19" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <Target class="size-8 opacity-40" />
                                         <p class="text-sm">Belum ada unit kerja.</p>
@@ -315,7 +349,7 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
 
             <div class="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
                 <p class="text-muted-foreground text-sm">
-                    Persentase mengacu pada bulan {{ namaBulan[filter.bulan - 1] }}.
+                    Kolom ringkasan mengacu pada bulan {{ namaBulan[filter.bulan - 1] }}.
                     Kolom berlatar terang menandai bulan yang sudah berjalan.
                 </p>
                 <Button :disabled="form.processing" @click="simpan">
