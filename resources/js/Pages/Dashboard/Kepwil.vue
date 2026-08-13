@@ -268,7 +268,7 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
         <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardContent>
-                    <p class="text-muted-foreground text-sm">Total Cabang</p>
+                    <p class="text-muted-foreground text-sm">Total Unit Kerja</p>
                     <p class="mt-1 text-3xl font-semibold tabular-nums">{{ ringkasan.total_cabang }}</p>
                 </CardContent>
             </Card>
