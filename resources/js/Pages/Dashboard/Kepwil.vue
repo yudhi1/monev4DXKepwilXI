@@ -248,8 +248,8 @@ const membandingkan = computed(() => props.detailLeadBanding !== null);
             </Card>
         </div>
 
-        <!-- Peringkat: satu atau dua minggu -->
-        <div :class="cn('mb-6 grid gap-4', membandingkan && '2xl:grid-cols-2')">
+        <!-- Peringkat: satu atau dua minggu, berdampingan bila layar memadai -->
+        <div :class="cn('mb-6 grid gap-4', membandingkan && 'xl:grid-cols-2')">
             <TabelPeringkat
                 :periode="periode(filter.minggu)"
                 :baris="peringkat"

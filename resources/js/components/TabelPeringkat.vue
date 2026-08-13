@@ -46,11 +46,11 @@ const KELAS_BILAH = {
                 <Table>
                     <TableHeader>
                         <TableRow class="hover:bg-transparent">
-                            <TableHead class="w-14 pl-4 text-center">#</TableHead>
-                            <TableHead class="min-w-[10rem]">Unit Kerja</TableHead>
-                            <TableHead class="w-28 text-center">Lead Diisi</TableHead>
-                            <TableHead class="w-44">% Capaian</TableHead>
-                            <TableHead class="w-28 text-center">Status</TableHead>
+                            <TableHead class="w-12 pl-3 text-center">#</TableHead>
+                            <TableHead class="min-w-[8rem]">Unit Kerja</TableHead>
+                            <TableHead class="w-24 text-center">Lead Diisi</TableHead>
+                            <TableHead class="w-32">% Capaian</TableHead>
+                            <TableHead class="w-24 text-center">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -60,7 +60,7 @@ const KELAS_BILAH = {
                             :class="cn('cursor-pointer', item.cabang_id === cabangDipilih && 'bg-secondary')"
                             @click="emit('pilih', item.cabang_id)"
                         >
-                            <TableCell class="pl-4 text-center">
+                            <TableCell class="pl-3 text-center">
                                 <span
                                     :class="
                                         cn(
@@ -75,14 +75,15 @@ const KELAS_BILAH = {
                             <TableCell class="text-sm font-medium whitespace-normal">{{ item.nama }}</TableCell>
                             <TableCell class="text-center text-sm tabular-nums">{{ item.jumlah_lead }}</TableCell>
                             <TableCell>
-                                <div class="flex items-center gap-2">
-                                    <div class="bg-muted h-2 flex-1 overflow-hidden rounded-full">
-                                        <div
-                                            :class="cn('h-full rounded-full', KELAS_BILAH[item.status])"
-                                            :style="{ width: `${Math.min(item.pct, 100)}%` }"
-                                        />
-                                    </div>
-                                    <span class="w-16 text-right text-sm font-medium tabular-nums">
+                                <div class="bg-muted relative h-5 overflow-hidden rounded">
+                                    <div
+                                        :class="cn('h-full rounded', KELAS_BILAH[item.status])"
+                                        :style="{ width: `${Math.min(item.pct, 100)}%` }"
+                                    />
+                                    <span
+                                        class="absolute inset-0 flex items-center justify-center text-xs font-semibold tabular-nums"
+                                        :class="item.pct >= 45 ? 'text-white' : 'text-foreground'"
+                                    >
                                         {{ item.pct }}%
                                     </span>
                                 </div>
