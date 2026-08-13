@@ -252,14 +252,64 @@ class LagLeadInertiaTest extends TestCase
 
     /* ---------------- Lead ---------------- */
 
-    public function test_daftar_lead_kosong_sebelum_wig_dan_cabang_dipilih(): void
+    private function buatLead(string $kode, ?LagMeasure $lag = null, array $ubah = []): LeadMeasure
     {
+        return LeadMeasure::create(array_merge([
+            'kode_lead' => $kode,
+            'lag_measure_id' => ($lag ?? $this->buatLag())->id,
+            'wig_id' => $this->wig->id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead '.$kode,
+            'is_active' => true,
+            'tahun' => (int) date('Y'),
+        ], $ubah));
+    }
+
+    public function test_semua_lead_tampil_tanpa_penyaringan(): void
+    {
+        $lag = $this->buatLag();
+        $this->buatLead('LEAD-A', $lag);
+        $this->buatLead('LEAD-B', $lag);
+
         $this->actingAs($this->admin())
             ->get('/lead-measures')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('LeadMeasure/Index')
-                ->has('leads', 0)
+                ->has('leads.data', 2)
+                ->where('filter.wig_id', null)
+                ->where('filter.lag_id', null)
+            );
+    }
+
+    public function test_filter_lag_menyaring_lead(): void
+    {
+        $lagA = $this->buatLag();
+        $lagB = $this->buatLag(['kode_lag' => 'BDG-02-'.date('Y')]);
+
+        $this->buatLead('LEAD-A', $lagA);
+        $this->buatLead('LEAD-B', $lagB);
+
+        $this->actingAs($this->admin())
+            ->get("/lead-measures?lag_id={$lagB->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('leads.data', 1)
+                ->where('leads.data.0.kode_lead', 'LEAD-B')
+                ->where('filter.lag_id', $lagB->id)
+            );
+    }
+
+    public function test_lag_di_luar_daftar_diabaikan_sebagai_filter(): void
+    {
+        $this->buatLead('LEAD-A');
+
+        $this->actingAs($this->admin())
+            ->get('/lead-measures?lag_id=99999')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('leads.data', 1)
+                ->where('filter.lag_id', null)
             );
     }
 
@@ -279,8 +329,8 @@ class LagLeadInertiaTest extends TestCase
             ->get("/lead-measures?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}")
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('leads', 1)
-                ->where('leads.0.kode_lead', 'LEAD-KEPESERTAAN-BDG-01-'.date('Y'))
+                ->has('leads.data', 1)
+                ->where('leads.data.0.kode_lead', 'LEAD-KEPESERTAAN-BDG-01-'.date('Y'))
             );
     }
 
@@ -306,9 +356,9 @@ class LagLeadInertiaTest extends TestCase
             ->get("/lead-measures?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}")
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('leads', 2)
-                ->where('leads.0.kode_lead', 'LEAD-B')
-                ->where('leads.1.kode_lead', 'LEAD-A')
+                ->has('leads.data', 2)
+                ->where('leads.data.0.kode_lead', 'LEAD-B')
+                ->where('leads.data.1.kode_lead', 'LEAD-A')
             );
     }
 

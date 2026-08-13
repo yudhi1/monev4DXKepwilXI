@@ -27,36 +27,54 @@ class LeadMeasureController extends Controller
             ? $user->cabang_id
             : $request->query('cabang_id');
 
-        $leads = collect();
-        $lags = collect();
+        $wigs = Wig::query()
+            ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
+            ->orderBy('kode_wig')
+            ->get(['id', 'kode_wig', 'nama_wig', 'bidang']);
 
-        // Daftar baru terisi setelah WIG dan cabang dipilih — sama seperti versi Livewire.
-        if ($wigId && $cabangId) {
-            $leads = LeadMeasure::with('lagMeasure:id,kode_lag,nama_lag')
-                ->where('wig_id', $wigId)
-                ->where('cabang_id', $cabangId)
-                // Yang aktif didahulukan; Lead nonaktif turun ke bawah.
-                ->orderByDesc('is_active')
-                ->orderBy('kode_lead')
-                ->get();
-
-            $lags = LagMeasure::where('wig_id', $wigId)
-                ->where(fn ($q) => $q->whereNull('cabang_id')->orWhere('cabang_id', $cabangId))
-                ->orderBy('kode_lag')
-                ->get(['id', 'kode_lag', 'nama_lag']);
+        if ($wigId && ! $wigs->contains('id', (int) $wigId)) {
+            $wigId = null;
         }
+
+        // Pilihan Lag menyempit mengikuti WIG dan cabang yang sedang disaring.
+        $lags = LagMeasure::query()
+            ->whereIn('wig_id', $wigs->pluck('id'))
+            ->when($wigId, fn ($q, $id) => $q->where('wig_id', $id))
+            ->when($cabangId, fn ($q, $id) => $q->where(
+                fn ($sub) => $sub->whereNull('cabang_id')->orWhere('cabang_id', $id)
+            ))
+            ->orderBy('kode_lag')
+            ->get(['id', 'kode_lag', 'nama_lag', 'wig_id']);
+
+        $lagId = $request->query('lag_id');
+
+        if ($lagId && ! $lags->contains('id', (int) $lagId)) {
+            $lagId = null;
+        }
+
+        // Seluruh Lead ditampilkan sejak halaman dibuka; penyaringan bersifat opsional.
+        $leads = LeadMeasure::query()
+            ->with(['lagMeasure:id,kode_lag,nama_lag', 'wig:id,kode_wig,bidang', 'cabang:id,nama'])
+            ->whereIn('wig_id', $wigs->pluck('id'))
+            ->where('tahun', $tahun)
+            ->when($wigId, fn ($q, $id) => $q->where('wig_id', $id))
+            ->when($cabangId, fn ($q, $id) => $q->where('cabang_id', $id))
+            ->when($lagId, fn ($q, $id) => $q->where('lag_measure_id', $id))
+            // Yang aktif didahulukan; Lead nonaktif turun ke bawah.
+            ->orderByDesc('is_active')
+            ->orderBy('kode_lead')
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('LeadMeasure/Index', [
             'leads' => $leads,
             'lags' => $lags,
-            'wigs' => Wig::query()
-                ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
-                ->orderBy('kode_wig')
-                ->get(['id', 'kode_wig', 'nama_wig', 'bidang']),
+            'wigs' => $wigs,
             'cabangs' => $this->cabangTerpilih($user),
             'filter' => [
-                'wig_id' => $wigId,
-                'cabang_id' => $cabangId,
+                'wig_id' => $wigId ? (int) $wigId : null,
+                'lag_id' => $lagId ? (int) $lagId : null,
+                'cabang_id' => $cabangId ? (int) $cabangId : null,
                 'tahun' => $tahun,
             ],
             'terkunciCabang' => (bool) $user?->hasRole('kantor_cabang'),

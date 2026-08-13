@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import Paginasi from '@/components/Paginasi.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeftRight, Pencil, Plus, Power, TrendingUp, Trash2 } from '@lucide/vue';
+import { Pencil, Plus, Power, TrendingUp, Trash2 } from '@lucide/vue';
 import { kelasBidang } from '@/lib/bidang';
 import { kelasAktif } from '@/lib/status';
 
@@ -41,27 +42,33 @@ const props = defineProps({
     terkunciCabang: { type: Boolean, default: false },
 });
 
-/* --- Konteks: WIG + cabang harus dipilih dulu --- */
-const wigId = ref(props.filter.wig_id ? String(props.filter.wig_id) : '');
-const cabangId = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : '');
-const tahun = ref(props.filter.tahun);
+/* --- Penyaringan; seluruh Lead tampil sejak halaman dibuka --- */
+const SEMUA = 'semua';
 
-const konteksLengkap = computed(() => !! wigId.value && !! cabangId.value);
+const wigId = ref(props.filter.wig_id ? String(props.filter.wig_id) : SEMUA);
+const lagId = ref(props.filter.lag_id ? String(props.filter.lag_id) : SEMUA);
+const cabangId = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : SEMUA);
+const tahun = ref(props.filter.tahun);
 
 const muatUlang = () =>
     router.get(
         '/lead-measures',
         {
-            wig_id: wigId.value || undefined,
-            cabang_id: cabangId.value || undefined,
+            wig_id: wigId.value === SEMUA ? undefined : wigId.value,
+            lag_id: lagId.value === SEMUA ? undefined : lagId.value,
+            cabang_id: cabangId.value === SEMUA ? undefined : cabangId.value,
             tahun: tahun.value,
         },
         { preserveState: true, replace: true }
     );
 
-watch([wigId, cabangId, tahun], muatUlang);
+watch([wigId, lagId, cabangId, tahun], muatUlang);
+
+/* Mengganti WIG membuat pilihan Lag sebelumnya tidak relevan lagi. */
+watch(wigId, () => (lagId.value = SEMUA));
 
 const wigTerpilih = computed(() => props.wigs.find((w) => String(w.id) === wigId.value));
+const lagTerpilih = computed(() => props.lags.find((l) => String(l.id) === lagId.value));
 
 /* --- Form --- */
 const dialogTerbuka = ref(false);
@@ -136,10 +143,10 @@ const bukaTambah = async () => {
     lagPilihan.value = [];
 
     // Mengikuti pilihan di halaman bila ada, tapi tidak mewajibkannya.
-    form.wig_id = wigId.value;
+    form.wig_id = wigId.value === SEMUA ? '' : wigId.value;
     form.cabang_id = props.terkunciCabang && props.filter.cabang_id
         ? String(props.filter.cabang_id)
-        : cabangId.value;
+        : (cabangId.value === SEMUA ? '' : cabangId.value);
     form.tahun = tahun.value;
 
     dialogTerbuka.value = true;
@@ -163,18 +170,7 @@ const simpan = () => {
     const opsi = {
         preserveScroll: true,
         onSuccess: () => {
-            const konteksBaru = form.wig_id !== wigId.value || form.cabang_id !== cabangId.value;
-
             dialogTerbuka.value = false;
-
-            // Bila menyimpan untuk kombinasi lain, pindahkan halaman ke sana
-            // supaya data yang baru dibuat langsung terlihat.
-            if (konteksBaru) {
-                wigId.value = form.wig_id;
-                cabangId.value = form.cabang_id;
-                tahun.value = form.tahun;
-            }
-
             form.reset();
         },
     };
@@ -236,57 +232,102 @@ const hapus = () => {
             </div>
         </template>
 
-        <!-- Pemilih konteks -->
+        <!-- Penyaringan -->
         <Card class="mb-4">
-            <CardContent class="flex flex-wrap items-end gap-4">
-                <div class="min-w-72 flex-1 space-y-2">
-                    <Label>WIG</Label>
-                    <Select v-model="wigId">
-                        <SelectTrigger class="w-full">
-                            <SelectValue placeholder="Pilih WIG" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
-                                {{ w.kode_wig }} — {{ w.nama_wig }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+            <CardContent class="space-y-4">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="min-w-72 flex-1 space-y-2">
+                        <Label>WIG</Label>
+                        <Select v-model="wigId">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="Semua WIG" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="SEMUA">Semua WIG</SelectItem>
+                                <SelectItem v-for="w in wigs" :key="w.id" :value="String(w.id)">
+                                    {{ w.kode_wig }} — {{ w.nama_wig }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="min-w-72 flex-1 space-y-2">
+                        <Label>Lag Measure</Label>
+                        <Select v-model="lagId">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="Semua Lag" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="SEMUA">Semua Lag</SelectItem>
+                                <SelectItem v-for="l in lags" :key="l.id" :value="String(l.id)">
+                                    {{ l.kode_lag }} — {{ l.nama_lag }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="min-w-56 flex-1 space-y-2">
+                        <Label>Cabang</Label>
+                        <Select v-model="cabangId" :disabled="terkunciCabang">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="Semua cabang" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="SEMUA">Semua cabang</SelectItem>
+                                <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
+                                    {{ c.nama }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="w-28 space-y-2">
+                        <Label for="tahun">Tahun</Label>
+                        <Input id="tahun" v-model.number="tahun" type="number" />
+                    </div>
                 </div>
 
-                <div class="min-w-56 flex-1 space-y-2">
-                    <Label>Cabang</Label>
-                    <Select v-model="cabangId" :disabled="terkunciCabang">
-                        <SelectTrigger class="w-full">
-                            <SelectValue placeholder="Pilih cabang" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
-                                {{ c.nama }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                <!-- Keterangan pilihan, menggantikan panel terpisah di tengah halaman -->
+                <div class="bg-muted/40 space-y-1.5 rounded-lg border p-3 text-sm">
+                    <p class="font-medium">Pilihan Anda</p>
 
-                <div class="w-28 space-y-2">
-                    <Label for="tahun">Tahun</Label>
-                    <Input id="tahun" v-model.number="tahun" type="number" />
+                    <div class="flex flex-wrap items-start gap-2">
+                        <span class="text-muted-foreground w-12 shrink-0">Wig :</span>
+                        <template v-if="wigTerpilih">
+                            <Badge variant="secondary" class="font-mono text-xs">{{ wigTerpilih.kode_wig }}</Badge>
+                            <Badge
+                                v-if="wigTerpilih.bidang"
+                                variant="outline"
+                                :class="kelasBidang(wigTerpilih.bidang)"
+                            >
+                                {{ wigTerpilih.bidang }}
+                            </Badge>
+                            <span class="text-muted-foreground min-w-0 flex-1 whitespace-pre-wrap">
+                                {{ wigTerpilih.nama_wig }}
+                            </span>
+                        </template>
+                        <span v-else class="text-muted-foreground">Semua WIG</span>
+                    </div>
+
+                    <div class="flex flex-wrap items-start gap-2">
+                        <span class="text-muted-foreground w-12 shrink-0">Lag :</span>
+                        <template v-if="lagTerpilih">
+                            <Badge variant="outline" class="font-mono text-xs">{{ lagTerpilih.kode_lag }}</Badge>
+                            <span class="text-muted-foreground min-w-0 flex-1 whitespace-pre-wrap">
+                                {{ lagTerpilih.nama_lag }}
+                            </span>
+                        </template>
+                        <span v-else class="text-muted-foreground">Semua Lag</span>
+                    </div>
                 </div>
             </CardContent>
         </Card>
 
-        <div v-if="wigTerpilih && konteksLengkap" class="bg-accent/40 mb-4 rounded-lg border p-3 text-sm">
-            <div class="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" class="font-mono">{{ wigTerpilih.kode_wig }}</Badge>
-                <Badge v-if="wigTerpilih.bidang" variant="outline" :class="kelasBidang(wigTerpilih.bidang)">{{ wigTerpilih.bidang }}</Badge>
-            </div>
-            <p class="text-muted-foreground mt-1.5 whitespace-pre-wrap">{{ wigTerpilih.nama_wig }}</p>
-        </div>
-
         <!-- Daftar -->
-        <Card v-if="konteksLengkap" class="overflow-hidden py-0">
+        <Card class="overflow-hidden py-0">
             <div class="flex items-center gap-3 border-b px-4 py-3">
                 <h2 class="text-sm font-medium">Daftar Lead Measure</h2>
-                <span class="text-muted-foreground ml-auto text-sm">{{ leads.length }} lead</span>
+                <span class="text-muted-foreground ml-auto text-sm">{{ leads.total }} lead</span>
             </div>
 
             <CardContent class="p-0">
@@ -297,22 +338,18 @@ const hapus = () => {
                                 <TableHead class="w-14 pl-4">#</TableHead>
                                 <TableHead class="w-64">Kode</TableHead>
                                 <TableHead class="w-[34rem] min-w-[20rem]">Nama Lead</TableHead>
-                                <TableHead>Lag Measure</TableHead>
                                 <TableHead class="w-24 text-center">Status</TableHead>
                                 <TableHead class="w-32 pr-4 text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow v-for="(lead, index) in leads" :key="lead.id">
-                                <TableCell class="text-muted-foreground pl-4 tabular-nums">{{ index + 1 }}</TableCell>
+                            <TableRow v-for="(lead, index) in leads.data" :key="lead.id">
+                                <TableCell class="text-muted-foreground pl-4 tabular-nums">{{ leads.from + index }}</TableCell>
                                 <TableCell>
                                     <Badge variant="secondary" class="font-mono text-xs">{{ lead.kode_lead }}</Badge>
                                 </TableCell>
                                 <TableCell class="align-top text-sm">
                                     <div class="max-w-[34rem] whitespace-pre-wrap">{{ lead.nama_lead }}</div>
-                                </TableCell>
-                                <TableCell class="text-muted-foreground text-sm">
-                                    {{ lead.lag_measure?.kode_lag ?? '—' }}
                                 </TableCell>
                                 <TableCell class="text-center">
                                     <Badge variant="outline" :class="kelasAktif(lead.is_active)">
@@ -345,11 +382,11 @@ const hapus = () => {
                                 </TableCell>
                             </TableRow>
 
-                            <TableRow v-if="leads.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="6" class="py-12">
+                            <TableRow v-if="leads.data.length === 0" class="hover:bg-transparent">
+                                <TableCell colspan="5" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <TrendingUp class="size-8 opacity-40" />
-                                        <p class="text-sm">Belum ada Lead Measure untuk kombinasi ini.</p>
+                                        <p class="text-sm">Tidak ada Lead Measure yang cocok.</p>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -357,16 +394,8 @@ const hapus = () => {
                     </Table>
                 </div>
             </CardContent>
-        </Card>
 
-        <!-- Belum memilih konteks -->
-        <Card v-else>
-            <CardContent class="py-16">
-                <div class="text-muted-foreground flex flex-col items-center gap-2">
-                    <ArrowLeftRight class="size-8 opacity-40" />
-                    <p class="text-sm">Pilih WIG dan cabang terlebih dahulu untuk melihat Lead Measure.</p>
-                </div>
-            </CardContent>
+            <Paginasi :data="leads" />
         </Card>
 
         <!-- Dialog tambah / edit -->
