@@ -10,6 +10,12 @@ class LeadMeasureRealisasi extends Model
 {
     use LogsActivity;
 
+    /**
+     * Jumlah minggu pelaporan dalam satu bulan. Dijadikan satu sumber
+     * kebenaran karena dipakai form input, dashboard, dan laporan.
+     */
+    public const JUMLAH_MINGGU = 5;
+
     protected $table = 'lead_measure_realisasis';
 
     protected $fillable = [

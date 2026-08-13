@@ -24,6 +24,7 @@ const props = defineProps({
     detailLeadBanding: { type: [Array, null], default: null },
     sasaran: { type: [Object, null], default: null },
     filter: { type: Object, required: true },
+    jumlahMinggu: { type: Number, default: 5 },
 });
 
 const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -192,7 +193,7 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
                     <Select v-model="minggu">
                         <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem v-for="m in 4" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
+                            <SelectItem v-for="m in jumlahMinggu" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -204,7 +205,7 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
                         <SelectContent>
                             <SelectItem :value="TANPA">Tanpa pembanding</SelectItem>
                             <SelectItem
-                                v-for="m in 4"
+                                v-for="m in jumlahMinggu"
                                 :key="m"
                                 :value="String(m)"
                                 :disabled="String(m) === minggu"

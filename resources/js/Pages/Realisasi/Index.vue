@@ -47,7 +47,7 @@ const wigTerpilih = computed(() => props.wigs.find((w) => String(w.id) === wigId
 /* ---------------- Edit per Lead ---------------- */
 /*
  | Tiap Lead disimpan sendiri (seperti versi Livewire), tapi pengetikan
- | seluruh 4 minggu terjadi lokal dan dikirim dalam satu permintaan.
+ | seluruh minggunya terjadi lokal dan dikirim dalam satu permintaan.
  */
 const draf = reactive({});
 const sedangDiedit = ref(null);
@@ -117,7 +117,7 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Input Realisasi Mingguan</h1>
                 <p class="text-muted-foreground mt-1 text-sm">
-                    Isi target dan realisasi tiap Lead Measure untuk empat minggu dalam satu bulan.
+                    Isi target dan realisasi tiap Lead Measure untuk seluruh minggu dalam satu bulan.
                 </p>
             </div>
         </template>

@@ -29,11 +29,11 @@ class DashboardKepwilController extends Controller
 
         $tahun = (int) $request->query('tahun', date('Y'));
         $bulan = min(max((int) $request->query('bulan', date('n')), 1), 12);
-        $minggu = min(max((int) $request->query('minggu', (int) ceil(date('j') / 7)), 1), 4);
+        $minggu = min(max((int) $request->query('minggu', (int) ceil(date('j') / 7)), 1), LeadMeasureRealisasi::JUMLAH_MINGGU);
 
         // Minggu pembanding bersifat opsional dan harus berbeda dari minggu utama.
         $mingguBanding = $request->query('minggu_banding');
-        $mingguBanding = $mingguBanding ? min(max((int) $mingguBanding, 1), 4) : null;
+        $mingguBanding = $mingguBanding ? min(max((int) $mingguBanding, 1), LeadMeasureRealisasi::JUMLAH_MINGGU) : null;
 
         if ($mingguBanding === $minggu) {
             $mingguBanding = null;
@@ -79,6 +79,7 @@ class DashboardKepwilController extends Controller
             'cabangs' => $cabangs,
             'wigs' => $wigs,
             'lags' => $lags,
+            'jumlahMinggu' => LeadMeasureRealisasi::JUMLAH_MINGGU,
             'peringkat' => $peringkat,
             'ringkasan' => [
                 'total_cabang' => $cabangs->count(),
@@ -252,10 +253,10 @@ class DashboardKepwilController extends Controller
         }
 
         if ($bulan > 1) {
-            return [$tahun, $bulan - 1, 4];
+            return [$tahun, $bulan - 1, LeadMeasureRealisasi::JUMLAH_MINGGU];
         }
 
-        return [$tahun - 1, 12, 4];
+        return [$tahun - 1, 12, LeadMeasureRealisasi::JUMLAH_MINGGU];
     }
 
     private function wilayahTerbatas(?User $user): ?int

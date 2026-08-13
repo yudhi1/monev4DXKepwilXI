@@ -28,7 +28,7 @@ class DashboardCabangController extends Controller
         $tahun = (int) $request->query('tahun', date('Y'));
         $bulan = (int) $request->query('bulan', date('n'));
         $minggu = (int) $request->query('minggu', $this->mingguBerjalan());
-        $minggu = min(max($minggu, 1), 4);
+        $minggu = min(max($minggu, 1), LeadMeasureRealisasi::JUMLAH_MINGGU);
 
         $cabangs = $this->cabangTerpilih($user);
         $cabangId = $this->tentukanCabang($request, $user, $cabangs);
@@ -62,6 +62,7 @@ class DashboardCabangController extends Controller
                 'on_track' => $onTrack,
                 'avg_pct' => $avgPct,
             ],
+            'jumlahMinggu' => LeadMeasureRealisasi::JUMLAH_MINGGU,
             'bulanData' => $this->capaianPerBulan($tahun, $cabangId),
             'rankingCabang' => $this->rankingCabang($user, $tahun, $cabangs),
             'wigProgress' => $this->progresWig($cabangId, $tahun, $bulan),
@@ -71,7 +72,7 @@ class DashboardCabangController extends Controller
 
     private function mingguBerjalan(): int
     {
-        return min(max((int) ceil(date('j') / 7), 1), 4);
+        return min(max((int) ceil(date('j') / 7), 1), LeadMeasureRealisasi::JUMLAH_MINGGU);
     }
 
     private function periodeSebelumnya(int $tahun, int $bulan, int $minggu): array
@@ -81,10 +82,10 @@ class DashboardCabangController extends Controller
         }
 
         if ($bulan > 1) {
-            return [$tahun, $bulan - 1, 4];
+            return [$tahun, $bulan - 1, LeadMeasureRealisasi::JUMLAH_MINGGU];
         }
 
-        return [$tahun - 1, 12, 4];
+        return [$tahun - 1, 12, LeadMeasureRealisasi::JUMLAH_MINGGU];
     }
 
     private function cabangTerpilih(?User $user)
@@ -317,7 +318,7 @@ class DashboardCabangController extends Controller
             $leadLabelMingguan = [];
 
             for ($b = 1; $b <= 12; $b++) {
-                for ($m = 1; $m <= 4; $m++) {
+                for ($m = 1; $m <= LeadMeasureRealisasi::JUMLAH_MINGGU; $m++) {
                     $leadPctMingguan[] = round((float) ($petaMingguan[$b][$m] ?? 0), 2);
                     $leadLabelMingguan[] = 'B'.$b.'-M'.$m;
                 }

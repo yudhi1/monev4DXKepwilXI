@@ -73,11 +73,12 @@ class RealisasiLeadInertiaTest extends TestCase
         return User::factory()->create()->assignRole('admin');
     }
 
-    private function empatMinggu(int $target = 100, int $realisasi = 80): array
+    /** Satu paket isian untuk seluruh minggu dalam sebulan. */
+    private function semuaMinggu(int $target = 100, int $realisasi = 80): array
     {
         $minggu = [];
 
-        for ($m = 1; $m <= 4; $m++) {
+        for ($m = 1; $m <= LeadMeasureRealisasi::JUMLAH_MINGGU; $m++) {
             $minggu[] = ['minggu_ke' => $m, 'target' => $target, 'realisasi' => $realisasi, 'keterangan' => null];
         }
 
@@ -95,16 +96,16 @@ class RealisasiLeadInertiaTest extends TestCase
             );
     }
 
-    public function test_tiap_lead_selalu_punya_empat_minggu(): void
+    public function test_tiap_lead_punya_baris_untuk_semua_minggu(): void
     {
         $this->actingAs($this->admin())
             ->get("/realisasi?wig_id={$this->wig->id}&cabang_id={$this->cabang->id}&tahun={$this->tahun}&bulan=3")
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->has('leads', 1)
-                ->has('leads.0.minggu', 4)
+                ->has('leads.0.minggu', LeadMeasureRealisasi::JUMLAH_MINGGU)
                 ->where('leads.0.minggu.0.minggu_ke', 1)
-                ->where('leads.0.minggu.3.minggu_ke', 4)
+                ->where('leads.0.minggu.4.minggu_ke', LeadMeasureRealisasi::JUMLAH_MINGGU)
             );
     }
 
@@ -117,7 +118,7 @@ class RealisasiLeadInertiaTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->has('leads', 0));
     }
 
-    public function test_menyimpan_empat_minggu_sekaligus(): void
+    public function test_menyimpan_seluruh_minggu_sekaligus(): void
     {
         $this->actingAs($this->admin())
             ->post('/realisasi', [
@@ -125,11 +126,14 @@ class RealisasiLeadInertiaTest extends TestCase
                 'cabang_id' => $this->cabang->id,
                 'tahun' => $this->tahun,
                 'bulan' => 3,
-                'minggu' => $this->empatMinggu(),
+                'minggu' => $this->semuaMinggu(),
             ])
             ->assertSessionHas('success');
 
-        $this->assertSame(4, LeadMeasureRealisasi::where('lead_measure_id', $this->lead->id)->count());
+        $this->assertSame(
+            LeadMeasureRealisasi::JUMLAH_MINGGU,
+            LeadMeasureRealisasi::where('lead_measure_id', $this->lead->id)->count()
+        );
     }
 
     public function test_persentase_dihitung_otomatis_saat_menyimpan(): void
@@ -140,7 +144,7 @@ class RealisasiLeadInertiaTest extends TestCase
                 'cabang_id' => $this->cabang->id,
                 'tahun' => $this->tahun,
                 'bulan' => 3,
-                'minggu' => $this->empatMinggu(200, 150),
+                'minggu' => $this->semuaMinggu(200, 150),
             ]);
 
         $baris = LeadMeasureRealisasi::where('lead_measure_id', $this->lead->id)->first();
@@ -155,14 +159,17 @@ class RealisasiLeadInertiaTest extends TestCase
             'cabang_id' => $this->cabang->id,
             'tahun' => $this->tahun,
             'bulan' => 3,
-            'minggu' => $this->empatMinggu(100, $realisasi),
+            'minggu' => $this->semuaMinggu(100, $realisasi),
         ]);
 
         $this->actingAs($this->admin());
         $kirim(50);
         $kirim(90);
 
-        $this->assertSame(4, LeadMeasureRealisasi::where('lead_measure_id', $this->lead->id)->count());
+        $this->assertSame(
+            LeadMeasureRealisasi::JUMLAH_MINGGU,
+            LeadMeasureRealisasi::where('lead_measure_id', $this->lead->id)->count()
+        );
         $this->assertEquals(90, LeadMeasureRealisasi::where('minggu_ke', 1)->first()->realisasi);
     }
 
@@ -178,7 +185,7 @@ class RealisasiLeadInertiaTest extends TestCase
                 'cabang_id' => $lain->id,
                 'tahun' => $this->tahun,
                 'bulan' => 3,
-                'minggu' => $this->empatMinggu(),
+                'minggu' => $this->semuaMinggu(),
             ])
             ->assertSessionHas('error');
 
@@ -202,7 +209,7 @@ class RealisasiLeadInertiaTest extends TestCase
                 'cabang_id' => $lain->id,
                 'tahun' => $this->tahun,
                 'bulan' => 3,
-                'minggu' => $this->empatMinggu(),
+                'minggu' => $this->semuaMinggu(),
             ])
             ->assertSessionHas('error');
 

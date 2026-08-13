@@ -156,7 +156,7 @@ class DashboardCabangInertiaTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->has('wigProgress', 1)
                 ->has('wigProgress.0.wig_pct_bulan', 12)
-                ->has('wigProgress.0.lead_pct_mingguan', 48)
+                ->has('wigProgress.0.lead_pct_mingguan', 12 * LeadMeasureRealisasi::JUMLAH_MINGGU)
                 ->has('wigProgress.0.korelasi')
             );
     }

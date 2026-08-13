@@ -20,6 +20,7 @@ const props = defineProps({
     cabangs: { type: Array, required: true },
     namaBulan: { type: Array, required: true },
     filter: { type: Object, required: true },
+    jumlahMinggu: { type: Number, default: 5 },
 });
 
 const SEMUA = 'semua';
@@ -173,7 +174,7 @@ const warnaPersen = (nilai) =>
                             <SelectTrigger class="w-full"><SelectValue placeholder="Semua minggu" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem :value="SEMUA">Semua minggu</SelectItem>
-                                <SelectItem v-for="m in 4" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
+                                <SelectItem v-for="m in jumlahMinggu" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

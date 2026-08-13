@@ -14,7 +14,7 @@ use Inertia\Response;
 
 /**
  * Input realisasi mingguan Lead Measure: satu WIG + cabang + bulan,
- * tiap Lead Measure diisi untuk 4 minggu sekaligus.
+ * tiap Lead Measure diisi untuk seluruh minggu dalam bulan itu sekaligus.
  */
 class RealisasiLeadController extends Controller
 {
@@ -44,6 +44,7 @@ class RealisasiLeadController extends Controller
             'cabangs' => $cabangs,
             'leads' => $this->daftarLead($wigId, $cabangId, $tahun, $bulan),
             'namaBulan' => self::BULAN,
+            'jumlahMinggu' => LeadMeasureRealisasi::JUMLAH_MINGGU,
             'filter' => [
                 'wig_id' => $wigId,
                 'cabang_id' => $cabangId,
@@ -55,7 +56,7 @@ class RealisasiLeadController extends Controller
     }
 
     /**
-     * Menyimpan satu Lead Measure untuk keempat minggunya sekaligus.
+     * Menyimpan satu Lead Measure untuk seluruh minggunya sekaligus.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -64,8 +65,8 @@ class RealisasiLeadController extends Controller
             'cabang_id' => ['required', 'exists:cabangs,id'],
             'tahun' => ['required', 'integer', 'min:2000', 'max:2100'],
             'bulan' => ['required', 'integer', 'min:1', 'max:12'],
-            'minggu' => ['required', 'array', 'size:4'],
-            'minggu.*.minggu_ke' => ['required', 'integer', 'min:1', 'max:4'],
+            'minggu' => ['required', 'array', 'size:'.LeadMeasureRealisasi::JUMLAH_MINGGU],
+            'minggu.*.minggu_ke' => ['required', 'integer', 'min:1', 'max:'.LeadMeasureRealisasi::JUMLAH_MINGGU],
             'minggu.*.target' => ['nullable', 'numeric'],
             'minggu.*.realisasi' => ['nullable', 'numeric'],
             'minggu.*.keterangan' => ['nullable', 'string', 'max:1000'],
@@ -130,7 +131,7 @@ class RealisasiLeadController extends Controller
 
             $minggu = [];
 
-            for ($m = 1; $m <= 4; $m++) {
+            for ($m = 1; $m <= LeadMeasureRealisasi::JUMLAH_MINGGU; $m++) {
                 $r = $perMinggu->get($m);
 
                 $minggu[] = [

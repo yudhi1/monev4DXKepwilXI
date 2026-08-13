@@ -113,6 +113,7 @@ class ReportController extends Controller
             ]),
             'cabangs' => $cabangs->map(fn (Cabang $c) => ['id' => $c->id, 'nama' => $c->nama]),
             'namaBulan' => self::BULAN,
+            'jumlahMinggu' => LeadMeasureRealisasi::JUMLAH_MINGGU,
             'filter' => [
                 'tahun' => $tahun,
                 'wig_id' => $request->query('wig_id'),

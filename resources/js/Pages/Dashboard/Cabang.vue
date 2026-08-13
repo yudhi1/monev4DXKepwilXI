@@ -24,6 +24,7 @@ const props = defineProps({
     rankingCabang: { type: Array, required: true },
     wigProgress: { type: Array, required: true },
     pohonWig: { type: Array, required: true },
+    jumlahMinggu: { type: Number, default: 5 },
 });
 
 const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -277,7 +278,7 @@ const toggleWig = (id) => (wigTerbuka.value[id] = ! wigTerbuka.value[id]);
                         <Select v-model="minggu">
                             <SelectTrigger class="w-32"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem v-for="m in 4" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
+                                <SelectItem v-for="m in jumlahMinggu" :key="m" :value="String(m)">Minggu {{ m }}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
