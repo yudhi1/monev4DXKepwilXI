@@ -116,6 +116,49 @@ class LaporanPanduanInertiaTest extends TestCase
             );
     }
 
+    public function test_filter_lag_menyaring_hasil(): void
+    {
+        $this->buatRealisasi(3, 1, 100, 75);
+
+        // Lead kedua di bawah Lag berbeda pada WIG yang sama.
+        $lagLain = LagMeasure::create([
+            'kode_lag' => 'LAG-02',
+            'wig_id' => $this->lead->wig_id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lag' => 'Lag Kedua',
+            'tahun' => $this->tahun,
+        ]);
+
+        $leadLain = LeadMeasure::create([
+            'kode_lead' => 'LEAD-02',
+            'lag_measure_id' => $lagLain->id,
+            'wig_id' => $this->lead->wig_id,
+            'cabang_id' => $this->cabang->id,
+            'nama_lead' => 'Lead Kedua',
+            'is_active' => true,
+            'tahun' => $this->tahun,
+        ]);
+
+        LeadMeasureRealisasi::create([
+            'lead_measure_id' => $leadLain->id,
+            'cabang_id' => $this->cabang->id,
+            'tahun' => $this->tahun,
+            'bulan' => 3,
+            'minggu_ke' => 1,
+            'target' => 100,
+            'realisasi' => 20,
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get("/laporan?tahun={$this->tahun}&lag_id={$lagLain->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('realisasis.data', 1)
+                ->where('realisasis.data.0.kode_lead', 'LEAD-02')
+                ->has('lags', 2)
+            );
+    }
+
     public function test_kantor_cabang_hanya_melihat_datanya_sendiri(): void
     {
         $lain = Cabang::create([

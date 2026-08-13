@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\RealisasiExport;
 use App\Models\Cabang;
-use App\Models\LeadMeasure;
+use App\Models\LagMeasure;
 use App\Models\LeadMeasureRealisasi;
 use App\Models\Wig;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -29,8 +29,8 @@ class ReportController extends Controller
         if ($request->filled('wig_id')) {
             $q->whereHas('leadMeasure', fn ($l) => $l->where('wig_id', $request->wig_id));
         }
-        if ($request->filled('lead_measure_id')) {
-            $q->where('lead_measure_id', $request->lead_measure_id);
+        if ($request->filled('lag_id')) {
+            $q->whereHas('leadMeasure', fn ($l) => $l->where('lag_measure_id', $request->lag_id));
         }
         if ($request->filled('bulan')) {
             $q->where('bulan', (int) $request->bulan);
@@ -64,14 +64,14 @@ class ReportController extends Controller
         }
         $wigs = $wigsQ->get();
 
-        $leadsQ = LeadMeasure::with('lagMeasure.wig')->orderBy('kode_lead');
+        $lagsQ = LagMeasure::orderBy('kode_lag');
         if ($request->filled('wig_id')) {
-            $leadsQ->where('wig_id', $request->wig_id);
+            $lagsQ->where('wig_id', $request->wig_id);
         }
         if ($u && ! $u->hasRole('admin') && $u->wilayah_id) {
-            $leadsQ->whereHas('wig', fn ($w) => $w->where('wilayah_id', $u->wilayah_id));
+            $lagsQ->whereHas('wig', fn ($w) => $w->where('wilayah_id', $u->wilayah_id));
         }
-        $leads = $leadsQ->get();
+        $lags = $lagsQ->get();
 
         $cabangsQ = Cabang::orderBy('nama');
         if ($u && $u->hasRole('kantor_cabang') && $u->cabang_id) {
@@ -106,10 +106,10 @@ class ReportController extends Controller
                 'kode_wig' => $w->kode_wig,
                 'nama_wig' => $w->nama_wig,
             ]),
-            'leads' => $leads->map(fn (LeadMeasure $l) => [
+            'lags' => $lags->map(fn (LagMeasure $l) => [
                 'id' => $l->id,
-                'kode_lead' => $l->kode_lead,
-                'nama_lead' => $l->nama_lead,
+                'kode_lag' => $l->kode_lag,
+                'nama_lag' => $l->nama_lag,
             ]),
             'cabangs' => $cabangs->map(fn (Cabang $c) => ['id' => $c->id, 'nama' => $c->nama]),
             'namaBulan' => self::BULAN,
@@ -117,7 +117,7 @@ class ReportController extends Controller
             'filter' => [
                 'tahun' => $tahun,
                 'wig_id' => $request->query('wig_id'),
-                'lead_measure_id' => $request->query('lead_measure_id'),
+                'lag_id' => $request->query('lag_id'),
                 'cabang_id' => $request->query('cabang_id'),
                 'bulan' => $request->query('bulan'),
                 'minggu' => $request->query('minggu'),

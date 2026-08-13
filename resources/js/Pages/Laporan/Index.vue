@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 const props = defineProps({
     realisasis: { type: Object, required: true },
     wigs: { type: Array, required: true },
-    leads: { type: Array, required: true },
+    lags: { type: Array, required: true },
     cabangs: { type: Array, required: true },
     namaBulan: { type: Array, required: true },
     filter: { type: Object, required: true },
@@ -29,7 +29,7 @@ const nilaiAwal = (kunci) => (props.filter[kunci] ? String(props.filter[kunci]) 
 
 const tahun = ref(props.filter.tahun);
 const wigId = ref(nilaiAwal('wig_id'));
-const leadId = ref(nilaiAwal('lead_measure_id'));
+const lagId = ref(nilaiAwal('lag_id'));
 const cabangId = ref(nilaiAwal('cabang_id'));
 const bulan = ref(nilaiAwal('bulan'));
 const minggu = ref(nilaiAwal('minggu'));
@@ -37,30 +37,30 @@ const minggu = ref(nilaiAwal('minggu'));
 const kueri = computed(() => ({
     tahun: tahun.value,
     wig_id: wigId.value === SEMUA ? undefined : wigId.value,
-    lead_measure_id: leadId.value === SEMUA ? undefined : leadId.value,
+    lag_id: lagId.value === SEMUA ? undefined : lagId.value,
     cabang_id: cabangId.value === SEMUA ? undefined : cabangId.value,
     bulan: bulan.value === SEMUA ? undefined : bulan.value,
     minggu: minggu.value === SEMUA ? undefined : minggu.value,
 }));
 
-watch([tahun, wigId, leadId, cabangId, bulan, minggu], () => {
+watch([tahun, wigId, lagId, cabangId, bulan, minggu], () => {
     router.get('/laporan', kueri.value, { preserveState: true, preserveScroll: true, replace: true });
 });
 
-/* Mengganti WIG membuat pilihan Lead sebelumnya tidak relevan lagi. */
-watch(wigId, () => (leadId.value = SEMUA));
+/* Mengganti WIG membuat pilihan Lag sebelumnya tidak relevan lagi. */
+watch(wigId, () => (lagId.value = SEMUA));
 
 const aturUlang = () => {
     tahun.value = new Date().getFullYear();
     wigId.value = SEMUA;
-    leadId.value = SEMUA;
+    lagId.value = SEMUA;
     cabangId.value = SEMUA;
     bulan.value = SEMUA;
     minggu.value = SEMUA;
 };
 
 const adaFilter = computed(() =>
-    [wigId, leadId, cabangId, bulan, minggu].some((f) => f.value !== SEMUA)
+    [wigId, lagId, cabangId, bulan, minggu].some((f) => f.value !== SEMUA)
 );
 
 const tautanEkspor = (jenis) => {
@@ -130,13 +130,13 @@ const warnaPersen = (nilai) =>
                     </div>
 
                     <div class="space-y-2">
-                        <Label>Lead Measure</Label>
-                        <Select v-model="leadId">
-                            <SelectTrigger class="w-full"><SelectValue placeholder="Semua Lead" /></SelectTrigger>
+                        <Label>Lag Measure</Label>
+                        <Select v-model="lagId">
+                            <SelectTrigger class="w-full"><SelectValue placeholder="Semua Lag" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem :value="SEMUA">Semua Lead</SelectItem>
-                                <SelectItem v-for="l in leads" :key="l.id" :value="String(l.id)">
-                                    {{ l.kode_lead }} — {{ l.nama_lead }}
+                                <SelectItem :value="SEMUA">Semua Lag</SelectItem>
+                                <SelectItem v-for="l in lags" :key="l.id" :value="String(l.id)">
+                                    {{ l.kode_lag }} — {{ l.nama_lag }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
