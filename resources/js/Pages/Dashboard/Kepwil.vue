@@ -2,13 +2,11 @@
 import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import Grafik from '@/components/grafik/Grafik.vue';
 import TabelDetailLead from '@/components/TabelDetailLead.vue';
-import { opsiDasar, warnaToken } from '@/components/grafik/pakaiTemaGrafik';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Building2 } from '@lucide/vue';
@@ -75,46 +73,6 @@ const semuaUnitKerja = computed(() => props.filter.cabang_id === null);
 const periode = (m) => `Minggu ${m} / ${BULAN_PANJANG[props.filter.bulan - 1]} ${props.filter.tahun}`;
 
 const membandingkan = computed(() => props.detailLeadBanding !== null);
-
-/* ---------------- Grafik peringkat ---------------- */
-const dataPeringkat = computed(() => ({
-    labels: props.peringkat.map((p) => p.nama),
-    datasets: [
-        {
-            label: '% Capaian',
-            data: props.peringkat.map((p) => p.pct),
-            backgroundColor: props.peringkat.map((p) =>
-                p.status === 'on'
-                    ? warnaToken('success')
-                    : p.status === 'waspada'
-                      ? warnaToken('warning')
-                      : warnaToken('destructive')
-            ),
-            borderRadius: 4,
-        },
-    ],
-}));
-
-const opsiPeringkat = computed(() => ({
-    ...opsiDasar({ maxY: 120, legend: false }),
-    indexAxis: 'y',
-    scales: {
-        x: {
-            beginAtZero: true,
-            suggestedMax: 120,
-            ticks: { color: warnaToken('muted-foreground'), callback: (v) => `${v}%` },
-            grid: { color: warnaToken('border') },
-            border: { display: false },
-        },
-        y: {
-            ticks: { color: warnaToken('muted-foreground') },
-            grid: { display: false },
-            border: { color: warnaToken('border') },
-        },
-    },
-}));
-
-const tinggiGrafik = computed(() => Math.max(props.peringkat.length * 36 + 40, 200));
 
 /* ---------------- Gaya status ---------------- */
 const KELAS_STATUS = {
@@ -316,20 +274,6 @@ const LABEL_STATUS = { on: 'On Track', waspada: 'Waspada', awas: 'Awas' };
                 :tampilkan-cabang="semuaUnitKerja"
             />
         </div>
-
-        <!-- Grafik peringkat -->
-        <Card v-if="peringkat.length" class="mb-6">
-            <CardHeader>
-                <CardTitle class="text-base">Peringkat Capaian Cabang</CardTitle>
-                <CardDescription>
-                    Rata-rata persentase Lead Measure pada Minggu {{ filter.minggu }}. Hijau ≥100%, kuning ≥90%,
-                    merah di bawahnya.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Grafik tipe="bar" :data="dataPeringkat" :opsi="opsiPeringkat" :tinggi-px="tinggiGrafik" />
-            </CardContent>
-        </Card>
 
         <!-- Tabel peringkat -->
         <Card class="overflow-hidden py-0">
