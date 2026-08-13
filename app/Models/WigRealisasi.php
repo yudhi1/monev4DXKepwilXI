@@ -12,7 +12,7 @@ class WigRealisasi extends Model
 
     protected $table = 'wig_realisasis';
 
-    protected $fillable = ['wig_id', 'cabang_id', 'tahun', 'bulan', 'nilai', 'catatan', 'created_by'];
+    protected $fillable = ['wig_id', 'cabang_id', 'tahun', 'bulan', 'target', 'nilai', 'catatan', 'created_by'];
 
     protected $casts = [
         'nilai' => 'decimal:2',

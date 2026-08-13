@@ -13,9 +13,8 @@ use App\Http\Controllers\MonevSegmenController;
 use App\Http\Controllers\RealisasiLeadController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WigCapaianController;
 use App\Http\Controllers\WigController;
-use App\Http\Controllers\WigRealisasiController;
-use App\Http\Controllers\WigTargetController;
 use App\Http\Controllers\WilayahController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -64,8 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/wigs/{wig}', [WigController::class, 'update'])->name('wigs.update');
         Route::delete('/wigs/{wig}', [WigController::class, 'destroy'])->name('wigs.destroy');
 
-        Route::get('/wig-targets', [WigTargetController::class, 'index'])->name('wig-targets');
-        Route::post('/wig-targets', [WigTargetController::class, 'store'])->name('wig-targets.store');
+        // Target WIG kini menyatu dengan realisasinya di /wig-capaian.
         Route::get('/lag-measures', [LagMeasureController::class, 'index'])->name('lags');
         Route::get('/lag-measures/kode', [LagMeasureController::class, 'kodeSaran'])->name('lags.kode');
         Route::post('/lag-measures', [LagMeasureController::class, 'store'])->name('lags.store');
@@ -91,8 +89,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/realisasi', [RealisasiLeadController::class, 'store'])->name('realisasi.store');
 
     Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
-        Route::get('/wig-realisasi', [WigRealisasiController::class, 'index'])->name('wig-realisasi');
-        Route::post('/wig-realisasi', [WigRealisasiController::class, 'store'])->name('wig-realisasi.store');
+        Route::get('/wig-capaian', [WigCapaianController::class, 'index'])->name('wig-capaian');
+        Route::post('/wig-capaian', [WigCapaianController::class, 'store'])->name('wig-capaian.store');
         Route::get('/monitoring-prioritas/iuran', [IuranMonitoringController::class, 'index'])->name('monitoring-prioritas.iuran');
         Route::get('/monitoring-prioritas/iuran/excel', [IuranMonitoringController::class, 'excel'])->name('monitoring-prioritas.iuran.excel');
         Route::get('/monitoring-prioritas/iuran/pdf', [IuranMonitoringController::class, 'pdf'])->name('monitoring-prioritas.iuran.pdf');

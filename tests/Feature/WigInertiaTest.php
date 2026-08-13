@@ -162,36 +162,39 @@ class WigInertiaTest extends TestCase
             );
     }
 
-    /* ---------------- Target WIG ---------------- */
+    /* ---------------- Target & Realisasi WIG ---------------- */
 
-    public function test_halaman_target_menyiapkan_baris_untuk_tiap_cabang(): void
+    public function test_halaman_capaian_menyiapkan_baris_per_unit_kerja(): void
     {
         $wig = $this->buatWig();
         Cabang::create(['kode' => 'KC-JKT', 'nama' => 'Cabang Jakarta', 'wilayah_id' => $this->wilayah->id]);
 
         $this->actingAs($this->admin())
-            ->get("/wig-targets?wig_id={$wig->id}")
+            ->get("/wig-capaian?wig_id={$wig->id}&tahun={$this->tahun}")
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->component('Wig/Target')
+                ->component('Wig/Capaian')
                 ->has('baris', 2)
+                ->has('baris.0.bulan', 12)
                 ->where('baris.0.satuan', 'Rp')
+                ->where('bisaUbahTarget', true)
             );
     }
 
-    public function test_menyimpan_target_per_cabang(): void
+    public function test_menyimpan_target_tahunan_dan_bulanan_sekaligus(): void
     {
         $wig = $this->buatWig();
 
         $this->actingAs($this->admin())
-            ->post('/wig-targets', [
+            ->post('/wig-capaian', [
                 'wig_id' => $wig->id,
+                'tahun' => $this->tahun,
                 'baris' => [[
                     'cabang_id' => $this->cabang->id,
-                    'nilai_awal' => 100,
-                    'nilai_target' => 500,
+                    'nilai_target' => 1200,
                     'satuan' => 'orang',
                     'tanggal_target' => '2026-12-31',
+                    'bulan' => $this->duaBelasBulan(100, 90),
                 ]],
             ])
             ->assertSessionHas('success');
@@ -199,112 +202,29 @@ class WigInertiaTest extends TestCase
         $this->assertDatabaseHas('wig_targets', [
             'wig_id' => $wig->id,
             'cabang_id' => $this->cabang->id,
-            'nilai_target' => 500,
+            'nilai_target' => 1200,
             'satuan' => 'orang',
         ]);
-    }
-
-    public function test_target_cabang_di_luar_wilayah_diabaikan(): void
-    {
-        $wig = $this->buatWig();
-        $lainWilayah = Wilayah::create(['kode' => 'W02', 'nama' => 'Wilayah Dua']);
-        $cabangLain = Cabang::create([
-            'kode' => 'KC-SBY', 'nama' => 'Cabang Surabaya', 'wilayah_id' => $lainWilayah->id,
-        ]);
-
-        $user = User::factory()->create(['wilayah_id' => $this->wilayah->id])->assignRole('kedeputian_wilayah');
-
-        $this->actingAs($user)
-            ->post('/wig-targets', [
-                'wig_id' => $wig->id,
-                'baris' => [[
-                    'cabang_id' => $cabangLain->id,
-                    'nilai_awal' => 0,
-                    'nilai_target' => 999,
-                    'satuan' => 'Rp',
-                    'tanggal_target' => null,
-                ]],
-            ])
-            ->assertSessionHas('success');
-
-        $this->assertDatabaseMissing('wig_targets', ['cabang_id' => $cabangLain->id]);
-    }
-
-    /* ---------------- Realisasi WIG ---------------- */
-
-    public function test_halaman_realisasi_selalu_menyiapkan_dua_belas_baris(): void
-    {
-        $wig = $this->buatWig();
-
-        $this->actingAs($this->admin())
-            ->get("/wig-realisasi?wig_id={$wig->id}&cabang_id={$this->cabang->id}&tahun={$this->tahun}")
-            ->assertOk()
-            ->assertInertia(fn (AssertableInertia $page) => $page
-                ->component('Wig/Realisasi')
-                ->has('baris', 12)
-                ->where('baris.0.bulan', 1)
-                ->where('baris.11.bulan', 12)
-            );
-    }
-
-    public function test_menyimpan_realisasi_dua_belas_bulan(): void
-    {
-        $wig = $this->buatWig();
-
-        $baris = [];
-
-        for ($bulan = 1; $bulan <= 12; $bulan++) {
-            $baris[] = ['bulan' => $bulan, 'nilai' => $bulan * 10, 'catatan' => null];
-        }
-
-        $this->actingAs($this->admin())
-            ->post('/wig-realisasi', [
-                'wig_id' => $wig->id,
-                'cabang_id' => $this->cabang->id,
-                'tahun' => $this->tahun,
-                'baris' => $baris,
-            ])
-            ->assertSessionHas('success');
 
         $this->assertSame(12, WigRealisasi::where('wig_id', $wig->id)->count());
-        $this->assertDatabaseHas('wig_realisasis', ['wig_id' => $wig->id, 'bulan' => 12, 'nilai' => 120]);
+        $this->assertDatabaseHas('wig_realisasis', [
+            'wig_id' => $wig->id,
+            'bulan' => 1,
+            'target' => 100,
+            'nilai' => 90,
+        ]);
     }
 
-    public function test_progres_dihitung_terhadap_rentang_awal_ke_target(): void
+    public function test_kantor_cabang_tidak_dapat_mengubah_target(): void
     {
         $wig = $this->buatWig();
 
         WigTarget::create([
             'wig_id' => $wig->id,
             'cabang_id' => $this->cabang->id,
-            'nilai_awal' => 100,
-            'nilai_target' => 600,
-            'satuan' => 'orang',
-        ]);
-
-        WigRealisasi::create([
-            'wig_id' => $wig->id,
-            'cabang_id' => $this->cabang->id,
-            'tahun' => $this->tahun,
-            'bulan' => 1,
-            'nilai' => 250,
-        ]);
-
-        // Rentang 500, realisasi 250 → 50%
-        $this->actingAs($this->admin())
-            ->get("/wig-realisasi?wig_id={$wig->id}&cabang_id={$this->cabang->id}&tahun={$this->tahun}")
-            ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('ringkasan.total_realisasi', 250)
-                ->where('ringkasan.progres', 50)
-                ->where('ringkasan.nilai_sekarang', 350)
-            );
-    }
-
-    public function test_kantor_cabang_tidak_bisa_menyimpan_untuk_cabang_lain(): void
-    {
-        $wig = $this->buatWig();
-        $lain = Cabang::create([
-            'kode' => 'KC-JKT', 'nama' => 'Cabang Jakarta', 'wilayah_id' => $this->wilayah->id,
+            'nilai_awal' => 0,
+            'nilai_target' => 500,
+            'satuan' => 'Rp',
         ]);
 
         $user = User::factory()->create([
@@ -312,21 +232,82 @@ class WigInertiaTest extends TestCase
             'cabang_id' => $this->cabang->id,
         ])->assignRole('kantor_cabang');
 
-        $baris = [];
+        $this->actingAs($user)
+            ->post('/wig-capaian', [
+                'wig_id' => $wig->id,
+                'tahun' => $this->tahun,
+                'baris' => [[
+                    'cabang_id' => $this->cabang->id,
+                    'nilai_target' => 999999,
+                    'satuan' => 'orang',
+                    'tanggal_target' => null,
+                    'bulan' => $this->duaBelasBulan(100, 90),
+                ]],
+            ])
+            ->assertSessionHas('success');
 
-        for ($bulan = 1; $bulan <= 12; $bulan++) {
-            $baris[] = ['bulan' => $bulan, 'nilai' => 10, 'catatan' => null];
-        }
+        // Target tahunan maupun target bulanan tetap seperti semula.
+        $this->assertDatabaseHas('wig_targets', ['wig_id' => $wig->id, 'nilai_target' => 500, 'satuan' => 'Rp']);
+        $this->assertDatabaseHas('wig_realisasis', ['wig_id' => $wig->id, 'bulan' => 1, 'target' => 0, 'nilai' => 90]);
+    }
+
+    public function test_unit_kerja_di_luar_wilayah_diabaikan(): void
+    {
+        $wig = $this->buatWig();
+        $wilayahLain = Wilayah::create(['kode' => 'W02', 'nama' => 'Wilayah Dua']);
+        $cabangLuar = Cabang::create([
+            'kode' => 'KC-SBY', 'nama' => 'Cabang Surabaya', 'wilayah_id' => $wilayahLain->id,
+        ]);
+
+        $user = User::factory()->create(['wilayah_id' => $this->wilayah->id])->assignRole('kedeputian_wilayah');
 
         $this->actingAs($user)
-            ->post('/wig-realisasi', [
+            ->post('/wig-capaian', [
                 'wig_id' => $wig->id,
-                'cabang_id' => $lain->id,
                 'tahun' => $this->tahun,
-                'baris' => $baris,
+                'baris' => [[
+                    'cabang_id' => $cabangLuar->id,
+                    'nilai_target' => 777,
+                    'satuan' => 'Rp',
+                    'tanggal_target' => null,
+                    'bulan' => $this->duaBelasBulan(10, 10),
+                ]],
             ])
-            ->assertSessionHas('error');
+            ->assertSessionHas('success');
 
-        $this->assertDatabaseMissing('wig_realisasis', ['cabang_id' => $lain->id]);
+        $this->assertDatabaseMissing('wig_targets', ['cabang_id' => $cabangLuar->id]);
+        $this->assertDatabaseMissing('wig_realisasis', ['cabang_id' => $cabangLuar->id]);
+    }
+
+    public function test_kantor_cabang_hanya_melihat_barisnya_sendiri(): void
+    {
+        $wig = $this->buatWig();
+        Cabang::create(['kode' => 'KC-JKT', 'nama' => 'Cabang Jakarta', 'wilayah_id' => $this->wilayah->id]);
+
+        $user = User::factory()->create([
+            'wilayah_id' => $this->wilayah->id,
+            'cabang_id' => $this->cabang->id,
+        ])->assignRole('kantor_cabang');
+
+        $this->actingAs($user)
+            ->get("/wig-capaian?wig_id={$wig->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('baris', 1)
+                ->where('baris.0.cabang_id', $this->cabang->id)
+                ->where('bisaUbahTarget', false)
+            );
+    }
+
+    /** Isian dua belas bulan dengan target dan realisasi yang sama tiap bulan. */
+    private function duaBelasBulan(float $target, float $realisasi): array
+    {
+        $bulan = [];
+
+        for ($b = 1; $b <= 12; $b++) {
+            $bulan[] = ['bulan' => $b, 'target' => $target, 'realisasi' => $realisasi];
+        }
+
+        return $bulan;
     }
 }
