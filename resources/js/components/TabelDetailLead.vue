@@ -1,5 +1,7 @@
 <script setup>
+import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Building2, Minus, TrendingDown, TrendingUp } from '@lucide/vue';
@@ -9,13 +11,34 @@ import { cn } from '@/lib/utils';
  * Rincian Lead Measure satu kantor cabang pada satu minggu.
  * Dipakai berulang agar dua minggu bisa dibandingkan berdampingan.
  */
-defineProps({
+const props = defineProps({
     judul: { type: String, required: true },
     periode: { type: String, required: true },
     baris: { type: Array, required: true },
     /** Kolom unit kerja hanya ditampilkan bila rinciannya mencakup lebih dari satu. */
     tampilkanCabang: { type: Boolean, default: false },
+    perHalaman: { type: Number, default: 5 },
 });
+
+/*
+ | Paginasi ditangani di sisi klien: datanya sudah lengkap di halaman, dan
+ | tiap tabel perbandingan perlu berpindah halaman sendiri-sendiri.
+ */
+const halaman = ref(1);
+
+const totalHalaman = computed(() => Math.max(Math.ceil(props.baris.length / props.perHalaman), 1));
+
+const barisTampil = computed(() => {
+    const mulai = (halaman.value - 1) * props.perHalaman;
+
+    return props.baris.slice(mulai, mulai + props.perHalaman);
+});
+
+const dari = computed(() => (props.baris.length === 0 ? 0 : (halaman.value - 1) * props.perHalaman + 1));
+const sampai = computed(() => Math.min(halaman.value * props.perHalaman, props.baris.length));
+
+// Data berganti (mis. filter berubah) — kembali ke halaman pertama.
+watch(() => props.baris, () => (halaman.value = 1));
 
 const KELAS_STATUS = {
     on: 'border-success/30 bg-success/10 text-success',
@@ -63,9 +86,9 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="(lead, i) in baris" :key="lead.id">
+                        <TableRow v-for="(lead, i) in barisTampil" :key="lead.id">
                             <TableCell class="text-muted-foreground pl-4 text-center tabular-nums">
-                                {{ i + 1 }}
+                                {{ dari + i }}
                             </TableCell>
                             <TableCell
                                 v-if="tampilkanCabang"
@@ -121,5 +144,23 @@ const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDig
                 </Table>
             </div>
         </CardContent>
+
+        <div v-if="baris.length" class="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
+            <p class="text-muted-foreground text-sm">
+                Menampilkan {{ dari }}–{{ sampai }} dari {{ baris.length }}
+            </p>
+
+            <div v-if="totalHalaman > 1" class="flex items-center gap-2">
+                <Button variant="outline" size="sm" :disabled="halaman === 1" @click="halaman--">
+                    Sebelumnya
+                </Button>
+                <span class="text-muted-foreground text-sm tabular-nums">
+                    {{ halaman }} / {{ totalHalaman }}
+                </span>
+                <Button variant="outline" size="sm" :disabled="halaman === totalHalaman" @click="halaman++">
+                    Berikutnya
+                </Button>
+            </div>
+        </div>
     </Card>
 </template>
