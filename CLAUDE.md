@@ -60,7 +60,23 @@ Tabel utama:
 - Validasi input wajib di Form Request
 - Kontrol akses per role lewat middleware `role:` (spatie) di `routes/web.php`
 
+## Struktur Multi-Modul
+Aplikasi ini menampung dua modul dengan **satu login** dan satu tabel `users`:
+
+| Modul | URL | Kode |
+|---|---|---|
+| Monev 4DX | root (`/dashboard`, `/wigs`, …) | `App\Http\Controllers\*`, `Pages/*` |
+| Project Management | `/pm` | `App\Http\Controllers\Pm\*`, `App\Models\Pm\*`, `Pages/Pm/*` |
+
+- Modul dipilih di `/apps` setelah login; user yang hanya berhak atas satu modul langsung dialihkan.
+- Daftar modul: `config/modul.php`. Akses modul disaring middleware `modul:<kunci>`.
+- Menu sidebar per modul: `resources/js/layouts/menu.js`.
+- Tabel PM berprefiks `pm_`. Nama rute PM berprefiks `pm.`.
+- Status/prioritas/peran PM ada di `config/pm.php`, bukan enum MySQL.
+
 ## Rencana Aktif
 - [docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md](docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md) —
-  persiapan menampung modul kedua (Project Management) dalam satu aplikasi & satu login.
-  Fase 0 (bersih-bersih Livewire) selesai.
+  Fase 0 (bersih-bersih Livewire) dan Fase 1 (kerangka modul) selesai.
+  Fase 2 (memindahkan URL 4DX ke `/4dx`) **ditunda**.
+- [docs/PRD_Modul_Project_Management.md](docs/PRD_Modul_Project_Management.md) —
+  tahap Core sedang dikerjakan; Kolaborasi, Management, dan Dashboard Eksekutif belum.

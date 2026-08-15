@@ -14,26 +14,29 @@ import {
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-    BookOpen,
     ChartNoAxesCombined,
     ChevronDown,
-    Database,
-    FileText,
-    Gauge,
+    FolderKanban,
+    Grid2x2,
     LayoutDashboard,
     LogOut,
     Menu,
     PanelLeft,
-    Star,
-    Target,
-    TrendingDown,
-    TrendingUp,
 } from '@lucide/vue';
 import { cn } from '@/lib/utils';
+import { BRAND_MODUL, MENU_MODUL } from './menu';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const roles = computed(() => user.value?.roles ?? []);
+
+/* --- Modul yang sedang dibuka & modul lain yang boleh diakses --- */
+const modulAktif = computed(() => page.props.modul?.aktif ?? '4dx');
+const modulTersedia = computed(() => page.props.modul?.daftar ?? []);
+const bisaGantiModul = computed(() => modulTersedia.value.length > 1);
+const brand = computed(() => BRAND_MODUL[modulAktif.value] ?? BRAND_MODUL['4dx']);
+
+const IKON_MODUL = { ChartNoAxesCombined, FolderKanban };
 
 const ROLE_LABEL = {
     admin: 'Admin',
@@ -46,68 +49,9 @@ const initial = computed(() => (user.value?.name ?? '?').charAt(0).toUpperCase()
 
 const bisa = (...izin) => izin.some((r) => roles.value.includes(r));
 
-/*
- | `roles: null` berarti menu terbuka untuk semua role.
- */
+/* Menu diambil sesuai modul aktif, lalu disaring menurut role user. */
 const menu = computed(() =>
-    [
-        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: null },
-        {
-            label: 'Master',
-            icon: Database,
-            roles: ['admin'],
-            items: [
-                { label: 'User', href: '/users' },
-                { label: 'Wilayah', href: '/wilayahs' },
-                { label: 'Cabang', href: '/cabangs' },
-            ],
-        },
-        {
-            label: 'WIG',
-            icon: Target,
-            roles: ['admin', 'kedeputian_wilayah'],
-            items: [
-                { label: 'Input Data WIG', href: '/wigs' },
-                { label: 'Target & Realisasi WIG', href: '/wig-capaian' },
-            ],
-        },
-        { label: 'Lag Measure', href: '/lag-measures', icon: TrendingDown, roles: ['admin', 'kedeputian_wilayah'] },
-        { label: 'Realisasi WIG', href: '/wig-capaian', icon: Target, roles: ['kantor_cabang'] },
-        {
-            label: 'Lead Measure',
-            icon: TrendingUp,
-            roles: null,
-            items: [
-                { label: 'Input Data Lead Measure', href: '/lead-measures' },
-                { label: 'Input Realisasi', href: '/realisasi' },
-            ],
-        },
-        {
-            label: 'Prioritas',
-            icon: Star,
-            roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'],
-            items: [
-                { label: 'Iuran', href: '/monitoring-prioritas/iuran' },
-                { label: 'Master Segmen', href: '/monev-iuran/segmen', roles: ['admin', 'kedeputian_wilayah'] },
-                { label: 'Input Realisasi Iuran', href: '/monev-iuran/input' },
-            ],
-        },
-        {
-            label: 'Monitoring Kinerja',
-            icon: Gauge,
-            roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'],
-            items: [
-                { label: 'Capaian Total APC', href: '/monitoring-kinerja/total' },
-                { label: 'Peserta Aktif', href: '/monitoring-kinerja/peserta-aktif' },
-                { label: 'Tingkat Kepuasan', href: '/monitoring-kinerja/kepuasan' },
-                { label: 'Penerimaan Iuran', href: '/monitoring-kinerja/penerimaan-iuran' },
-                { label: 'Realisasi Biaya Manfaat', href: '/monitoring-kinerja/biaya-manfaat' },
-                { label: 'Biaya Operasional', href: '/monitoring-kinerja/biaya-operasional' },
-            ],
-        },
-        { label: 'Laporan', href: '/laporan', icon: FileText, roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'] },
-        { label: 'Panduan', href: '/panduan', icon: BookOpen, roles: null },
-    ]
+    (MENU_MODUL[modulAktif.value] ?? [])
         .filter((m) => m.roles === null || bisa(...m.roles))
         .map((m) => ({
             ...m,
@@ -186,16 +130,16 @@ const logout = () => router.post('/logout');
                 )
             "
         >
-            <!-- Brand -->
+            <!-- Brand: mengikuti modul yang sedang dibuka -->
             <div class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-                <Link href="/dashboard" class="flex items-center gap-2 overflow-hidden">
+                <Link :href="brand.beranda" class="flex items-center gap-2 overflow-hidden">
                     <span
                         class="from-primary to-success flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
                     >
                         <ChartNoAxesCombined class="size-4" />
                     </span>
                     <span v-if="!ciut" class="text-[15px] font-semibold tracking-tight whitespace-nowrap">
-                        Monev <span class="text-muted-foreground font-normal">4DX</span>
+                        {{ brand.judul }} <span class="text-muted-foreground font-normal">{{ brand.sub }}</span>
                     </span>
                 </Link>
             </div>
@@ -345,6 +289,29 @@ const logout = () => router.post('/logout');
                             <p class="text-muted-foreground text-xs font-normal">{{ user?.email }}</p>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
+
+                        <!-- Pindah modul tanpa perlu keluar dulu -->
+                        <template v-if="bisaGantiModul">
+                            <DropdownMenuLabel class="text-muted-foreground text-xs font-normal">
+                                Aplikasi
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem v-for="m in modulTersedia" :key="m.kunci" as-child>
+                                <Link
+                                    :href="m.beranda"
+                                    :class="
+                                        cn(
+                                            'w-full cursor-pointer',
+                                            m.kunci === modulAktif && 'bg-secondary font-medium'
+                                        )
+                                    "
+                                >
+                                    <component :is="IKON_MODUL[m.ikon] ?? Grid2x2" class="mr-2 size-4" />
+                                    {{ m.nama }}
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                        </template>
+
                         <DropdownMenuItem class="cursor-pointer" @select="logout">
                             <LogOut class="mr-2 size-4" />
                             Keluar
@@ -364,7 +331,7 @@ const logout = () => router.post('/logout');
                         <ChartNoAxesCombined class="size-4" />
                     </span>
                     <span class="text-[15px] font-semibold tracking-tight">
-                        Monev <span class="text-muted-foreground font-normal">4DX</span>
+                        {{ brand.judul }} <span class="text-muted-foreground font-normal">{{ brand.sub }}</span>
                     </span>
                 </div>
                 <nav class="h-[calc(100vh-3.5rem)] space-y-1 overflow-y-auto p-3">

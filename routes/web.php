@@ -8,8 +8,14 @@ use App\Http\Controllers\DashboardKepwilController;
 use App\Http\Controllers\IuranMonitoringController;
 use App\Http\Controllers\LagMeasureController;
 use App\Http\Controllers\LeadMeasureController;
+use App\Http\Controllers\ModulController;
 use App\Http\Controllers\MonevIuranController;
 use App\Http\Controllers\MonevSegmenController;
+use App\Http\Controllers\Pm\DashboardController as PmDashboardController;
+use App\Http\Controllers\Pm\MemberController as PmMemberController;
+use App\Http\Controllers\Pm\ProjectController as PmProjectController;
+use App\Http\Controllers\Pm\TaskController as PmTaskController;
+use App\Http\Controllers\Pm\TugasSayaController as PmTugasSayaController;
 use App\Http\Controllers\RealisasiLeadController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
@@ -19,7 +25,7 @@ use App\Http\Controllers\WilayahController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', fn () => redirect('/dashboard'));
+Route::get('/', fn () => redirect('/apps'));
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -28,6 +34,10 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Pemilih modul. User yang hanya berhak atas satu modul langsung dialihkan.
+    Route::get('/apps', [ModulController::class, 'index'])->name('apps');
+
     Route::get('/dashboard', function () {
         $u = auth()->user();
         if ($u && $u->hasRole('kedeputian_wilayah') && request('mode') !== 'cabang') {
@@ -120,5 +130,40 @@ Route::middleware('auth')->group(function () {
                 Route::get('/{upload}/unduh', [ApcDashboardController::class, 'unduh'])->name('monitoring-kinerja.unduh');
                 Route::delete('/{upload}', [ApcDashboardController::class, 'destroy'])->name('monitoring-kinerja.destroy');
             });
+    });
+
+    /*
+     |--------------------------------------------------------------------
+     | Modul Project Management
+     |--------------------------------------------------------------------
+     | Berprefix /pm dengan nama rute `pm.` agar tidak bentrok dengan modul
+     | 4DX yang untuk sementara masih berada di root (lihat
+     | docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md, Fase 2 ditunda).
+     |
+     | Hak akses berlapis: middleware `modul:pm` menyaring siapa yang boleh
+     | masuk modul sama sekali, sedangkan siapa boleh apa di dalam sebuah
+     | project ditentukan ProjectPolicy.
+     */
+    Route::prefix('pm')->name('pm.')->middleware('modul:pm')->group(function () {
+        Route::get('/', [PmDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/tugas-saya', [PmTugasSayaController::class, 'index'])->name('tugas-saya');
+
+        Route::get('/projects', [PmProjectController::class, 'index'])->name('projects');
+        Route::post('/projects', [PmProjectController::class, 'store'])->name('projects.store');
+        Route::get('/projects/{project}', [PmProjectController::class, 'show'])->name('projects.show');
+        Route::put('/projects/{project}', [PmProjectController::class, 'update'])->name('projects.update');
+        Route::delete('/projects/{project}', [PmProjectController::class, 'destroy'])->name('projects.destroy');
+
+        Route::prefix('projects/{project}')->group(function () {
+            Route::post('/tasks', [PmTaskController::class, 'store'])->name('tasks.store');
+            Route::put('/tasks/{task}', [PmTaskController::class, 'update'])->name('tasks.update');
+            Route::patch('/tasks/{task}/pindah', [PmTaskController::class, 'pindah'])->name('tasks.pindah');
+            Route::patch('/tasks/{task}/progress', [PmTaskController::class, 'progress'])->name('tasks.progress');
+            Route::delete('/tasks/{task}', [PmTaskController::class, 'destroy'])->name('tasks.destroy');
+
+            Route::post('/anggota', [PmMemberController::class, 'store'])->name('anggota.store');
+            Route::put('/anggota/{anggota}', [PmMemberController::class, 'update'])->name('anggota.update');
+            Route::delete('/anggota/{anggota}', [PmMemberController::class, 'destroy'])->name('anggota.destroy');
+        });
     });
 });

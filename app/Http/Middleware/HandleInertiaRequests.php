@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Modul;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -47,7 +48,12 @@ class HandleInertiaRequests extends Middleware
                     'wilayah_id' => $user->wilayah_id,
                     'cabang_id' => $user->cabang_id,
                     'roles' => $user->getRoleNames(),
+                    'permissions' => $user->getAllPermissions()->pluck('name'),
                 ] : null,
+            ],
+            'modul' => [
+                'aktif' => Modul::aktif($request),
+                'daftar' => Modul::untukUser($user),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

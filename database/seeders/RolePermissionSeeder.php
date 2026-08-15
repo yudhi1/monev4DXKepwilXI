@@ -13,23 +13,47 @@ class RolePermissionSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $permissions = [
+        /* Permission modul 4DX (yang sudah ada) + penanda akses modulnya. */
+        $izin4dx = [
+            'akses-4dx',
             'manage users', 'manage wilayah', 'manage cabang',
             'manage wig', 'manage lag', 'manage lead',
             'input realisasi', 'view dashboard', 'export laporan',
         ];
 
-        foreach ($permissions as $p) {
+        /*
+         | Permission modul Project Management.
+         |
+         | Peran di dalam sebuah project (manager/member/viewer) TIDAK ada di
+         | sini — itu disimpan per-project di pm_project_members.peran, karena
+         | satu orang bisa jadi manager di satu project dan member di project
+         | lain. Yang di sini hanya hak yang berlaku lintas project.
+         */
+        $izinPm = [
+            'akses-pm',
+            'pm.project.buat',
+            'pm.lihat-semua',
+            'pm.kelola',
+        ];
+
+        foreach ([...$izin4dx, ...$izinPm] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
 
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $admin->syncPermissions($permissions);
+        $admin->syncPermissions([...$izin4dx, ...$izinPm]);
 
         $wilayah = Role::firstOrCreate(['name' => 'kedeputian_wilayah', 'guard_name' => 'web']);
-        $wilayah->syncPermissions(['manage wig', 'manage lag', 'manage lead', 'view dashboard', 'export laporan']);
+        $wilayah->syncPermissions([
+            'akses-4dx', 'manage wig', 'manage lag', 'manage lead', 'view dashboard', 'export laporan',
+            'akses-pm', 'pm.project.buat', 'pm.lihat-semua',
+        ]);
 
         $cabang = Role::firstOrCreate(['name' => 'kantor_cabang', 'guard_name' => 'web']);
-        $cabang->syncPermissions(['input realisasi', 'view dashboard']);
+        $cabang->syncPermissions([
+            'akses-4dx', 'input realisasi', 'view dashboard',
+            // Hanya melihat project yang dia ikuti — tanpa pm.lihat-semua.
+            'akses-pm',
+        ]);
     }
 }

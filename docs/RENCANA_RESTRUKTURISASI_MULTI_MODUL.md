@@ -80,7 +80,7 @@ batas `phpoffice/phpspreadsheet` di lock file — dijalankan ulang dengan
 sebaiknya `config.platform.php` di `composer.json` dipin ke versi PHP produksi
 supaya resolusi dependensi deterministik.
 
-### Fase 1 — Kerangka modul (belum pindah URL)
+### Fase 1 — Kerangka modul (belum pindah URL) — ✅ SELESAI 15 Agustus 2026
 
 Tujuan: konsep "modul" hadir dan bisa dites, tanpa menyentuh satu URL pun.
 
@@ -103,7 +103,17 @@ Tujuan: konsep "modul" hadir dan bisa dites, tanpa menyentuh satu URL pun.
 Verifikasi: user `kantor_cabang` login → langsung masuk 4DX (tak lihat `/apps`);
 user `admin` → lihat `/apps` dengan satu kartu; buka `/pm` → 403.
 
-### Fase 2 — Pindahkan 4DX ke `/4dx`
+### Fase 2 — Pindahkan 4DX ke `/4dx` — ⏸ DITUNDA
+
+**Keputusan 15 Agustus 2026:** ditunda atas permintaan pemilik produk. Modul PM
+dibangun langsung di `/pm` sementara 4DX tetap di URL root. Alasannya fase ini murni
+risiko dan sama sekali tidak memblokir pengembangan PM — bentrok nama rute sudah
+dicegah dengan memberi prefix `pm.` pada rute modul baru.
+
+Konsekuensi yang ditanggung sementara: URL kedua modul tidak simetris (`/dashboard`
+vs `/pm`), dan menu 4DX di `resources/js/layouts/menu.js` masih menunjuk root.
+Saat fase ini akhirnya dikerjakan, hanya berkas itu dan `routes/web.php` bagian 4DX
+yang perlu disesuaikan — struktur modulnya sendiri sudah siap.
 
 Fase paling berisiko. Kerjakan sekaligus dalam satu branch, jangan dicicil.
 
