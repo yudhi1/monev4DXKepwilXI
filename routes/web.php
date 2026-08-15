@@ -45,8 +45,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-        // Fase 2 — dimigrasi ke Inertia + Vue. Komponen Livewire lama
-        // (App\Livewire\WilayahManagement) sengaja belum dihapus agar mudah dibalik.
         Route::get('/wilayahs', [WilayahController::class, 'index'])->name('wilayahs');
         Route::post('/wilayahs', [WilayahController::class, 'store'])->name('wilayahs.store');
         Route::put('/wilayahs/{wilayah}', [WilayahController::class, 'update'])->name('wilayahs.update');
@@ -124,8 +122,3 @@ Route::middleware('auth')->group(function () {
             });
     });
 });
-
-// Fase 1 — halaman uji rakitan Inertia + Vue + shadcn-vue.
-// Tidak tertaut di navigasi; hapus setelah migrasi berjalan.
-Route::middleware('auth')->get('/_inertia-check', fn () => Inertia::render('InertiaCheck'))
-    ->name('inertia.check');

@@ -2,11 +2,16 @@
 
 ## Tech Stack
 - Backend: Laravel
-- Frontend: Laravel Livewire
+- Frontend: Inertia.js + Vue 3 (SPA, komponen di `resources/js/Pages/`)
 - Database: MySQL
-- Authentication: Laravel Breeze / Jetstream
-- UI Framework: Bootstrap / Tailwind CSS
+- Authentication: sesi Laravel bawaan via `AuthController` (bukan Breeze/Jetstream)
+- UI Framework: Tailwind CSS 4 + shadcn-vue (reka-ui), ikon Lucide
+- Grafik: Chart.js via vue-chartjs
 - Reporting: Laravel Excel / DomPDF
+
+> Livewire sudah tidak dipakai lagi — seluruh halaman dimigrasi ke Inertia + Vue
+> pada Agustus 2026 dan paketnya dilepas. Blade hanya tersisa untuk shell Inertia
+> (`resources/views/inertia.blade.php`) dan template PDF DomPDF.
 
 ## Package yang Digunakan
 - spatie/laravel-permission → Role & Permission
@@ -50,7 +55,12 @@ Tabel utama:
 
 ## Konvensi Kode
 - Gunakan bahasa Indonesia untuk nama variabel domain (misal: $realisasi, $capaian)
-- Gunakan Repository Pattern untuk Model
-- Setiap fitur gunakan Livewire Component
+- Setiap halaman = satu Controller yang mengembalikan `Inertia::render()` + satu komponen di `resources/js/Pages/`
+- Navigasi antar halaman selalu pakai `<Link>` dari `@inertiajs/vue3`, bukan `<a>`
 - Validasi input wajib di Form Request
-- Gunakan Policy Laravel untuk kontrol akses per role
+- Kontrol akses per role lewat middleware `role:` (spatie) di `routes/web.php`
+
+## Rencana Aktif
+- [docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md](docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md) —
+  persiapan menampung modul kedua (Project Management) dalam satu aplikasi & satu login.
+  Fase 0 (bersih-bersih Livewire) selesai.

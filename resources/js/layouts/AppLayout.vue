@@ -47,40 +47,7 @@ const initial = computed(() => (user.value?.name ?? '?').charAt(0).toUpperCase()
 const bisa = (...izin) => izin.some((r) => roles.value.includes(r));
 
 /*
- | Selama migrasi, sebagian halaman masih Livewire/Blade. Menuju ke sana
- | harus lewat <a> biasa (muat ulang penuh) — kalau memakai <Link> Inertia,
- | server membalas HTML Blade yang tidak dikenali Inertia dan berakhir
- | tampil sebagai modal error. Hapus entri dari daftar ini setiap kali
- | sebuah halaman selesai dimigrasi.
- */
-const RUTE_INERTIA = [
-    '/dashboard-cabang',
-    '/wilayahs',
-    '/cabangs',
-    '/users',
-    '/wigs',
-    '/wig-capaian',
-    '/lag-measures',
-    '/lead-measures',
-    '/realisasi',
-    '/monev-iuran/input',
-    '/monev-iuran/segmen',
-    '/dashboard-kepwil',
-    '/monitoring-prioritas/iuran',
-    '/monitoring-kinerja',
-    '/laporan',
-    '/panduan',
-];
-
-const sudahInertia = (href) => RUTE_INERTIA.some((r) => href === r || href.startsWith(`${r}/`));
-
-/** Link untuk halaman Inertia, anchor biasa untuk halaman Livewire yang tersisa. */
-const tautan = (href) => (sudahInertia(href) ? Link : 'a');
-
-/*
- | Struktur menu mengikuti navbar Blade lama (layouts/app.blade.php) supaya
- | arsitektur informasinya tidak berubah bagi user — hanya tampilannya yang
- | pindah ke sidebar shadcn. `roles: null` berarti terbuka untuk semua role.
+ | `roles: null` berarti menu terbuka untuk semua role.
  */
 const menu = computed(() =>
     [
@@ -221,7 +188,7 @@ const logout = () => router.post('/logout');
         >
             <!-- Brand -->
             <div class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-                <component :is="tautan('/dashboard')" href="/dashboard" class="flex items-center gap-2 overflow-hidden">
+                <Link href="/dashboard" class="flex items-center gap-2 overflow-hidden">
                     <span
                         class="from-primary to-success flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
                     >
@@ -230,7 +197,7 @@ const logout = () => router.post('/logout');
                     <span v-if="!ciut" class="text-[15px] font-semibold tracking-tight whitespace-nowrap">
                         Monev <span class="text-muted-foreground font-normal">4DX</span>
                     </span>
-                </component>
+                </Link>
             </div>
 
             <!-- Navigasi -->
@@ -241,8 +208,7 @@ const logout = () => router.post('/logout');
                         <template v-if="item.href">
                             <Tooltip v-if="ciut">
                                 <TooltipTrigger as-child>
-                                    <component
-                                        :is="tautan(item.href)"
+                                    <Link
                                         :href="item.href"
                                         :class="
                                             cn(
@@ -254,14 +220,13 @@ const logout = () => router.post('/logout');
                                         "
                                     >
                                         <component :is="item.icon" class="size-[18px]" />
-                                    </component>
+                                    </Link>
                                 </TooltipTrigger>
                                 <TooltipContent side="right">{{ item.label }}</TooltipContent>
                             </Tooltip>
 
-                            <component
+                            <Link
                                 v-else
-                                :is="tautan(item.href)"
                                 :href="item.href"
                                 :class="
                                     cn(
@@ -274,7 +239,7 @@ const logout = () => router.post('/logout');
                             >
                                 <component :is="item.icon" class="size-[18px] shrink-0" />
                                 <span class="truncate">{{ item.label }}</span>
-                            </component>
+                            </Link>
                         </template>
 
                         <!-- Grup: saat ciut jadi dropdown, saat lebar jadi accordion -->
@@ -298,7 +263,7 @@ const logout = () => router.post('/logout');
                                     <DropdownMenuLabel>{{ item.label }}</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem v-for="sub in item.items" :key="sub.href" as-child>
-                                        <component :is="tautan(sub.href)" :href="sub.href" class="w-full cursor-pointer">{{ sub.label }}</component>
+                                        <Link :href="sub.href" class="w-full cursor-pointer">{{ sub.label }}</Link>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -328,10 +293,9 @@ const logout = () => router.post('/logout');
                                 </button>
 
                                 <div v-if="grupTerbuka[item.label]" class="border-border mt-1 ml-[1.4rem] space-y-0.5 border-l pl-3">
-                                    <component
+                                    <Link
                                         v-for="sub in item.items"
                                         :key="sub.href"
-                                        :is="tautan(sub.href)"
                                         :href="sub.href"
                                         :class="
                                             cn(
@@ -343,7 +307,7 @@ const logout = () => router.post('/logout');
                                         "
                                     >
                                         {{ sub.label }}
-                                    </component>
+                                    </Link>
                                 </div>
                             </div>
                         </template>
@@ -405,9 +369,8 @@ const logout = () => router.post('/logout');
                 </div>
                 <nav class="h-[calc(100vh-3.5rem)] space-y-1 overflow-y-auto p-3">
                     <template v-for="item in menu" :key="item.label">
-                        <component
+                        <Link
                             v-if="item.href"
-                            :is="tautan(item.href)"
                             :href="item.href"
                             :class="
                                 cn(
@@ -418,16 +381,15 @@ const logout = () => router.post('/logout');
                         >
                             <component :is="item.icon" class="size-[18px] shrink-0" />
                             {{ item.label }}
-                        </component>
+                        </Link>
                         <div v-else class="py-1">
                             <p class="text-muted-foreground flex items-center gap-3 px-3 py-2 text-xs font-semibold tracking-wide uppercase">
                                 <component :is="item.icon" class="size-4 shrink-0" />
                                 {{ item.label }}
                             </p>
-                            <component
+                            <Link
                                 v-for="sub in item.items"
                                 :key="sub.href"
-                                :is="tautan(sub.href)"
                                 :href="sub.href"
                                 :class="
                                     cn(
@@ -437,7 +399,7 @@ const logout = () => router.post('/logout');
                                 "
                             >
                                 {{ sub.label }}
-                            </component>
+                            </Link>
                         </div>
                     </template>
                 </nav>
