@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -46,14 +47,31 @@ class RolePermissionSeeder extends Seeder
         $wilayah = Role::firstOrCreate(['name' => 'kedeputian_wilayah', 'guard_name' => 'web']);
         $wilayah->syncPermissions([
             'akses-4dx', 'manage wig', 'manage lag', 'manage lead', 'view dashboard', 'export laporan',
-            'akses-pm', 'pm.project.buat', 'pm.lihat-semua',
+            /*
+             | Sengaja TANPA pm.lihat-semua. Role ini kini juga dipakai staf
+             | bidang di Kedeputian Wilayah, dan staf tidak boleh melihat
+             | seluruh project. Hak "pimpinan" diberikan per user sebagai
+             | permission langsung lewat form Kelola User.
+             */
+            'akses-pm', 'pm.project.buat',
         ]);
 
         $cabang = Role::firstOrCreate(['name' => 'kantor_cabang', 'guard_name' => 'web']);
         $cabang->syncPermissions([
             'akses-4dx', 'input realisasi', 'view dashboard',
-            // Hanya melihat project yang dia ikuti — tanpa pm.lihat-semua.
-            'akses-pm',
+            /*
+             | Setiap pegawai boleh membuat project atas nama bidangnya sendiri.
+             | Tanpa pm.lihat-semua: dia hanya melihat project yang dia ikuti
+             | atau yang dimiliki bidangnya.
+             */
+            'akses-pm', 'pm.project.buat',
         ]);
+
+        /*
+         | Akun institusi `kepwil` dipakai untuk memantau, jadi tetap diberi
+         | hak melihat seluruh project — sebagai permission langsung, bukan
+         | lewat role, supaya staf bidang tidak ikut kebagian.
+         */
+        User::where('name', 'kepwil')->first()?->givePermissionTo('pm.lihat-semua');
     }
 }

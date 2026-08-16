@@ -52,6 +52,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users');
+        Route::get('/users/impor/template', [UserController::class, 'templateImpor'])->name('users.impor.template');
+        Route::post('/users/impor', [UserController::class, 'impor'])->name('users.impor');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');

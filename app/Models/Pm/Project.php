@@ -2,6 +2,7 @@
 
 namespace App\Models\Pm;
 
+use App\Models\UnitKerja;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ class Project extends Model
 
     protected $fillable = [
         'kode', 'nama', 'deskripsi', 'status', 'prioritas',
-        'tanggal_mulai', 'tanggal_selesai', 'pemilik_id',
+        'tanggal_mulai', 'tanggal_selesai', 'pemilik_id', 'unit_kerja_id',
     ];
 
     protected $casts = [
@@ -26,6 +27,12 @@ class Project extends Model
     public function pemilik(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pemilik_id');
+    }
+
+    /** Bidang pemilik project — boleh berbeda dari bidang para anggotanya. */
+    public function unitKerja(): BelongsTo
+    {
+        return $this->belongsTo(UnitKerja::class, 'unit_kerja_id');
     }
 
     public function anggotas(): HasMany
@@ -53,8 +60,10 @@ class Project extends Model
     /**
      * Batasi ke project yang boleh dilihat user.
      *
-     * Pemegang `pm.lihat-semua` (admin & pimpinan) melihat semua; selain itu
-     * hanya project yang dia ikuti atau dia miliki.
+     * Pemegang `pm.lihat-semua` (admin & pimpinan) melihat semua. Selain itu:
+     * project yang dia miliki, yang dia ikuti sebagai anggota, atau yang
+     * dimiliki unit kerjanya sendiri — sehingga rekan satu bidang tetap dapat
+     * memantau pekerjaan bidangnya tanpa harus didaftarkan satu per satu.
      */
     public function scopeBisaDilihat(Builder $query, User $user): Builder
     {
@@ -65,6 +74,10 @@ class Project extends Model
         return $query->where(function (Builder $q) use ($user) {
             $q->where('pemilik_id', $user->id)
                 ->orWhereHas('anggotas', fn (Builder $a) => $a->where('user_id', $user->id));
+
+            if ($user->unit_kerja_id) {
+                $q->orWhere('unit_kerja_id', $user->unit_kerja_id);
+            }
         });
     }
 

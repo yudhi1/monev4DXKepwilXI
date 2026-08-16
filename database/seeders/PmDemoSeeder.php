@@ -18,16 +18,23 @@ class PmDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        $pemilik = User::role('admin')->first() ?? User::first();
+        /*
+         | Project dimiliki sebuah bidang dan dikerjakan pegawai perorangan,
+         | jadi seeder ini bergantung pada UnitKerjaSeeder + PegawaiDemoSeeder.
+         */
+        $pemilik = User::pegawai()->where('is_active', true)->orderBy('id')->first();
 
         if (! $pemilik) {
-            $this->command?->warn('Tidak ada user; PmDemoSeeder dilewati.');
+            $this->command?->warn('Belum ada pegawai perorangan; jalankan PegawaiDemoSeeder dulu. PmDemoSeeder dilewati.');
 
             return;
         }
 
-        $anggotaLain = User::where('id', '!=', $pemilik->id)
+        // Sengaja mencampur bidang Kepwil dan kantor cabang untuk menguji tim lintas unit.
+        $anggotaLain = User::pegawai()
             ->where('is_active', true)
+            ->where('id', '!=', $pemilik->id)
+            ->orderBy('id')
             ->take(4)
             ->get();
 
@@ -107,6 +114,7 @@ class PmDemoSeeder extends Seeder
                 'tanggal_mulai' => $data['tanggal_mulai'],
                 'tanggal_selesai' => $data['tanggal_selesai'],
                 'pemilik_id' => $pemilik->id,
+                'unit_kerja_id' => $pemilik->unit_kerja_id,
             ]
         );
 

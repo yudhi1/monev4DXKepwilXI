@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
     ArrowLeft,
+    Building2,
     CalendarClock,
     Flag,
     MessageSquare,
@@ -252,6 +253,10 @@ const kandidatTersisa = computed(() => {
                             </span>
                         </div>
                         <h1 class="mt-1 text-2xl font-semibold tracking-tight">{{ project.nama }}</h1>
+                        <p v-if="project.unitKerja" class="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
+                            <Building2 class="size-3.5 shrink-0" />
+                            {{ project.unitKerja }} &middot; {{ project.unitKerjaInduk }}
+                        </p>
                         <p class="text-muted-foreground mt-1 text-sm">
                             {{ project.progress }}% selesai &middot; PM: {{ project.pemilik }} &middot;
                             {{ tanggal(project.tanggal_mulai) }} – {{ tanggal(project.tanggal_selesai) }}
@@ -334,25 +339,35 @@ const kandidatTersisa = computed(() => {
                 <span class="font-medium">Done</span> otomatis menjadi 100%.
             </p>
 
-            <div class="grid gap-4 overflow-x-auto lg:grid-cols-5">
+            <!--
+              Papan digulir mendatar dengan lebar kolom tetap. Grid tidak dipakai
+              di sini karena kolom yang harus mempertahankan lebar minimum akan
+              saling meluber begitu jumlah kolom melebihi lebar layar.
+            -->
+            <div class="gulir-terlihat flex gap-4 overflow-x-auto pb-3">
+                <!-- Kolom dibiarkan meregang sama tinggi supaya area jatuhnya luas. -->
                 <div
                     v-for="kolom in papan"
                     :key="kolom.kunci"
                     :class="[
-                        'bg-muted/40 flex min-w-[16rem] flex-col rounded-lg border transition-colors',
+                        'bg-muted/40 flex w-[17.5rem] shrink-0 flex-col rounded-lg border transition-colors',
                         kolomSasaran === kolom.kunci && 'border-primary bg-primary/5',
                     ]"
                     @dragover.prevent="seretMasuk(kolom.kunci)"
                     @drop.prevent="jatuhkan(kolom)"
                 >
-                    <div class="flex items-center justify-between border-b px-3 py-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm font-medium">{{ kolom.label }}</span>
-                            <span class="text-muted-foreground text-xs tabular-nums">{{ kolom.tasks.length }}</span>
+                    <div class="flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
+                        <div class="flex min-w-0 items-center gap-2">
+                            <span class="truncate text-sm font-medium">{{ kolom.label }}</span>
+                            <span
+                                class="bg-secondary text-muted-foreground shrink-0 rounded px-1.5 text-xs tabular-nums"
+                            >
+                                {{ kolom.tasks.length }}
+                            </span>
                         </div>
                         <button
                             v-if="izin.kelolaTask"
-                            class="text-muted-foreground hover:text-foreground"
+                            class="text-muted-foreground hover:text-foreground shrink-0"
                             :title="`Tambah task di ${kolom.label}`"
                             @click="bukaTambahTask(kolom.kunci)"
                         >
@@ -360,7 +375,7 @@ const kandidatTersisa = computed(() => {
                         </button>
                     </div>
 
-                    <div class="flex-1 space-y-2 p-2">
+                    <div class="min-h-[6rem] flex-1 space-y-2 p-2">
                         <article
                             v-for="(task, i) in kolom.tasks"
                             :key="task.id"
@@ -374,14 +389,14 @@ const kandidatTersisa = computed(() => {
                             @drop.stop.prevent="jatuhkan(kolom, i)"
                         >
                             <div class="flex items-start justify-between gap-2">
-                                <div class="flex flex-wrap gap-1">
+                                <div class="flex min-w-0 flex-wrap gap-1">
                                     <Lencana :nilai="task.prioritas" :peta="opsi.prioritas" />
                                     <span
                                         v-if="task.milestone"
-                                        class="bg-secondary text-muted-foreground inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
+                                        class="bg-secondary text-muted-foreground inline-flex max-w-full items-center gap-1 rounded px-1.5 py-0.5 text-xs"
                                     >
-                                        <Flag class="size-3" />
-                                        {{ task.milestone }}
+                                        <Flag class="size-3 shrink-0" />
+                                        <span class="truncate">{{ task.milestone }}</span>
                                     </span>
                                 </div>
 
@@ -398,24 +413,24 @@ const kandidatTersisa = computed(() => {
                                 </div>
                             </div>
 
-                            <p class="mt-1.5 text-sm font-medium">{{ task.judul }}</p>
-                            <p v-if="task.deskripsi" class="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
+                            <p class="mt-1.5 text-sm leading-snug font-medium break-words">{{ task.judul }}</p>
+                            <p v-if="task.deskripsi" class="text-muted-foreground mt-0.5 line-clamp-2 text-xs break-words">
                                 {{ task.deskripsi }}
                             </p>
 
                             <BilahProgress :nilai="task.progress" class="mt-2.5" />
 
                             <div class="mt-2 flex items-center justify-between gap-2">
-                                <div class="flex -space-x-1.5">
+                                <div class="flex min-w-0 -space-x-1.5">
                                     <span
                                         v-for="a in task.assignees"
                                         :key="a.id"
                                         :title="a.nama"
-                                        class="bg-secondary ring-background flex size-6 items-center justify-center rounded-full text-[10px] font-semibold ring-2"
+                                        class="bg-secondary ring-background flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ring-2"
                                     >
                                         {{ a.nama?.charAt(0).toUpperCase() }}
                                     </span>
-                                    <span v-if="task.assignees.length === 0" class="text-muted-foreground text-xs">
+                                    <span v-if="task.assignees.length === 0" class="text-muted-foreground truncate text-xs">
                                         Belum ada PIC
                                     </span>
                                 </div>
@@ -423,7 +438,7 @@ const kandidatTersisa = computed(() => {
                                 <span
                                     v-if="task.deadline"
                                     :class="[
-                                        'flex items-center gap-1 text-xs whitespace-nowrap',
+                                        'flex shrink-0 items-center gap-1 text-xs whitespace-nowrap',
                                         task.terlambat ? 'font-medium text-rose-600' : 'text-muted-foreground',
                                     ]"
                                 >
@@ -434,7 +449,10 @@ const kandidatTersisa = computed(() => {
                             </div>
                         </article>
 
-                        <p v-if="kolom.tasks.length === 0" class="text-muted-foreground px-2 py-6 text-center text-xs">
+                        <p
+                            v-if="kolom.tasks.length === 0"
+                            class="text-muted-foreground px-2 py-6 text-center text-xs text-balance"
+                        >
                             {{ kolom.keterangan }}
                         </p>
                     </div>
@@ -457,6 +475,9 @@ const kandidatTersisa = computed(() => {
                             <SelectContent>
                                 <SelectItem v-for="k in kandidatTersisa" :key="k.id" :value="String(k.id)">
                                     {{ k.nama }}
+                                    <span class="text-muted-foreground text-xs">
+                                        — {{ k.unitKerja }}, {{ k.induk }}
+                                    </span>
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -485,7 +506,7 @@ const kandidatTersisa = computed(() => {
                         <TableHeader>
                             <TableRow class="hover:bg-transparent">
                                 <TableHead class="pl-4">Nama</TableHead>
-                                <TableHead>Email</TableHead>
+                                <TableHead>Unit Kerja</TableHead>
                                 <TableHead class="w-48">Peran</TableHead>
                                 <TableHead class="w-32 text-right">Kontribusi</TableHead>
                                 <TableHead v-if="izin.kelola" class="w-20 pr-4 text-right">Aksi</TableHead>
@@ -493,8 +514,17 @@ const kandidatTersisa = computed(() => {
                         </TableHeader>
                         <TableBody>
                             <TableRow v-for="a in project.anggotas" :key="a.id">
-                                <TableCell class="pl-4 font-medium">{{ a.nama }}</TableCell>
-                                <TableCell class="text-muted-foreground">{{ a.email }}</TableCell>
+                                <TableCell class="pl-4">
+                                    <p class="font-medium">{{ a.nama }}</p>
+                                    <p v-if="a.jabatan" class="text-muted-foreground text-xs">{{ a.jabatan }}</p>
+                                </TableCell>
+                                <TableCell class="text-muted-foreground">
+                                    <template v-if="a.unitKerja">
+                                        <p class="text-sm">{{ a.unitKerja }}</p>
+                                        <p class="text-xs">{{ a.induk }}</p>
+                                    </template>
+                                    <span v-else class="text-sm">{{ a.email }}</span>
+                                </TableCell>
                                 <TableCell>
                                     <Select
                                         v-if="izin.kelola"

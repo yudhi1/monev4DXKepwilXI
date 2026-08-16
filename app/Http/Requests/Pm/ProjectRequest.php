@@ -30,6 +30,17 @@ class ProjectRequest extends FormRequest
             'prioritas' => ['required', Rule::in(array_keys(config('pm.prioritas')))],
             'tanggal_mulai' => ['nullable', 'date'],
             'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
+
+            // Unit kerja pemilik. Kosong = ikut unit kerja pembuatnya.
+            'unit_kerja_id' => ['nullable', 'exists:unit_kerjas,id'],
+
+            /*
+             | Anggota ditentukan sejak project dibuat. Boleh lintas bidang dan
+             | lintas level — pegawai Kepwil dan kantor cabang bisa satu tim.
+             */
+            'anggotas' => ['array'],
+            'anggotas.*.user_id' => ['required', 'distinct', 'exists:users,id'],
+            'anggotas.*.peran' => ['required', Rule::in(array_keys(config('pm.peran')))],
         ];
     }
 

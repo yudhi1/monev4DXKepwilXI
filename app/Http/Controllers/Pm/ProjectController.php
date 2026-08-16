@@ -23,7 +23,7 @@ class ProjectController extends Controller
 
         $projects = Project::query()
             ->bisaDilihat($user)
-            ->with(['pemilik:id,name', 'tasks:id,project_id,status,progress,bobot,deadline'])
+            ->with(['pemilik:id,name', 'unitKerja.cabang:id,nama', 'tasks:id,project_id,status,progress,bobot,deadline'])
             ->withCount('anggotas')
             ->when($cari !== '', fn ($q) => $q->where(
                 fn ($sub) => $sub->where('kode', 'like', "%{$cari}%")
@@ -36,34 +36,68 @@ class ProjectController extends Controller
             ->withQueryString()
             ->through(fn (Project $p) => $this->ringkas($p, $user));
 
+        $bisaBuat = $user->can('create', Project::class);
+
         return Inertia::render('Pm/Project/Index', [
             'projects' => $projects,
             'filter' => ['cari' => $cari, 'status' => $status, 'prioritas' => $prioritas],
             'opsi' => $this->opsi(),
-            'bisaBuat' => $user->can('create', Project::class),
-            'kandidatAnggota' => $user->can('create', Project::class) ? $this->kandidatAnggota() : [],
+            'bisaBuat' => $bisaBuat,
+            'kandidatAnggota' => $bisaBuat ? $this->kandidatAnggota() : [],
+            'unitSaya' => $user->unitKerja ? [
+                'id' => $user->unitKerja->id,
+                'nama' => $user->unitKerja->nama,
+                'induk' => $user->unitKerja->tingkat === 'cabang'
+                    ? ($user->unitKerja->cabang?->nama ?? '-')
+                    : 'Kedeputian Wilayah',
+            ] : null,
         ]);
     }
 
     public function store(ProjectRequest $request): RedirectResponse
     {
-        $project = DB::transaction(function () use ($request) {
+        $data = $request->validated();
+        $anggotas = $data['anggotas'] ?? [];
+        unset($data['anggotas']);
+
+        $pembuat = $request->user();
+
+        // Project selalu dimiliki sebuah unit kerja; bawaannya unit si pembuat.
+        $data['unit_kerja_id'] = $data['unit_kerja_id'] ?? $pembuat->unit_kerja_id;
+
+        $project = DB::transaction(function () use ($data, $anggotas, $pembuat) {
             $project = Project::create([
-                ...$request->validated(),
-                'pemilik_id' => $request->user()->id,
+                ...$data,
+                'pemilik_id' => $pembuat->id,
             ]);
 
-            // Pemilik selalu tercatat sebagai anggota bertaraf manager supaya
-            // aturan keanggotaan (mis. validasi assignee) tidak perlu kasus khusus.
+            /*
+             | Pembuat selalu tercatat sebagai anggota bertaraf manager supaya
+             | aturan keanggotaan (mis. validasi assignee) tidak perlu kasus
+             | khusus. Kalau dia juga ada di daftar anggota, barisnya tidak
+             | digandakan.
+             */
             $project->anggotas()->create([
-                'user_id' => $request->user()->id,
+                'user_id' => $pembuat->id,
                 'peran' => 'manager',
             ]);
+
+            foreach ($anggotas as $anggota) {
+                if ((int) $anggota['user_id'] === $pembuat->id) {
+                    continue;
+                }
+
+                $project->anggotas()->create([
+                    'user_id' => $anggota['user_id'],
+                    'peran' => $anggota['peran'],
+                ]);
+            }
 
             return $project;
         });
 
-        return redirect("/pm/projects/{$project->id}")->with('success', 'Project berhasil dibuat.');
+        return redirect("/pm/projects/{$project->id}")
+            ->with('success', 'Project berhasil dibuat dengan '.$project->anggotas()->count().' anggota.');
     }
 
     public function show(Request $request, Project $project): Response
@@ -74,7 +108,9 @@ class ProjectController extends Controller
 
         $project->load([
             'pemilik:id,name',
-            'anggotas.user:id,name,email',
+            'unitKerja.cabang:id,nama',
+            'anggotas.user:id,name,email,jabatan,unit_kerja_id',
+            'anggotas.user.unitKerja.cabang:id,nama',
             'milestones',
             'tasks.assignees:id,name',
             'tasks.milestone:id,nama',
@@ -112,6 +148,13 @@ class ProjectController extends Controller
                     'user_id' => $a->user_id,
                     'nama' => $a->user?->name,
                     'email' => $a->user?->email,
+                    'jabatan' => $a->user?->jabatan,
+                    'unitKerja' => $a->user?->unitKerja?->nama,
+                    'induk' => $a->user?->unitKerja
+                        ? ($a->user->unitKerja->tingkat === 'cabang'
+                            ? ($a->user->unitKerja->cabang?->nama ?? '-')
+                            : 'Kedeputian Wilayah')
+                        : null,
                     'peran' => $a->peran,
                     'kontribusi' => $this->kontribusi($project, $a->user_id),
                 ])->sortBy('nama')->values(),
@@ -160,6 +203,12 @@ class ProjectController extends Controller
             'tanggal_mulai' => $project->tanggal_mulai?->toDateString(),
             'tanggal_selesai' => $project->tanggal_selesai?->toDateString(),
             'pemilik' => $project->pemilik?->name,
+            'unitKerja' => $project->unitKerja?->nama,
+            'unitKerjaInduk' => $project->unitKerja
+                ? ($project->unitKerja->tingkat === 'cabang'
+                    ? ($project->unitKerja->cabang?->nama ?? '-')
+                    : 'Kedeputian Wilayah')
+                : null,
             'progress' => $project->progress(),
             'health' => $project->health(),
             'peranSaya' => $project->peranUser($user),
@@ -218,14 +267,30 @@ class ProjectController extends Controller
         return round($nilai / $totalBobot * 100, 1);
     }
 
-    /** Semua user aktif, untuk dropdown penambahan anggota. */
+    /**
+     * Kandidat anggota: seluruh pegawai aktif dari semua bidang, baik di
+     * Kedeputian Wilayah maupun kantor cabang — keanggotaan project memang
+     * boleh lintas bidang dan lintas level.
+     *
+     * Akun institusi lama (kc.*, kepwil) tidak ikut karena bukan perorangan.
+     */
     private function kandidatAnggota(): array
     {
         return User::query()
+            ->pegawai()
             ->where('is_active', true)
+            ->with('unitKerja.cabang:id,nama')
             ->orderBy('name')
-            ->get(['id', 'name', 'email'])
-            ->map(fn (User $u) => ['id' => $u->id, 'nama' => $u->name, 'email' => $u->email])
+            ->get()
+            ->map(fn (User $u) => [
+                'id' => $u->id,
+                'nama' => $u->name,
+                'jabatan' => $u->jabatan,
+                'unitKerja' => $u->unitKerja?->nama,
+                'induk' => $u->unitKerja?->tingkat === 'cabang'
+                    ? ($u->unitKerja?->cabang?->nama ?? '-')
+                    : 'Kedeputian Wilayah',
+            ])
             ->all();
     }
 

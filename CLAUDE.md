@@ -74,6 +74,15 @@ Aplikasi ini menampung dua modul dengan **satu login** dan satu tabel `users`:
 - Tabel PM berprefiks `pm_`. Nama rute PM berprefiks `pm.`.
 - Status/prioritas/peran PM ada di `config/pm.php`, bukan enum MySQL.
 
+## Struktur Organisasi
+- `unit_kerjas` = bidang: 4 di Kedeputian Wilayah (KML, JPK, PIKUE, SDMUK) +
+  6 bidang × 11 kantor cabang (PMU, Yanfasskes, Kepesertaan, Yanser, PKP, SDMUK) = 70 unit.
+- Bidang cabang berdiri sendiri per cabang — "PMU KC Denpasar" ≠ "PMU KC Kupang".
+- `users.unit_kerja_id` terisi = akun pegawai perorangan (dipakai modul PM).
+  Akun institusi lama (`admin`, `kepwil`, `kc.*`) kosong dan hanya untuk 4DX.
+- Hak "pimpinan" (`pm.lihat-semua`) diberikan **per user**, bukan lewat role —
+  role `kedeputian_wilayah` kini juga dipakai staf bidang.
+
 ## Rencana Aktif
 - [docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md](docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md) —
   Fase 0 (bersih-bersih Livewire) dan Fase 1 (kerangka modul) selesai.

@@ -25,9 +25,42 @@ PROJECT → MILESTONE → TASK → ASSIGNEE → PROGRESS → OUTPUT → EVALUATI
 
 | Pertanyaan | Keputusan | Konsekuensi |
 |---|---|---|
-| Project terikat wilayah/cabang? | **Tidak.** Project berdiri bebas. | `pm_projects` tanpa `wilayah_id`/`cabang_id`. Keanggotaan murni lewat `pm_project_members`. |
-| Siapa boleh melihat project? | **Anggota project + pimpinan/admin.** | Query project selalu difilter keanggotaan, kecuali user punya permission `pm.lihat-semua`. |
+| Project terikat unit kerja? | **Ya, dimiliki satu bidang.** *(direvisi 16 Agu 2026)* | `pm_projects.unit_kerja_id`. Sebelumnya project berdiri bebas; diubah setelah struktur organisasi ditetapkan. |
+| Siapa boleh melihat project? | **Anggota + rekan satu unit kerja + pimpinan/admin.** | Selain pemegang `pm.lihat-semua`, query difilter keanggotaan **atau** kesamaan `unit_kerja_id`. |
+| Siapa boleh membuat project? | **Semua pegawai, atas nama unit kerjanya.** | Butuh `pm.project.buat` **dan** punya `unit_kerja_id`. Pembuat otomatis jadi Project Manager. |
+| Member ditentukan kapan? | **Saat project dibuat.** | Form pembuatan project memuat pemilihan anggota beserta perannya; masih bisa diubah di tab Members. |
 | Prefix URL 4DX dipindah ke `/4dx`? | **Ditunda.** | 4DX tetap di URL sekarang; PM langsung di `/pm`. Nama rute PM diberi prefix `pm.` agar tidak bentrok. |
+
+## 2a. Struktur Organisasi
+
+```
+Kedeputian Wilayah XI
+├── Bidang KML, JPK, PIKUE, SDMUK                 (tingkat 'wilayah')
+└── 11 Kantor Cabang
+    └── masing-masing: Bidang PMU, Yanfasskes,    (tingkat 'cabang')
+        Kepesertaan, Yanser, PKP, SDMUK
+```
+
+Disimpan di tabel `unit_kerjas` — 4 + (11 × 6) = **70 unit**. Bidang di kantor
+cabang berdiri sendiri per cabang: "Bidang PMU KC Denpasar" adalah baris berbeda
+dari "Bidang PMU KC Kupang", karena keduanya unit kerja yang berbeda.
+
+Keanggotaan project **boleh lintas bidang dan lintas level** — pegawai Bidang KML
+di Kedeputian Wilayah dapat satu tim dengan pegawai Bidang PMU KC Denpasar.
+
+**"Internal Kepwil"** adalah kantor cabang semu yang dipakai modul 4DX untuk input
+internal, bukan kantor cabang sungguhan, jadi tidak diberi struktur bidang.
+
+### Akun pengguna
+
+Modul PM bekerja atas **akun perorangan** (`users.unit_kerja_id` terisi), bukan
+akun institusi. Akun institusi lama (`admin`, `kepwil`, `kc.*`) tetap ada dan
+dipakai modul 4DX, tetapi tidak muncul sebagai kandidat anggota project.
+
+Pegawai ditambahkan admin lewat **Master → User**, satu per satu atau massal
+lewat **Impor Pegawai** (Excel: `nama`, `jabatan`, `bidang`, `cabang`; kolom
+`cabang` dikosongkan untuk pegawai Kedeputian Wilayah). Role ditentukan otomatis
+dari tingkat bidangnya. Password awal akun hasil impor: `monev2026`.
 
 **Teknologi:** mengikuti stack yang sudah ada — Laravel + Inertia + Vue 3 + Tailwind 4 +
 shadcn-vue + MySQL. Dokumen konsep revisi sudah menghapus Fortify/Sanctum, Reverb,
@@ -43,9 +76,14 @@ Dua lapis, sengaja dipisah:
 | Permission | Arti |
 |---|---|
 | `akses-pm` | Boleh masuk modul PM sama sekali |
-| `pm.project.buat` | Boleh membuat project baru |
+| `pm.project.buat` | Boleh membuat project atas nama unit kerjanya |
 | `pm.lihat-semua` | Melihat semua project tanpa harus jadi anggota (pimpinan & admin) |
 | `pm.kelola` | Kelola master/pengaturan modul PM |
+
+> **`pm.lihat-semua` sengaja tidak dilekatkan pada role `kedeputian_wilayah`.**
+> Role itu kini juga dipakai staf bidang di Kedeputian Wilayah, dan staf tidak
+> boleh melihat pekerjaan seluruh organisasi. Hak pimpinan diberikan **per user**
+> lewat sakelar *Pimpinan* di form Kelola User (permission langsung, bukan role).
 
 **Lapis 2 — peran di dalam sebuah project (kolom `peran` di `pm_project_members`).**
 
@@ -74,7 +112,8 @@ dipakai bersama — tidak ada duplikasi akun.
 
 | Tabel | Isi |
 |---|---|
-| `pm_projects` | kode, nama, deskripsi, status, prioritas, tanggal mulai & selesai, pemilik |
+| `unit_kerjas` | bidang di Kedeputian Wilayah & kantor cabang (dipakai bersama, bukan tabel PM) |
+| `pm_projects` | kode, nama, deskripsi, status, prioritas, tanggal mulai & selesai, pemilik, **unit kerja** |
 | `pm_project_members` | relasi project ⇄ user + `peran` (manager/member/viewer) |
 | `pm_milestones` | tahapan project, urutan, target tanggal |
 | `pm_tasks` | pekerjaan: judul, deskripsi, status, prioritas, deadline, progress, bobot, milestone |

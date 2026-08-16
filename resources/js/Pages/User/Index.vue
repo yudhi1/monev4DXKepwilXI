@@ -27,15 +27,24 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pencil, Plus, Search, Trash2, Users } from '@lucide/vue';
+import { Download, Pencil, Plus, Search, Trash2, Upload, Users } from '@lucide/vue';
 import { kelasAktif } from '@/lib/status';
 
 const props = defineProps({
     users: { type: Object, required: true },
     wilayahs: { type: Array, required: true },
     cabangs: { type: Array, required: true },
+    unitKerjas: { type: Array, default: () => [] },
     filter: { type: Object, required: true },
 });
 
@@ -53,6 +62,7 @@ const labelRole = (nilai) => ROLE.find((r) => r.nilai === nilai)?.label ?? '—'
 /* --- Filter --- */
 const cari = ref(props.filter.cari);
 const roleFilter = ref(props.filter.role ?? 'semua');
+const unitFilter = ref(props.filter.unit_kerja ? String(props.filter.unit_kerja) : 'semua');
 let timer = null;
 
 const muatUlang = () =>
@@ -61,6 +71,7 @@ const muatUlang = () =>
         {
             cari: cari.value || undefined,
             role: roleFilter.value === 'semua' ? undefined : roleFilter.value,
+            unit_kerja: unitFilter.value === 'semua' ? undefined : unitFilter.value,
         },
         { preserveState: true, replace: true }
     );
@@ -70,7 +81,36 @@ watch(cari, () => {
     timer = setTimeout(muatUlang, 350);
 });
 
-watch(roleFilter, muatUlang);
+watch([roleFilter, unitFilter], muatUlang);
+
+/* Label unit kerja dikelompokkan per kantor induk agar dropdown 70 unit tetap terbaca. */
+const unitBerkelompok = computed(() => {
+    const kelompok = new Map();
+
+    for (const u of props.unitKerjas) {
+        if (! kelompok.has(u.induk)) {
+            kelompok.set(u.induk, []);
+        }
+        kelompok.get(u.induk).push(u);
+    }
+
+    return [...kelompok.entries()].map(([induk, units]) => ({ induk, units }));
+});
+
+/* --- Impor pegawai dari Excel --- */
+const dialogImpor = ref(false);
+const formImpor = useForm({ file: null });
+
+const pilihBerkas = (e) => (formImpor.file = e.target.files?.[0] ?? null);
+
+const kirimImpor = () =>
+    formImpor.post('/users/impor', {
+        preserveScroll: true,
+        onSuccess: () => {
+            dialogImpor.value = false;
+            formImpor.reset();
+        },
+    });
 
 /* --- Form --- */
 const dialogTerbuka = ref(false);
@@ -82,6 +122,9 @@ const form = useForm({
     role: 'kantor_cabang',
     wilayah_id: null,
     cabang_id: null,
+    unit_kerja_id: null,
+    jabatan: '',
+    lihat_semua_project: false,
     is_active: true,
     alamat: '',
 });
@@ -117,6 +160,9 @@ const bukaEdit = (user) => {
     form.role = user.role ?? 'kantor_cabang';
     form.wilayah_id = user.wilayah_id ? String(user.wilayah_id) : null;
     form.cabang_id = user.cabang_id ? String(user.cabang_id) : null;
+    form.unit_kerja_id = user.unit_kerja_id ? String(user.unit_kerja_id) : null;
+    form.jabatan = user.jabatan ?? '';
+    form.lihat_semua_project = user.lihat_semua_project ?? false;
     form.is_active = user.is_active;
     form.alamat = user.alamat ?? '';
     dialogTerbuka.value = true;
@@ -179,10 +225,16 @@ const hapus = () => {
                         Akun pengguna beserta role dan penempatannya. Email dibuat otomatis dari nama.
                     </p>
                 </div>
-                <Button @click="bukaTambah">
-                    <Plus class="mr-1.5 size-4" />
-                    Tambah User
-                </Button>
+                <div class="flex flex-wrap gap-2">
+                    <Button variant="outline" @click="dialogImpor = true">
+                        <Upload class="mr-1.5 size-4" />
+                        Impor Pegawai
+                    </Button>
+                    <Button @click="bukaTambah">
+                        <Plus class="mr-1.5 size-4" />
+                        Tambah User
+                    </Button>
+                </div>
             </div>
         </template>
 
@@ -194,12 +246,27 @@ const hapus = () => {
                 </div>
 
                 <Select v-model="roleFilter">
-                    <SelectTrigger class="w-56">
+                    <SelectTrigger class="w-52">
                         <SelectValue placeholder="Semua role" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="semua">Semua role</SelectItem>
                         <SelectItem v-for="r in ROLE" :key="r.nilai" :value="r.nilai">{{ r.label }}</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select v-model="unitFilter">
+                    <SelectTrigger class="w-64">
+                        <SelectValue placeholder="Semua unit kerja" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="semua">Semua unit kerja</SelectItem>
+                        <SelectGroup v-for="k in unitBerkelompok" :key="k.induk">
+                            <SelectLabel>{{ k.induk }}</SelectLabel>
+                            <SelectItem v-for="u in k.units" :key="u.id" :value="String(u.id)">
+                                {{ u.nama }}
+                            </SelectItem>
+                        </SelectGroup>
                     </SelectContent>
                 </Select>
 
@@ -215,6 +282,7 @@ const hapus = () => {
                                 <TableHead>Nama</TableHead>
                                 <TableHead>Email</TableHead>
                                 <TableHead>Role</TableHead>
+                                <TableHead>Unit Kerja</TableHead>
                                 <TableHead>Penempatan</TableHead>
                                 <TableHead class="w-24 text-center">Status</TableHead>
                                 <TableHead class="w-24 pr-4 text-right">Aksi</TableHead>
@@ -232,6 +300,16 @@ const hapus = () => {
                                 <TableCell class="text-muted-foreground">{{ user.email }}</TableCell>
                                 <TableCell>
                                     <Badge variant="secondary">{{ labelRole(user.role) }}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <template v-if="user.unitKerja">
+                                        <p class="text-sm">{{ user.unitKerja }}</p>
+                                        <p class="text-muted-foreground text-xs">{{ user.unitKerjaInduk }}</p>
+                                        <p v-if="user.jabatan" class="text-muted-foreground text-xs">
+                                            {{ user.jabatan }}
+                                        </p>
+                                    </template>
+                                    <span v-else class="text-muted-foreground text-sm">—</span>
                                 </TableCell>
                                 <TableCell class="text-muted-foreground">
                                     {{ user.cabang ?? user.wilayah ?? '—' }}
@@ -261,7 +339,7 @@ const hapus = () => {
                             </TableRow>
 
                             <TableRow v-if="users.data.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="7" class="py-12">
+                                <TableCell colspan="8" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <Users class="size-8 opacity-40" />
                                         <p class="text-sm">Tidak ada user yang cocok.</p>
@@ -359,6 +437,38 @@ const hapus = () => {
                         </div>
                     </div>
 
+                    <!--
+                      Unit kerja hanya diisi untuk akun pegawai perorangan.
+                      Akun institusi lama (kc.*, kepwil) dibiarkan kosong.
+                    -->
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="space-y-2">
+                            <Label>Unit Kerja (Bidang)</Label>
+                            <Select v-model="form.unit_kerja_id">
+                                <SelectTrigger class="w-full">
+                                    <SelectValue placeholder="Bukan pegawai perorangan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup v-for="k in unitBerkelompok" :key="k.induk">
+                                        <SelectLabel>{{ k.induk }}</SelectLabel>
+                                        <SelectItem v-for="u in k.units" :key="u.id" :value="String(u.id)">
+                                            {{ u.nama }}
+                                        </SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <p v-if="form.errors.unit_kerja_id" class="text-destructive text-sm">
+                                {{ form.errors.unit_kerja_id }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="jabatan">Jabatan</Label>
+                            <Input id="jabatan" v-model="form.jabatan" placeholder="Staf / Kepala Bidang" />
+                            <p v-if="form.errors.jabatan" class="text-destructive text-sm">{{ form.errors.jabatan }}</p>
+                        </div>
+                    </div>
+
                     <div class="space-y-2">
                         <Label for="alamat">Alamat</Label>
                         <Input id="alamat" v-model="form.alamat" />
@@ -371,6 +481,17 @@ const hapus = () => {
                             <p class="text-muted-foreground text-sm">User nonaktif tidak dapat masuk ke aplikasi.</p>
                         </div>
                         <Switch id="is_active" v-model="form.is_active" />
+                    </div>
+
+                    <div class="flex items-center justify-between rounded-lg border p-3">
+                        <div>
+                            <Label for="lihat_semua_project">Pimpinan</Label>
+                            <p class="text-muted-foreground text-sm">
+                                Dapat melihat seluruh project di modul Project Management, termasuk
+                                yang tidak diikutinya. Staf bidang sebaiknya dibiarkan mati.
+                            </p>
+                        </div>
+                        <Switch id="lihat_semua_project" v-model="form.lihat_semua_project" />
                     </div>
 
                     <DialogFooter>
@@ -404,5 +525,55 @@ const hapus = () => {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <!-- ===== Impor pegawai dari Excel ===== -->
+        <Dialog v-model:open="dialogImpor">
+            <DialogContent class="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Impor Pegawai</DialogTitle>
+                    <DialogDescription>
+                        Unggah daftar pegawai beserta bidangnya. Nama yang sudah ada akan
+                        diperbarui, bukan diduplikasi.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-4">
+                    <div class="bg-muted/50 space-y-2 rounded-lg border p-3 text-sm">
+                        <p class="font-medium">Kolom yang dibaca</p>
+                        <p class="text-muted-foreground">
+                            <code>nama</code> · <code>jabatan</code> · <code>bidang</code> · <code>cabang</code>
+                        </p>
+                        <p class="text-muted-foreground text-xs">
+                            Kolom <code>cabang</code> dikosongkan untuk pegawai di kantor Kedeputian
+                            Wilayah. Role ditentukan otomatis dari tingkat bidangnya, dan password
+                            awal semua akun baru adalah <code>monev2026</code>.
+                        </p>
+                        <a
+                            href="/users/impor/template"
+                            class="text-primary inline-flex items-center gap-1 text-sm font-medium"
+                        >
+                            <Download class="size-4" />
+                            Unduh template Excel
+                        </a>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="berkas-pegawai">Berkas Excel</Label>
+                        <Input id="berkas-pegawai" type="file" accept=".xlsx,.xls,.csv" @change="pilihBerkas" />
+                        <p v-if="formImpor.errors.file" class="text-destructive text-sm">
+                            {{ formImpor.errors.file }}
+                        </p>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" @click="dialogImpor = false">Batal</Button>
+                    <Button :disabled="! formImpor.file || formImpor.processing" @click="kirimImpor">
+                        <Upload class="mr-1.5 size-4" />
+                        Unggah
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>
