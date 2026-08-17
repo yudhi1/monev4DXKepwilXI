@@ -53,6 +53,13 @@ Tabel utama:
 - Phase 3: Input Realisasi Mingguan
 - Phase 4: Dashboard & Reporting
 
+## Pemeriksaan Sebelum Commit
+- `npm run lint` — **wajib** untuk perubahan Vue. `npm run build` TIDAK menangkap
+  variabel/komponen yang dipakai tanpa diimpor (mis. `computed` lupa diimpor);
+  Vue baru gagal saat render dan halaman tampil **kosong tanpa pesan error**.
+  ESLint menangkapnya lewat `no-undef`.
+- `./vendor/bin/pint` — gaya kode PHP (juga dijalankan pre-commit hook).
+
 ## Konvensi Kode
 - Gunakan bahasa Indonesia untuk nama variabel domain (misal: $realisasi, $capaian)
 - Setiap halaman = satu Controller yang mengembalikan `Inertia::render()` + satu komponen di `resources/js/Pages/`

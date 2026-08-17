@@ -18,7 +18,6 @@ import {
     ChevronDown,
     FolderKanban,
     Grid2x2,
-    LayoutDashboard,
     LogOut,
     Menu,
     PanelLeft,

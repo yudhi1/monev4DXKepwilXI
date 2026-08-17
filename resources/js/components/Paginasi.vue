@@ -17,6 +17,11 @@ defineProps({
         </p>
         <div class="flex flex-wrap gap-1">
             <template v-for="(tautan, i) in data.links" :key="i">
+                <!--
+                  Label paginator Laravel memuat entitas HTML (&laquo;, &raquo;) sehingga
+                  harus dirender sebagai HTML. Isinya berasal dari framework, bukan input
+                  pengguna, jadi tidak ada jalur XSS di sini.
+                -->
                 <Link
                     v-if="tautan.url"
                     :href="tautan.url"

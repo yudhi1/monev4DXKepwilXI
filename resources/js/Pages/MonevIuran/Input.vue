@@ -20,7 +20,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Coins, Lock, LockOpen, Pencil, Save, X } from '@lucide/vue';
-import { cn } from '@/lib/utils';
 
 const props = defineProps({
     cabangs: { type: Array, required: true },
