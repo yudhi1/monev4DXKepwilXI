@@ -46,7 +46,7 @@ class RolePermissionSeeder extends Seeder
 
         /*
          | Role di bawah ini murni milik modul Monev 4DX dan hanya dipakai akun
-         | institusi. Tidak satu pun memuat permission PM: akses modul Project
+         | unit kerja. Tidak satu pun memuat permission PM: akses modul Project
          | Management ditentukan users.pm_role lewat User::selaraskanIzinPm(),
          | supaya kedua jenis akun benar-benar terpisah.
          */
@@ -58,8 +58,8 @@ class RolePermissionSeeder extends Seeder
         $cabang = Role::firstOrCreate(['name' => 'kantor_cabang', 'guard_name' => 'web']);
         $cabang->syncPermissions(['akses-4dx', 'input realisasi', 'view dashboard']);
 
-        // Sisa permission PM pada akun institusi dari versi sebelumnya dibersihkan.
-        User::institusi()->whereHas('roles', fn ($q) => $q->where('name', '!=', 'admin'))
+        // Sisa permission PM pada akun unit kerja dari versi sebelumnya dibersihkan.
+        User::akunUnitKerja()->whereHas('roles', fn ($q) => $q->where('name', '!=', 'admin'))
             ->get()
             ->each(function (User $u) {
                 foreach (['akses-pm', 'pm.project.buat', 'pm.lihat-semua', 'pm.kelola'] as $izin) {

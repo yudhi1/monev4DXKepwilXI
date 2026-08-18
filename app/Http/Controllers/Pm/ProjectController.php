@@ -272,7 +272,7 @@ class ProjectController extends Controller
      * Kedeputian Wilayah maupun kantor cabang — keanggotaan project memang
      * boleh lintas bidang dan lintas level.
      *
-     * Akun institusi lama (kc.*, kepwil) tidak ikut karena bukan perorangan.
+     * Akun unit kerja (kc.*, kepwil) tidak ikut karena bukan perorangan.
      */
     private function kandidatAnggota(): array
     {

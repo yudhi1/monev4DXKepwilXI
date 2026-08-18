@@ -74,7 +74,7 @@ class PegawaiDemoSeeder extends Seeder
 
             /*
              | Pegawai sengaja tidak diberi role spatie: role itu milik modul
-             | 4DX dan hanya dipakai akun institusi. Akses PM diturunkan dari
+             | 4DX dan hanya dipakai akun unit kerja. Akses PM diturunkan dari
              | pm_role.
              */
             $user->syncRoles([]);

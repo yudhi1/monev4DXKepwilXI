@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 /**
  * Kelola akun pegawai perorangan — pengguna modul Project Management.
  *
- * Terpisah dari UserController yang mengurus akun institusi Monev 4DX:
+ * Terpisah dari UserController yang mengurus akun unit kerja Monev 4DX:
  * kedua jenis akun punya field yang berbeda, jadi layarnya pun dipisah
  * meski keduanya tersimpan di tabel `users`.
  */

@@ -23,7 +23,7 @@ class ProjectPolicy
 
     /**
      * Membuat project dilakukan atas nama unit kerja, jadi pembuatnya harus
-     * terdaftar di sebuah bidang. Akun institusi lama tanpa unit kerja
+     * terdaftar di sebuah bidang. Akun unit kerja (kantor) tanpa bidang
      * dikecualikan kecuali dia admin.
      */
     public function create(User $user): bool

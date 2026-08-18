@@ -35,11 +35,14 @@ PROJECT → MILESTONE → TASK → ASSIGNEE → PROGRESS → OUTPUT → EVALUATI
 
 ```
 Kedeputian Wilayah XI
-├── Bidang KML, JPK, PIKUE, SDMUK                 (tingkat 'wilayah')
+├── Bidang JPK, PIKEU, KML, SDMUK                    (tingkat 'wilayah')
 └── 11 Kantor Cabang
-    └── masing-masing: Bidang PMU, Yanfasskes,    (tingkat 'cabang')
-        Kepesertaan, Yanser, PKP, SDMUK
+    └── masing-masing: Bidang Kepesertaan,           (tingkat 'cabang')
+        Yanfaskes, Yanser, PMU, PKP, SDMU
 ```
+
+Perhatikan **SDMUK** di Kedeputian Wilayah tetapi **SDMU** di kantor cabang —
+memang berbeda, bukan salah ketik.
 
 Disimpan di tabel `unit_kerjas` — 4 + (11 × 6) = **70 unit**. Bidang di kantor
 cabang berdiri sendiri per cabang: "Bidang PMU KC Denpasar" adalah baris berbeda
@@ -55,9 +58,9 @@ internal, bukan kantor cabang sungguhan, jadi tidak diberi struktur bidang.
 
 Kedua modul punya pengguna yang berbeda, dibedakan kolom `users.tipe`:
 
-| | `institusi` — Monev 4DX | `pegawai` — Project Management |
+| | `unit_kerja` — Monev 4DX | `pegawai` — Project Management |
 |---|---|---|
-| Mewakili | satu unit kerja (kantor) | satu orang |
+| Mewakili | satu unit kerja / kantor | satu orang |
 | Contoh | `admin`, `kepwil`, `kc.denpasar` | Rina Kusuma, Kadek Surya |
 | Field | nama unit kerja, password, role, wilayah, cabang | nama pegawai, password, bidang, jabatan, role PM |
 | Role | spatie: `admin`, `kedeputian_wilayah`, `kantor_cabang` | kolom `pm_role` |
@@ -69,7 +72,7 @@ Kedua modul punya pengguna yang berbeda, dibedakan kolom `users.tipe`:
 polimorfik di mana-mana. Yang dipisah adalah layar kelola dan form-nya.
 
 **Aksesnya benar-benar terpisah:** seluruh rute 4DX dijaga `modul:4dx` dan seluruh
-rute PM dijaga `modul:pm`. Pegawai mendapat 403 di halaman 4DX, akun institusi
+rute PM dijaga `modul:pm`. Pegawai mendapat 403 di halaman 4DX, akun unit kerja
 mendapat 403 di halaman PM. Hanya `admin` memegang keduanya.
 
 Pegawai ditambahkan admin satu per satu, atau massal lewat **Impor Excel**
@@ -99,7 +102,7 @@ Pemetaan role → permission ada di `config/pm.php` dan diterapkan
 
 > **Permission PM sengaja tidak dilekatkan pada role spatie.** Role spatie
 > (`admin`, `kedeputian_wilayah`, `kantor_cabang`) milik modul 4DX dan hanya
-> dipakai akun institusi. Pegawai tidak diberi role spatie sama sekali; aksesnya
+> dipakai akun unit kerja. Pegawai tidak diberi role spatie sama sekali; aksesnya
 > murni dari `pm_role`.
 
 **Lapis 2 — peran di dalam sebuah project (kolom `peran` di `pm_project_members`).**
@@ -111,16 +114,12 @@ Pemetaan role → permission ada di `config/pm.php` dan diterapkan
 | `viewer` | Baca saja |
 
 Alasan pemisahan: seorang pegawai bisa jadi *manager* di project A dan *member* di
-project B. Peran semacam itu tidak bisa diwakili role global spatie, dan memaksakannya
-ke sana akan mengunci satu orang pada satu peran untuk semua project.
+project B. Peran semacam itu tidak bisa diwakili satu label tetap di akun, dan
+memaksakannya ke sana akan mengunci satu orang pada satu peran untuk semua project.
 
-Pemetaan ke role yang sudah ada:
-
-| Role global sekarang | Dapat permission PM |
-|---|---|
-| `admin` | `akses-pm`, `pm.project.buat`, `pm.lihat-semua`, `pm.kelola` |
-| `kedeputian_wilayah` | `akses-pm`, `pm.project.buat`, `pm.lihat-semua` |
-| `kantor_cabang` | `akses-pm` (hanya project yang dia ikuti) |
+Contoh bagaimana keduanya bekerja bersama: pegawai ber-`pm_role` **Member** tidak
+bisa memulai project sendiri, tetapi tetap boleh ditunjuk sebagai *manager* di
+sebuah project yang dibuat orang lain.
 
 ## 4. Struktur Database
 

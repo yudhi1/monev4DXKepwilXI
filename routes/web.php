@@ -65,7 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard-kepwil', [DashboardKepwilController::class, 'index'])->name('dashboard.kepwil');
 
         Route::middleware('role:admin')->group(function () {
-            // Akun institusi — pengguna modul Monev 4DX.
+            // Akun unit kerja — pengguna modul Monev 4DX.
             Route::get('/users', [UserController::class, 'index'])->name('users');
             Route::post('/users', [UserController::class, 'store'])->name('users.store');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');

@@ -14,7 +14,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Kelola akun institusi — pengguna modul Monev 4DX.
+ * Kelola akun unit kerja — pengguna modul Monev 4DX.
  *
  * Akun perorangan pegawai (modul Project Management) diurus terpisah oleh
  * PegawaiController: field dan role-nya berbeda, jadi layarnya pun dipisah
@@ -28,7 +28,7 @@ class UserController extends Controller
         $role = $request->query('role');
 
         $users = User::query()
-            ->institusi()
+            ->akunUnitKerja()
             ->with(['roles:id,name', 'wilayah:id,nama', 'cabang:id,nama'])
             ->when($cari !== '', fn ($q) => $q->where('name', 'like', "%{$cari}%"))
             ->when($role, fn ($q) => $q->whereHas('roles', fn ($sub) => $sub->where('name', $role)))
@@ -64,7 +64,7 @@ class UserController extends Controller
 
         $user = User::create([
             ...collect($data)->except(['password', 'role'])->all(),
-            'tipe' => 'institusi',
+            'tipe' => 'unit_kerja',
             'email' => $this->emailDariNama($data['name']),
             'password' => Hash::make($data['password']),
         ]);

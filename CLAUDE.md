@@ -88,7 +88,7 @@ Aplikasi ini menampung dua modul dengan **satu login** dan satu tabel `users`:
 - Bidang cabang berdiri sendiri per cabang — "PMU KC Denpasar" ≠ "PMU KC Kupang".
 
 ## Dua Jenis Akun (satu tabel `users`, kolom `tipe`)
-| | `institusi` | `pegawai` |
+| | `unit_kerja` | `pegawai` |
 |---|---|---|
 | Modul | Monev 4DX | Project Management |
 | Contoh | `admin`, `kepwil`, `kc.*` | perorangan, terikat satu bidang |

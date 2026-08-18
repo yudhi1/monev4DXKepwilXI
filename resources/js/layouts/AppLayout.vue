@@ -45,7 +45,7 @@ const ROLE_LABEL = {
 
 /*
  | Pegawai perorangan tidak punya role spatie — role itu milik modul 4DX dan
- | hanya dipakai akun institusi. Untuk mereka yang ditampilkan adalah role PM
+ | hanya dipakai akun unit kerja. Untuk mereka yang ditampilkan adalah role PM
  | beserta bidangnya.
  */
 const PM_ROLE_LABEL = {

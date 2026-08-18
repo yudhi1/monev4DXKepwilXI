@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             /*
-             | Bidang tempat pegawai bertugas. Nullable karena akun institusi
-             | lama (admin, kepwil, kc.*) yang dipakai modul 4DX tidak berada
-             | di satu bidang tertentu.
+             | Bidang tempat pegawai bertugas. Nullable karena akun unit kerja
+             | (admin, kepwil, kc.*) yang dipakai modul 4DX tidak berada di satu
+             | bidang tertentu.
              */
             $table->foreignId('unit_kerja_id')
                 ->nullable()

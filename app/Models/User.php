@@ -57,10 +57,15 @@ class User extends Authenticatable
         return $query->where('tipe', 'pegawai');
     }
 
-    /** Akun unit kerja — pengguna modul Monev 4DX. */
-    public function scopeInstitusi($query)
+    /**
+     * Akun unit kerja (kantor) — pengguna modul Monev 4DX.
+     *
+     * Namanya "akunUnitKerja", bukan "unitKerja", karena nama itu sudah dipakai
+     * relasi belongsTo ke bidang — metode relasi akan menutupi scope-nya.
+     */
+    public function scopeAkunUnitKerja($query)
     {
-        return $query->where('tipe', 'institusi');
+        return $query->where('tipe', 'unit_kerja');
     }
 
     /** Namanya sengaja bukan pegawai(), agar tidak menutupi scopePegawai(). */
