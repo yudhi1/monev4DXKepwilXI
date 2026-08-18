@@ -27,7 +27,8 @@ export const menu4dx = [
         icon: Database,
         roles: ['admin'],
         items: [
-            { label: 'User', href: '/users' },
+            { label: 'Akun Monev 4DX', href: '/users' },
+            { label: 'Pegawai', href: '/pegawai' },
             { label: 'Wilayah', href: '/wilayahs' },
             { label: 'Cabang', href: '/cabangs' },
         ],

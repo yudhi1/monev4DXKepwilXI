@@ -35,6 +35,31 @@ return [
         'tinggi' => ['label' => 'Tinggi', 'warna' => 'rose'],
     ],
 
+    /*
+     | Role pegawai di tingkat akun (kolom users.pm_role) — mengatur hak
+     | LINTAS project. Jangan dikacaukan dengan 'peran' di bawah, yang berlaku
+     | di dalam satu project tertentu.
+     |
+     | 'permissions' disinkronkan ke spatie setiap kali pegawai disimpan.
+     */
+    'role_akun' => [
+        'member' => [
+            'label' => 'Member',
+            'keterangan' => 'Ikut project yang mendaftarkannya; tidak bisa membuat project sendiri',
+            'permissions' => ['akses-pm'],
+        ],
+        'project_manager' => [
+            'label' => 'Project Manager',
+            'keterangan' => 'Boleh membuat project atas nama unit kerjanya',
+            'permissions' => ['akses-pm', 'pm.project.buat'],
+        ],
+        'pimpinan' => [
+            'label' => 'Pimpinan',
+            'keterangan' => 'Melihat seluruh project tanpa harus menjadi anggota',
+            'permissions' => ['akses-pm', 'pm.project.buat', 'pm.lihat-semua'],
+        ],
+    ],
+
     /* Peran seseorang di dalam satu project (kolom pm_project_members.peran). */
     'peran' => [
         'manager' => ['label' => 'Project Manager', 'keterangan' => 'Atur anggota, milestone, task, dan bobot'],

@@ -14,8 +14,8 @@ class User extends Authenticatable
     use HasFactory, HasRoles, LogsActivity, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'wilayah_id', 'cabang_id', 'unit_kerja_id',
-        'jabatan', 'is_active', 'alamat',
+        'name', 'email', 'password', 'tipe', 'wilayah_id', 'cabang_id',
+        'unit_kerja_id', 'jabatan', 'pm_role', 'is_active', 'alamat',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -51,9 +51,41 @@ class User extends Authenticatable
         return $this->belongsTo(UnitKerja::class);
     }
 
-    /** Pegawai perorangan = punya unit kerja. Akun institusi lama tidak. */
+    /** Akun perorangan pegawai — pengguna modul Project Management. */
     public function scopePegawai($query)
     {
-        return $query->whereNotNull('unit_kerja_id');
+        return $query->where('tipe', 'pegawai');
+    }
+
+    /** Akun unit kerja — pengguna modul Monev 4DX. */
+    public function scopeInstitusi($query)
+    {
+        return $query->where('tipe', 'institusi');
+    }
+
+    /** Namanya sengaja bukan pegawai(), agar tidak menutupi scopePegawai(). */
+    public function adalahPegawai(): bool
+    {
+        return $this->tipe === 'pegawai';
+    }
+
+    /**
+     * Menyelaraskan permission modul PM dengan pm_role.
+     *
+     * Permission PM sengaja tidak dilekatkan pada role spatie: role di sini
+     * milik modul 4DX, dan kedua jenis akun memang dipisah.
+     */
+    public function selaraskanIzinPm(): void
+    {
+        $semua = collect(config('pm.role_akun'))->pluck('permissions')->flatten()->unique();
+        $diberikan = collect(config("pm.role_akun.{$this->pm_role}.permissions", []));
+
+        foreach ($semua as $izin) {
+            if ($diberikan->contains($izin)) {
+                $this->givePermissionTo($izin);
+            } elseif ($this->hasDirectPermission($izin)) {
+                $this->revokePermissionTo($izin);
+            }
+        }
     }
 }

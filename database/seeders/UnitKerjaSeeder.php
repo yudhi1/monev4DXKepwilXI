@@ -16,20 +16,20 @@ class UnitKerjaSeeder extends Seeder
 {
     /** Bidang di kantor Kedeputian Wilayah. */
     private const BIDANG_WILAYAH = [
-        'KML' => 'Bidang KML',
         'JPK' => 'Bidang JPK',
-        'PIKUE' => 'Bidang PIKUE',
+        'PIKEU' => 'Bidang PIKEU',
+        'KML' => 'Bidang KML',
         'SDMUK' => 'Bidang SDMUK',
     ];
 
-    /** Bidang yang ada di setiap kantor cabang. */
+    /** Bidang yang ada di setiap kantor cabang. Perhatikan SDMU, bukan SDMUK. */
     private const BIDANG_CABANG = [
-        'PMU' => 'Bidang PMU',
-        'YANFASKES' => 'Bidang Yanfasskes',
         'KEPESERTAAN' => 'Bidang Kepesertaan',
+        'YANFASKES' => 'Bidang Yanfaskes',
         'YANSER' => 'Bidang Yanser',
+        'PMU' => 'Bidang PMU',
         'PKP' => 'Bidang PKP',
-        'SDMUK' => 'Bidang SDMUK',
+        'SDMU' => 'Bidang SDMU',
     ];
 
     public function run(): void

@@ -24,7 +24,7 @@ class TemplatePegawaiExport implements FromArray, ShouldAutoSize, WithHeadings, 
 
     public function headings(): array
     {
-        return ['nama', 'jabatan', 'bidang', 'cabang'];
+        return ['nama', 'jabatan', 'bidang', 'cabang', 'role'];
     }
 
     public function array(): array
@@ -32,15 +32,24 @@ class TemplatePegawaiExport implements FromArray, ShouldAutoSize, WithHeadings, 
         $contohCabang = UnitKerja::where('tingkat', 'cabang')->with('cabang')->first();
 
         $baris = [
-            ['Budi Santoso', 'Staf', 'KML', ''],
-            ['Siti Rahayu', 'Kepala Bidang', 'JPK', ''],
-            ['Andi Wijaya', 'Staf', $contohCabang?->kode ?? 'PMU', $contohCabang?->cabang?->kode ?? 'KC-DPS'],
+            ['Budi Santoso', 'Staf', 'KML', '', 'member'],
+            ['Siti Rahayu', 'Kepala Bidang', 'JPK', '', 'project_manager'],
+            ['Andi Wijaya', 'Staf', $contohCabang?->kode ?? 'PMU', $contohCabang?->cabang?->kode ?? 'KC-DPS', ''],
             [],
             ['— Kosongkan kolom "cabang" untuk pegawai di kantor Kedeputian Wilayah —'],
+            ['— Kolom "role" boleh kosong; bawaannya member —'],
             [],
-            ['DAFTAR KODE BIDANG'],
-            ['tingkat', 'kode', 'nama', 'berlaku di'],
+            ['PILIHAN ROLE'],
+            ['kode', 'arti'],
         ];
+
+        foreach (config('pm.role_akun') as $kode => $meta) {
+            $baris[] = [$kode, $meta['keterangan']];
+        }
+
+        $baris[] = [];
+        $baris[] = ['DAFTAR KODE BIDANG'];
+        $baris[] = ['tingkat', 'kode', 'nama', 'berlaku di'];
 
         foreach (UnitKerja::aktif()->where('tingkat', 'wilayah')->orderBy('urutan')->get() as $u) {
             $baris[] = ['wilayah', $u->kode, $u->nama, 'Kedeputian Wilayah (kolom cabang dikosongkan)'];

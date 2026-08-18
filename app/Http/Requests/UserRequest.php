@@ -28,11 +28,6 @@ class UserRequest extends FormRequest
             'role' => ['required', Rule::in(['admin', 'kedeputian_wilayah', 'kantor_cabang'])],
             'wilayah_id' => ['nullable', 'exists:wilayahs,id'],
             'cabang_id' => ['nullable', 'exists:cabangs,id'],
-            // Diisi untuk pegawai perorangan; akun institusi lama dibiarkan kosong.
-            'unit_kerja_id' => ['nullable', 'exists:unit_kerjas,id'],
-            'jabatan' => ['nullable', 'string', 'max:100'],
-            // Penanda pimpinan: boleh melihat seluruh project modul PM.
-            'lihat_semua_project' => ['boolean'],
             'is_active' => ['boolean'],
             'alamat' => ['nullable', 'string', 'max:500'],
         ];
@@ -41,10 +36,9 @@ class UserRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => 'nama user',
+            'name' => 'nama unit kerja',
             'wilayah_id' => 'wilayah',
             'cabang_id' => 'cabang',
-            'unit_kerja_id' => 'unit kerja',
         ];
     }
 }

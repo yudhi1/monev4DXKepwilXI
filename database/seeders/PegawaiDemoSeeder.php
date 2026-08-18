@@ -21,31 +21,31 @@ class PegawaiDemoSeeder extends Seeder
 
     public function run(): void
     {
-        // (nama, jabatan, kode bidang, kode cabang | null untuk Kedeputian Wilayah)
+        // (nama, jabatan, kode bidang, kode cabang | null untuk Kedeputian Wilayah, role)
         $pegawai = [
-            ['Rina Kusuma', 'Kepala Bidang', 'KML', null],
-            ['Dedi Prasetyo', 'Staf', 'KML', null],
-            ['Maya Anggraini', 'Kepala Bidang', 'JPK', null],
-            ['Bagus Nugroho', 'Staf', 'JPK', null],
-            ['Sari Wulandari', 'Kepala Bidang', 'PIKUE', null],
-            ['Hendra Gunawan', 'Kepala Bidang', 'SDMUK', null],
+            ['Rina Kusuma', 'Kepala Bidang', 'KML', null, 'project_manager'],
+            ['Dedi Prasetyo', 'Staf', 'KML', null, 'member'],
+            ['Maya Anggraini', 'Kepala Bidang', 'JPK', null, 'project_manager'],
+            ['Bagus Nugroho', 'Staf', 'JPK', null, 'member'],
+            ['Sari Wulandari', 'Kepala Bidang', 'PIKEU', null, 'project_manager'],
+            ['Hendra Gunawan', 'Kepala Bidang', 'SDMUK', null, 'pimpinan'],
 
-            ['Putu Ariana', 'Kepala Bidang', 'PMU', 'KC-DPS'],
-            ['Kadek Surya', 'Staf', 'PMU', 'KC-DPS'],
-            ['Wayan Astuti', 'Kepala Bidang', 'KEPESERTAAN', 'KC-DPS'],
-            ['Nyoman Adi', 'Staf', 'YANFASKES', 'KC-DPS'],
+            ['Putu Ariana', 'Kepala Bidang', 'PMU', 'KC-DPS', 'project_manager'],
+            ['Kadek Surya', 'Staf', 'PMU', 'KC-DPS', 'member'],
+            ['Wayan Astuti', 'Kepala Bidang', 'KEPESERTAAN', 'KC-DPS', 'project_manager'],
+            ['Nyoman Adi', 'Staf', 'YANFASKES', 'KC-DPS', 'member'],
 
-            ['Lalu Ahmad', 'Kepala Bidang', 'PMU', 'KC-MTR'],
-            ['Baiq Nuraini', 'Staf', 'YANSER', 'KC-MTR'],
+            ['Lalu Ahmad', 'Kepala Bidang', 'PMU', 'KC-MTR', 'project_manager'],
+            ['Baiq Nuraini', 'Staf', 'YANSER', 'KC-MTR', 'member'],
 
-            ['Yohanes Bere', 'Kepala Bidang', 'PMU', 'KC-KPG'],
-            ['Maria Dhema', 'Staf', 'PKP', 'KC-KPG'],
+            ['Yohanes Bere', 'Kepala Bidang', 'PMU', 'KC-KPG', 'project_manager'],
+            ['Maria Dhema', 'Staf', 'PKP', 'KC-KPG', 'member'],
         ];
 
         $unitKerjas = UnitKerja::with('cabang:id,kode')->get();
         $dibuat = 0;
 
-        foreach ($pegawai as [$nama, $jabatan, $kodeBidang, $kodeCabang]) {
+        foreach ($pegawai as [$nama, $jabatan, $kodeBidang, $kodeCabang, $role]) {
             $unit = $unitKerjas->first(
                 fn (UnitKerja $u) => $u->kode === $kodeBidang
                     && ($kodeCabang === null ? $u->cabang_id === null : $u->cabang?->kode === $kodeCabang)
@@ -62,7 +62,9 @@ class PegawaiDemoSeeder extends Seeder
                 [
                     'email' => Str::slug($nama, '.').'@monev.local',
                     'password' => Hash::make(self::PASSWORD_AWAL),
+                    'tipe' => 'pegawai',
                     'jabatan' => $jabatan,
+                    'pm_role' => $role,
                     'unit_kerja_id' => $unit->id,
                     'wilayah_id' => $unit->wilayah_id,
                     'cabang_id' => $unit->cabang_id,
@@ -70,7 +72,13 @@ class PegawaiDemoSeeder extends Seeder
                 ]
             );
 
-            $user->syncRoles([$unit->tingkat === 'wilayah' ? 'kedeputian_wilayah' : 'kantor_cabang']);
+            /*
+             | Pegawai sengaja tidak diberi role spatie: role itu milik modul
+             | 4DX dan hanya dipakai akun institusi. Akses PM diturunkan dari
+             | pm_role.
+             */
+            $user->syncRoles([]);
+            $user->selaraskanIzinPm();
             $dibuat++;
         }
 

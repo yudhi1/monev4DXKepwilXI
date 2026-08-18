@@ -51,16 +51,31 @@ di Kedeputian Wilayah dapat satu tim dengan pegawai Bidang PMU KC Denpasar.
 **"Internal Kepwil"** adalah kantor cabang semu yang dipakai modul 4DX untuk input
 internal, bukan kantor cabang sungguhan, jadi tidak diberi struktur bidang.
 
-### Akun pengguna
+### Dua jenis akun
 
-Modul PM bekerja atas **akun perorangan** (`users.unit_kerja_id` terisi), bukan
-akun institusi. Akun institusi lama (`admin`, `kepwil`, `kc.*`) tetap ada dan
-dipakai modul 4DX, tetapi tidak muncul sebagai kandidat anggota project.
+Kedua modul punya pengguna yang berbeda, dibedakan kolom `users.tipe`:
 
-Pegawai ditambahkan admin lewat **Master → User**, satu per satu atau massal
-lewat **Impor Pegawai** (Excel: `nama`, `jabatan`, `bidang`, `cabang`; kolom
-`cabang` dikosongkan untuk pegawai Kedeputian Wilayah). Role ditentukan otomatis
-dari tingkat bidangnya. Password awal akun hasil impor: `monev2026`.
+| | `institusi` — Monev 4DX | `pegawai` — Project Management |
+|---|---|---|
+| Mewakili | satu unit kerja (kantor) | satu orang |
+| Contoh | `admin`, `kepwil`, `kc.denpasar` | Rina Kusuma, Kadek Surya |
+| Field | nama unit kerja, password, role, wilayah, cabang | nama pegawai, password, bidang, jabatan, role PM |
+| Role | spatie: `admin`, `kedeputian_wilayah`, `kantor_cabang` | kolom `pm_role` |
+| Dikelola di | Master → **Akun Monev 4DX** (`/users`) | Master → **Pegawai** (`/pegawai`) |
+
+**Satu tabel, bukan dua.** Laravel hanya mengautentikasi satu tabel per guard, dan
+`pm_project_members.user_id`, `pm_task_assignees.user_id`, serta
+`activity_log.causer_id` semuanya menunjuk ke `users` — memecahnya berarti relasi
+polimorfik di mana-mana. Yang dipisah adalah layar kelola dan form-nya.
+
+**Aksesnya benar-benar terpisah:** seluruh rute 4DX dijaga `modul:4dx` dan seluruh
+rute PM dijaga `modul:pm`. Pegawai mendapat 403 di halaman 4DX, akun institusi
+mendapat 403 di halaman PM. Hanya `admin` memegang keduanya.
+
+Pegawai ditambahkan admin satu per satu, atau massal lewat **Impor Excel**
+(`nama`, `jabatan`, `bidang`, `cabang`, `role`; kolom `cabang` dikosongkan untuk
+pegawai Kedeputian Wilayah, kolom `role` boleh kosong dan berarti Member).
+Password awal akun baru: `monev2026`.
 
 **Teknologi:** mengikuti stack yang sudah ada — Laravel + Inertia + Vue 3 + Tailwind 4 +
 shadcn-vue + MySQL. Dokumen konsep revisi sudah menghapus Fortify/Sanctum, Reverb,
@@ -71,19 +86,21 @@ Notifikasi realtime, kalau nanti diperlukan, dikerjakan dengan polling biasa dul
 
 Dua lapis, sengaja dipisah:
 
-**Lapis 1 — akses aplikasi (global, spatie/laravel-permission).**
+**Lapis 1 — role di akun (kolom `users.pm_role`), berlaku lintas project.**
 
-| Permission | Arti |
-|---|---|
-| `akses-pm` | Boleh masuk modul PM sama sekali |
-| `pm.project.buat` | Boleh membuat project atas nama unit kerjanya |
-| `pm.lihat-semua` | Melihat semua project tanpa harus jadi anggota (pimpinan & admin) |
-| `pm.kelola` | Kelola master/pengaturan modul PM |
+| Role | Arti | Permission yang disinkronkan |
+|---|---|---|
+| `member` | Ikut project yang mendaftarkannya; tidak bisa membuat project | `akses-pm` |
+| `project_manager` | Boleh membuat project atas nama unit kerjanya | + `pm.project.buat` |
+| `pimpinan` | Melihat seluruh project tanpa harus jadi anggota | + `pm.lihat-semua` |
 
-> **`pm.lihat-semua` sengaja tidak dilekatkan pada role `kedeputian_wilayah`.**
-> Role itu kini juga dipakai staf bidang di Kedeputian Wilayah, dan staf tidak
-> boleh melihat pekerjaan seluruh organisasi. Hak pimpinan diberikan **per user**
-> lewat sakelar *Pimpinan* di form Kelola User (permission langsung, bukan role).
+Pemetaan role → permission ada di `config/pm.php` dan diterapkan
+`User::selaraskanIzinPm()` setiap kali pegawai disimpan.
+
+> **Permission PM sengaja tidak dilekatkan pada role spatie.** Role spatie
+> (`admin`, `kedeputian_wilayah`, `kantor_cabang`) milik modul 4DX dan hanya
+> dipakai akun institusi. Pegawai tidak diberi role spatie sama sekali; aksesnya
+> murni dari `pm_role`.
 
 **Lapis 2 — peran di dalam sebuah project (kolom `peran` di `pm_project_members`).**
 

@@ -82,13 +82,26 @@ Aplikasi ini menampung dua modul dengan **satu login** dan satu tabel `users`:
 - Status/prioritas/peran PM ada di `config/pm.php`, bukan enum MySQL.
 
 ## Struktur Organisasi
-- `unit_kerjas` = bidang: 4 di Kedeputian Wilayah (KML, JPK, PIKUE, SDMUK) +
-  6 bidang × 11 kantor cabang (PMU, Yanfasskes, Kepesertaan, Yanser, PKP, SDMUK) = 70 unit.
+- `unit_kerjas` = bidang: 4 di Kedeputian Wilayah (JPK, PIKEU, KML, SDMUK) +
+  6 bidang × 11 kantor cabang (Kepesertaan, Yanfaskes, Yanser, PMU, PKP, SDMU) = 70 unit.
+  Perhatikan **SDMUK** di wilayah tapi **SDMU** di cabang.
 - Bidang cabang berdiri sendiri per cabang — "PMU KC Denpasar" ≠ "PMU KC Kupang".
-- `users.unit_kerja_id` terisi = akun pegawai perorangan (dipakai modul PM).
-  Akun institusi lama (`admin`, `kepwil`, `kc.*`) kosong dan hanya untuk 4DX.
-- Hak "pimpinan" (`pm.lihat-semua`) diberikan **per user**, bukan lewat role —
-  role `kedeputian_wilayah` kini juga dipakai staf bidang.
+
+## Dua Jenis Akun (satu tabel `users`, kolom `tipe`)
+| | `institusi` | `pegawai` |
+|---|---|---|
+| Modul | Monev 4DX | Project Management |
+| Contoh | `admin`, `kepwil`, `kc.*` | perorangan, terikat satu bidang |
+| Role | spatie (`admin`/`kedeputian_wilayah`/`kantor_cabang`) | kolom `pm_role` |
+| Dikelola | `/users` | `/pegawai` |
+
+- **Permission PM tidak boleh dilekatkan pada role spatie.** Role spatie milik 4DX.
+  Akses PM diturunkan dari `pm_role` lewat `User::selaraskanIzinPm()`
+  (pemetaannya di `config/pm.php`). Pegawai tidak punya role spatie sama sekali.
+- Rute 4DX dijaga `modul:4dx`, rute PM dijaga `modul:pm`. Jangan menambah rute
+  modul di luar grup itu — halaman tanpa middleware `role:` akan bocor ke modul lain.
+- `User::scopePegawai()` vs `User::adalahPegawai()`: namanya sengaja berbeda supaya
+  metode instance tidak menutupi scope saat dipanggil statis.
 
 ## Rencana Aktif
 - [docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md](docs/RENCANA_RESTRUKTURISASI_MULTI_MODUL.md) —

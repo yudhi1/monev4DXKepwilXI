@@ -44,34 +44,32 @@ class RolePermissionSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->syncPermissions([...$izin4dx, ...$izinPm]);
 
+        /*
+         | Role di bawah ini murni milik modul Monev 4DX dan hanya dipakai akun
+         | institusi. Tidak satu pun memuat permission PM: akses modul Project
+         | Management ditentukan users.pm_role lewat User::selaraskanIzinPm(),
+         | supaya kedua jenis akun benar-benar terpisah.
+         */
         $wilayah = Role::firstOrCreate(['name' => 'kedeputian_wilayah', 'guard_name' => 'web']);
         $wilayah->syncPermissions([
             'akses-4dx', 'manage wig', 'manage lag', 'manage lead', 'view dashboard', 'export laporan',
-            /*
-             | Sengaja TANPA pm.lihat-semua. Role ini kini juga dipakai staf
-             | bidang di Kedeputian Wilayah, dan staf tidak boleh melihat
-             | seluruh project. Hak "pimpinan" diberikan per user sebagai
-             | permission langsung lewat form Kelola User.
-             */
-            'akses-pm', 'pm.project.buat',
         ]);
 
         $cabang = Role::firstOrCreate(['name' => 'kantor_cabang', 'guard_name' => 'web']);
-        $cabang->syncPermissions([
-            'akses-4dx', 'input realisasi', 'view dashboard',
-            /*
-             | Setiap pegawai boleh membuat project atas nama bidangnya sendiri.
-             | Tanpa pm.lihat-semua: dia hanya melihat project yang dia ikuti
-             | atau yang dimiliki bidangnya.
-             */
-            'akses-pm', 'pm.project.buat',
-        ]);
+        $cabang->syncPermissions(['akses-4dx', 'input realisasi', 'view dashboard']);
 
-        /*
-         | Akun institusi `kepwil` dipakai untuk memantau, jadi tetap diberi
-         | hak melihat seluruh project — sebagai permission langsung, bukan
-         | lewat role, supaya staf bidang tidak ikut kebagian.
-         */
-        User::where('name', 'kepwil')->first()?->givePermissionTo('pm.lihat-semua');
+        // Sisa permission PM pada akun institusi dari versi sebelumnya dibersihkan.
+        User::institusi()->whereHas('roles', fn ($q) => $q->where('name', '!=', 'admin'))
+            ->get()
+            ->each(function (User $u) {
+                foreach (['akses-pm', 'pm.project.buat', 'pm.lihat-semua', 'pm.kelola'] as $izin) {
+                    if ($u->hasDirectPermission($izin)) {
+                        $u->revokePermissionTo($izin);
+                    }
+                }
+            });
+
+        // Pegawai: izin PM diturunkan dari pm_role masing-masing.
+        User::pegawai()->get()->each(fn (User $u) => $u->selaraskanIzinPm());
     }
 }

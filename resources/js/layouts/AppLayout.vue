@@ -43,7 +43,24 @@ const ROLE_LABEL = {
     kantor_cabang: 'Cabang',
 };
 
-const roleLabel = computed(() => ROLE_LABEL[roles.value[0]] ?? '-');
+/*
+ | Pegawai perorangan tidak punya role spatie — role itu milik modul 4DX dan
+ | hanya dipakai akun institusi. Untuk mereka yang ditampilkan adalah role PM
+ | beserta bidangnya.
+ */
+const PM_ROLE_LABEL = {
+    member: 'Member',
+    project_manager: 'Project Manager',
+    pimpinan: 'Pimpinan',
+};
+
+const roleLabel = computed(() => {
+    if (user.value?.tipe === 'pegawai') {
+        return PM_ROLE_LABEL[user.value?.pm_role] ?? 'Pegawai';
+    }
+
+    return ROLE_LABEL[roles.value[0]] ?? '-';
+});
 const initial = computed(() => (user.value?.name ?? '?').charAt(0).toUpperCase());
 
 const bisa = (...izin) => izin.some((r) => roles.value.includes(r));
