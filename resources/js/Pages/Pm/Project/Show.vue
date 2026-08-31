@@ -42,6 +42,7 @@ import {
     Trash2,
     TriangleAlert,
     UserPlus,
+    UserRound,
 } from '@lucide/vue';
 
 const props = defineProps({
@@ -71,6 +72,9 @@ const tanggal = (nilai) =>
     nilai ? new Date(nilai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
 const totalTask = computed(() => props.papan.reduce((n, kolom) => n + kolom.tasks.length, 0));
+
+/* Daftar nama PIC sebuah task, dipisah koma. */
+const namaPic = (task) => (task.assignees ?? []).map((a) => a.nama).join(', ');
 
 /* ================= Kanban: geser kartu ================= */
 
@@ -421,16 +425,21 @@ const kandidatTersisa = computed(() => {
                             <BilahProgress :nilai="task.progress" class="mt-2.5" />
 
                             <div class="mt-2 flex items-center justify-between gap-2">
-                                <div class="flex min-w-0 -space-x-1.5">
+                                <!--
+                                  Nama PIC ditulis utuh, bukan inisial: dua orang
+                                  bisa berinisial sama, dan satu huruf tidak
+                                  memberi tahu siapa pun apa-apa.
+                                -->
+                                <div class="flex min-w-0 items-center gap-1">
+                                    <UserRound class="text-muted-foreground size-3 shrink-0" />
                                     <span
-                                        v-for="a in task.assignees"
-                                        :key="a.id"
-                                        :title="a.nama"
-                                        class="bg-secondary ring-background flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ring-2"
+                                        v-if="task.assignees.length"
+                                        class="text-muted-foreground truncate text-xs"
+                                        :title="namaPic(task)"
                                     >
-                                        {{ a.nama?.charAt(0).toUpperCase() }}
+                                        {{ namaPic(task) }}
                                     </span>
-                                    <span v-if="task.assignees.length === 0" class="text-muted-foreground truncate text-xs">
+                                    <span v-else class="text-muted-foreground truncate text-xs italic">
                                         Belum ada PIC
                                     </span>
                                 </div>
