@@ -29,6 +29,14 @@ class TaskRequest extends FormRequest
             'progress' => ['required', 'integer', 'min:0', 'max:100'],
             'bobot' => ['required', 'numeric', 'min:0', 'max:999999'],
 
+            /*
+             | Target opsional. Kalau diisi, realisasi jadi wajib (boleh 0)
+             | karena progress akan dihitung dari keduanya.
+             */
+            'satuan' => ['nullable', Rule::in(config('pm.satuan'))],
+            'target' => ['nullable', 'numeric', 'min:0'],
+            'realisasi' => ['nullable', 'numeric', 'min:0', 'required_with:target'],
+
             // Milestone harus milik project yang sama.
             'milestone_id' => [
                 'nullable',
@@ -49,6 +57,7 @@ class TaskRequest extends FormRequest
             'judul' => 'judul task',
             'milestone_id' => 'milestone',
             'assignees' => 'PIC',
+            'satuan' => 'satuan target',
         ];
     }
 }

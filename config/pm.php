@@ -9,6 +9,12 @@
 
 return [
 
+    /*
+     | Satuan target/realisasi task. Daftarnya sengaja sama dengan modul 4DX
+     | (WigCapaianController::SATUAN) supaya istilahnya seragam di kedua modul.
+     */
+    'satuan' => ['Rp', '%', 'orang', 'unit', 'transaksi', 'kasus', 'badan usaha', 'dokumen'],
+
     /* Kolom papan Kanban, urut kiri ke kanan. */
     'status_task' => [
         'backlog' => ['label' => 'Backlog', 'warna' => 'slate', 'keterangan' => 'Ide / pekerjaan belum diprioritaskan'],

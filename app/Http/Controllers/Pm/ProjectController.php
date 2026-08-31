@@ -230,6 +230,10 @@ class ProjectController extends Controller
             'deadline' => $task->deadline?->toDateString(),
             'progress' => $task->progress,
             'bobot' => (float) $task->bobot,
+            'satuan' => $task->satuan,
+            'target' => $task->target !== null ? (float) $task->target : null,
+            'realisasi' => $task->realisasi !== null ? (float) $task->realisasi : null,
+            'pakaiTarget' => $task->pakaiTarget(),
             'urutan' => $task->urutan,
             'terlambat' => $task->terlambat(),
             'milestone_id' => $task->milestone_id,
@@ -301,6 +305,7 @@ class ProjectController extends Controller
             'statusTask' => config('pm.status_task'),
             'prioritas' => config('pm.prioritas'),
             'peran' => config('pm.peran'),
+            'satuan' => config('pm.satuan'),
         ];
     }
 }

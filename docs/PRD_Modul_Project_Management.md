@@ -149,6 +149,26 @@ Prioritas (project & task): `rendah`, `sedang`, `tinggi`.
 Nilai-nilai ini disimpan sebagai string pendek dengan daftar terpusat di
 `config/pm.php`, bukan enum MySQL — supaya menambah status tidak perlu migrasi.
 
+## 4a. Target & Realisasi per Task
+
+Task boleh punya angka: `satuan`, `target`, dan `realisasi` (ketiganya opsional).
+Untuk task semacam itu **progress tidak diisi tangan**, melainkan dihitung
+`realisasi ÷ target`, dibatasi 0–100%. Task tanpa target tetap memakai progress
+manual — tidak semua pekerjaan terukur angka.
+
+Hasilnya tetap disimpan di kolom `progress`, bukan dihitung saat dibaca, supaya
+progress project dan kontribusi anggota tidak perlu tahu soal target.
+
+**Sengaja sekali per task, bukan riwayat per periode.** Pelacakan berkala sudah
+menjadi tugas modul 4DX (`wig_realisasis` per bulan, `lead_measure_realisasis`
+per minggu). Menduplikasinya di PM berarti dua sumber angka untuk hal yang sama,
+dan tim harus mengisi di dua tempat.
+
+**Masuk kolom Done tidak memaksa 100% untuk task bertarget.** Penagihan yang
+periodenya ditutup di 70% tampil apa adanya — "selesai dikerjakan, target tidak
+tercapai" adalah informasi yang berguna, bukan kesalahan yang perlu ditutupi.
+Task tanpa target tetap menjadi 100% saat masuk Done.
+
 ## 5. Perhitungan Kontribusi & Progress
 
 Dari dokumen konsep: **Kontribusi = Bobot Task × Progress Task**.

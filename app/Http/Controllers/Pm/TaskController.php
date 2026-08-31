@@ -27,6 +27,7 @@ class TaskController extends Controller
                 'urutan' => (int) $project->tasks()->where('status', $data['status'])->max('urutan') + 1,
             ]);
 
+            $this->selaraskanProgress($task);
             $task->assignees()->sync($assignees);
         });
 
@@ -43,6 +44,7 @@ class TaskController extends Controller
 
         DB::transaction(function () use ($task, $data, $assignees) {
             $task->update($data);
+            $this->selaraskanProgress($task);
             $task->assignees()->sync($assignees);
         });
 
@@ -74,11 +76,21 @@ class TaskController extends Controller
                 ->where('urutan', '>=', $data['urutan'])
                 ->increment('urutan');
 
+            /*
+             | Task tanpa target: masuk Done berarti rampung, progress 100.
+             |
+             | Task bertarget TIDAK diperlakukan begitu. Progressnya tetap
+             | mengikuti realisasi, sehingga penagihan yang periodenya sudah
+             | ditutup pada 70% tampil apa adanya — "selesai dikerjakan, target
+             | tidak tercapai" adalah informasi, bukan kesalahan yang perlu
+             | ditutupi dengan angka 100.
+             */
             $task->update([
                 'status' => $data['status'],
                 'urutan' => $data['urutan'],
-                // Masuk kolom Done berarti pekerjaan rampung.
-                'progress' => $data['status'] === config('pm.status_selesai') ? 100 : $task->progress,
+                'progress' => ! $task->pakaiTarget() && $data['status'] === config('pm.status_selesai')
+                    ? 100
+                    : $task->progress,
             ]);
         });
 
@@ -90,6 +102,18 @@ class TaskController extends Controller
     {
         $this->authorize('ubahProgress', $project);
         $this->pastikanMilikProject($project, $task);
+
+        // Task bertarget diperbarui lewat realisasinya; progress ikut menyesuaikan.
+        if ($task->pakaiTarget()) {
+            $data = $request->validate([
+                'realisasi' => ['required', 'numeric', 'min:0'],
+            ]);
+
+            $task->update($data);
+            $this->selaraskanProgress($task);
+
+            return back()->with('success', 'Realisasi task diperbarui.');
+        }
 
         $data = $request->validate([
             'progress' => ['required', 'integer', 'min:0', 'max:100'],
@@ -108,6 +132,21 @@ class TaskController extends Controller
         $task->delete();
 
         return back()->with('success', 'Task berhasil dihapus.');
+    }
+
+    /**
+     * Menyimpan progress hasil hitungan bagi task yang punya target.
+     *
+     * Kolom `progress` sengaja tetap diisi, bukan dihitung saat dibaca, agar
+     * progress project dan kontribusi anggota tidak perlu tahu soal target.
+     */
+    private function selaraskanProgress(Task $task): void
+    {
+        if (! $task->pakaiTarget()) {
+            return;
+        }
+
+        $task->update(['progress' => $task->progressDariTarget()]);
     }
 
     /**

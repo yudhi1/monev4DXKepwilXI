@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Lencana from '@/components/pm/Lencana.vue';
@@ -133,9 +133,35 @@ const formTask = useForm({
     deadline: '',
     progress: 0,
     bobot: 1,
+    satuan: null,
+    target: '',
+    realisasi: '',
     milestone_id: null,
     assignees: [],
 });
+
+/* Task yang diukur angka: progress tidak lagi diisi tangan. */
+const formPakaiTarget = computed(() => Number(formTask.target) > 0);
+
+const progressHitungan = computed(() => {
+    if (! formPakaiTarget.value) {
+        return null;
+    }
+
+    const persen = (Number(formTask.realisasi) || 0) / Number(formTask.target) * 100;
+
+    return Math.round(Math.max(0, Math.min(100, persen)));
+});
+
+/* Progress ikut angka realisasi supaya yang tersimpan tidak bertentangan. */
+watch(progressHitungan, (nilai) => {
+    if (nilai !== null) {
+        formTask.progress = nilai;
+    }
+});
+
+/* Angka besar seperti rupiah sulit dibaca tanpa pemisah ribuan. */
+const angka = (nilai) => (nilai === null || nilai === '' ? '—' : Number(nilai).toLocaleString('id-ID'));
 
 const bukaTambahTask = (statusAwal = 'backlog') => {
     taskDiedit.value = null;
@@ -155,6 +181,9 @@ const bukaEditTask = (task) => {
     formTask.deadline = task.deadline ?? '';
     formTask.progress = task.progress;
     formTask.bobot = task.bobot;
+    formTask.satuan = task.satuan;
+    formTask.target = task.target ?? '';
+    formTask.realisasi = task.realisasi ?? '';
     formTask.milestone_id = task.milestone_id;
     formTask.assignees = task.assignees.map((a) => a.id);
     dialogTask.value = true;
@@ -422,6 +451,12 @@ const kandidatTersisa = computed(() => {
                                 {{ task.deskripsi }}
                             </p>
 
+                            <p v-if="task.pakaiTarget" class="text-muted-foreground mt-2 text-xs tabular-nums">
+                                <span class="text-foreground font-medium">{{ angka(task.realisasi) }}</span>
+                                / {{ angka(task.target) }}
+                                <span v-if="task.satuan">{{ task.satuan }}</span>
+                            </p>
+
                             <BilahProgress :nilai="task.progress" class="mt-2.5" />
 
                             <div class="mt-2 flex items-center justify-between gap-2">
@@ -652,10 +687,80 @@ const kandidatTersisa = computed(() => {
                         </div>
                     </div>
 
+                    <!--
+                      Target opsional. Diisi untuk pekerjaan yang punya angka
+                      (penagihan Rp, kolekting badan usaha); dikosongkan untuk
+                      pekerjaan yang tak terukur angka.
+                    -->
+                    <div class="space-y-3 rounded-lg border p-3">
+                        <div class="flex items-center justify-between">
+                            <Label class="text-sm">Target &amp; Realisasi</Label>
+                            <span class="text-muted-foreground text-xs">opsional</span>
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-3">
+                            <div class="space-y-1.5">
+                                <Label for="satuan" class="text-muted-foreground text-xs">Satuan</Label>
+                                <Select
+                                    :model-value="formTask.satuan ?? 'tanpa'"
+                                    @update:model-value="(v) => (formTask.satuan = v === 'tanpa' ? null : v)"
+                                >
+                                    <SelectTrigger id="satuan"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="tanpa">Tanpa satuan</SelectItem>
+                                        <SelectItem v-for="sat in opsi.satuan" :key="sat" :value="sat">
+                                            {{ sat }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <Label for="target" class="text-muted-foreground text-xs">Target</Label>
+                                <Input id="target" v-model="formTask.target" type="number" min="0" step="any" />
+                                <p v-if="formTask.errors.target" class="text-destructive text-sm">
+                                    {{ formTask.errors.target }}
+                                </p>
+                            </div>
+                            <div class="space-y-1.5">
+                                <Label for="realisasi" class="text-muted-foreground text-xs">Realisasi</Label>
+                                <Input
+                                    id="realisasi"
+                                    v-model="formTask.realisasi"
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    :disabled="! formPakaiTarget"
+                                />
+                                <p v-if="formTask.errors.realisasi" class="text-destructive text-sm">
+                                    {{ formTask.errors.realisasi }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p v-if="formPakaiTarget" class="text-muted-foreground text-xs">
+                            Progress dihitung otomatis: {{ angka(formTask.realisasi || 0) }} dari
+                            {{ angka(formTask.target) }} {{ formTask.satuan ?? '' }} =
+                            <span class="text-foreground font-medium">{{ progressHitungan }}%</span>
+                        </p>
+                        <p v-else class="text-muted-foreground text-xs">
+                            Kosongkan bila pekerjaan ini tidak diukur dengan angka — progress diisi manual.
+                        </p>
+                    </div>
+
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="space-y-1.5">
                             <Label for="progress">Progress (%)</Label>
-                            <Input id="progress" v-model="formTask.progress" type="number" min="0" max="100" />
+                            <Input
+                                id="progress"
+                                v-model="formTask.progress"
+                                type="number"
+                                min="0"
+                                max="100"
+                                :disabled="formPakaiTarget"
+                            />
+                            <p v-if="formPakaiTarget" class="text-muted-foreground text-xs">
+                                Terkunci — mengikuti realisasi.
+                            </p>
                             <p v-if="formTask.errors.progress" class="text-destructive text-sm">
                                 {{ formTask.errors.progress }}
                             </p>

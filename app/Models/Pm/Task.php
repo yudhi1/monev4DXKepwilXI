@@ -14,14 +14,41 @@ class Task extends Model
 
     protected $fillable = [
         'project_id', 'milestone_id', 'judul', 'deskripsi', 'status',
-        'prioritas', 'deadline', 'progress', 'bobot', 'urutan', 'dibuat_oleh',
+        'prioritas', 'deadline', 'progress', 'bobot', 'satuan', 'target',
+        'realisasi', 'urutan', 'dibuat_oleh',
     ];
 
     protected $casts = [
         'deadline' => 'date',
         'progress' => 'integer',
         'bobot' => 'decimal:2',
+        'target' => 'decimal:2',
+        'realisasi' => 'decimal:2',
     ];
+
+    /** Task yang kemajuannya diukur angka, bukan ditaksir sendiri oleh PIC. */
+    public function pakaiTarget(): bool
+    {
+        return $this->target !== null && (float) $this->target > 0;
+    }
+
+    /**
+     * Progress yang seharusnya, dihitung dari realisasi terhadap target.
+     *
+     * Dipanggil saat menyimpan sehingga kolom `progress` tetap menjadi satu-
+     * satunya sumber bagi perhitungan lain (progress project, kontribusi
+     * anggota) — semuanya tidak perlu tahu soal target.
+     */
+    public function progressDariTarget(): int
+    {
+        if (! $this->pakaiTarget()) {
+            return $this->progress;
+        }
+
+        $persen = (float) $this->realisasi / (float) $this->target * 100;
+
+        return (int) round(max(0, min(100, $persen)));
+    }
 
     public function project(): BelongsTo
     {
