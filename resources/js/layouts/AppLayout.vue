@@ -141,13 +141,13 @@ const logout = () => router.post('/logout');
         <aside
             :class="
                 cn(
-                    'bg-background fixed inset-y-0 left-0 z-40 hidden flex-col border-r transition-[width] duration-200 lg:flex',
+                    'bg-sidebar border-sidebar-border fixed inset-y-0 left-0 z-40 hidden flex-col border-r transition-[width] duration-200 lg:flex',
                     ciut ? 'w-[4.5rem]' : 'w-64'
                 )
             "
         >
             <!-- Brand: mengikuti modul yang sedang dibuka -->
-            <div class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+            <div class="border-sidebar-border flex h-14 shrink-0 items-center gap-2 border-b px-4">
                 <Link :href="brand.beranda" class="flex items-center gap-2 overflow-hidden">
                     <span
                         class="from-primary to-success flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
@@ -174,8 +174,8 @@ const logout = () => router.post('/logout');
                                             cn(
                                                 'flex h-10 items-center justify-center rounded-md transition-colors',
                                                 aktif(item)
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                                    ? 'bg-sidebar-active text-sidebar-active-foreground shadow-sm'
+                                                    : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground'
                                             )
                                         "
                                     >
@@ -192,8 +192,8 @@ const logout = () => router.post('/logout');
                                     cn(
                                         'flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
                                         aktif(item)
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            ? 'bg-sidebar-active text-sidebar-active-foreground shadow-sm'
+                                            : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground'
                                     )
                                 "
                             >
@@ -211,8 +211,8 @@ const logout = () => router.post('/logout');
                                             cn(
                                                 'flex h-10 w-full items-center justify-center rounded-md transition-colors',
                                                 aktif(item)
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                                    ? 'bg-sidebar-active text-sidebar-active-foreground shadow-sm'
+                                                    : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground'
                                             )
                                         "
                                     >
@@ -235,7 +235,7 @@ const logout = () => router.post('/logout');
                                             'flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
                                             aktif(item)
                                                 ? 'text-foreground'
-                                                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                                : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground'
                                         )
                                     "
                                     @click="toggleGrup(item.label)"
@@ -252,7 +252,7 @@ const logout = () => router.post('/logout');
                                     />
                                 </button>
 
-                                <div v-if="grupTerbuka[item.label]" class="border-border mt-1 ml-[1.4rem] space-y-0.5 border-l pl-3">
+                                <div v-if="grupTerbuka[item.label]" class="border-sidebar-border mt-1 ml-[1.4rem] space-y-0.5 border-l pl-3">
                                     <Link
                                         v-for="sub in item.items"
                                         :key="sub.href"
@@ -261,8 +261,8 @@ const logout = () => router.post('/logout');
                                             cn(
                                                 'block rounded-md px-3 py-2 text-sm transition-colors',
                                                 aktif(sub)
-                                                    ? 'bg-secondary text-foreground font-medium'
-                                                    : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+                                                    ? 'bg-sidebar-active text-sidebar-active-foreground font-medium shadow-sm'
+                                                    : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground'
                                             )
                                         "
                                     >
@@ -276,13 +276,13 @@ const logout = () => router.post('/logout');
             </TooltipProvider>
 
             <!-- Kaki: identitas user -->
-            <div class="shrink-0 border-t p-3">
+            <div class="border-sidebar-border shrink-0 border-t p-3">
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
                         <button
                             :class="
                                 cn(
-                                    'hover:bg-secondary flex w-full items-center gap-2 rounded-md p-2 transition-colors',
+                                    'hover:bg-sidebar-hover flex w-full items-center gap-2 rounded-md p-2 transition-colors',
                                     ciut && 'justify-center'
                                 )
                             "
@@ -339,8 +339,8 @@ const logout = () => router.post('/logout');
 
         <!-- ============ Laci mobile ============ -->
         <Sheet v-model:open="laciTerbuka">
-            <SheetContent side="left" class="w-72 p-0">
-                <div class="flex h-14 items-center gap-2 border-b px-4">
+            <SheetContent side="left" class="bg-sidebar w-72 p-0">
+                <div class="border-sidebar-border flex h-14 items-center gap-2 border-b px-4">
                     <span
                         class="from-primary to-success flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
                     >
@@ -358,7 +358,9 @@ const logout = () => router.post('/logout');
                             :class="
                                 cn(
                                     'flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium',
-                                    aktif(item) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                                    aktif(item)
+                                        ? 'bg-sidebar-active text-sidebar-active-foreground shadow-sm'
+                                        : 'text-sidebar-foreground'
                                 )
                             "
                         >
@@ -366,7 +368,7 @@ const logout = () => router.post('/logout');
                             {{ item.label }}
                         </Link>
                         <div v-else class="py-1">
-                            <p class="text-muted-foreground flex items-center gap-3 px-3 py-2 text-xs font-semibold tracking-wide uppercase">
+                            <p class="text-sidebar-foreground flex items-center gap-3 px-3 py-2 text-xs font-semibold tracking-wide uppercase">
                                 <component :is="item.icon" class="size-4 shrink-0" />
                                 {{ item.label }}
                             </p>
@@ -377,7 +379,9 @@ const logout = () => router.post('/logout');
                                 :class="
                                     cn(
                                         'ml-[1.9rem] block rounded-md px-3 py-2 text-sm',
-                                        aktif(sub) ? 'bg-secondary font-medium' : 'text-muted-foreground'
+                                        aktif(sub)
+                                            ? 'bg-sidebar-active text-sidebar-active-foreground font-medium shadow-sm'
+                                            : 'text-sidebar-foreground'
                                     )
                                 "
                             >

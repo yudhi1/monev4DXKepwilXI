@@ -63,6 +63,21 @@
     --ring: oklch(0.53 0.16 248);
 
     /*
+     | Sidebar. Latarnya sengaja biru-abu lembut, bukan putih, supaya area
+     | navigasi terpisah tenang dari area isi tanpa perlu bayangan tebal.
+     |
+     | Kuncinya: menu aktif justru LEBIH TERANG daripada latar sidebar
+     | (putih bersih), jadi ia menonjol sebagai kartu yang terangkat, bukan
+     | blok gelap yang berteriak.
+     */
+    --sidebar: oklch(0.965 0.012 236);
+    --sidebar-foreground: oklch(0.45 0.035 245);
+    --sidebar-border: oklch(0.905 0.017 232);
+    --sidebar-hover: oklch(0.985 0.007 230);
+    --sidebar-active: oklch(1 0 0);
+    --sidebar-active-foreground: oklch(0.45 0.15 250);
+
+    /*
      | Warna per bidang. Hue-nya sengaja dijauhkan satu sama lain agar
      | keempatnya tetap terbedakan, termasuk oleh mata yang sulit
      | membedakan merah-hijau.
@@ -114,6 +129,14 @@
     --input: oklch(1 0 0 / 16%);
     --ring: oklch(0.68 0.14 248);
 
+    /* Di mode gelap arahnya tetap sama: aktif lebih terang dari latarnya. */
+    --sidebar: oklch(0.2 0.028 250);
+    --sidebar-foreground: oklch(0.74 0.03 232);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-hover: oklch(0.25 0.035 250);
+    --sidebar-active: oklch(0.32 0.05 250);
+    --sidebar-active-foreground: oklch(0.95 0.015 230);
+
     --bidang-jpk: oklch(0.74 0.13 250);
     --bidang-kml: oklch(0.76 0.12 160);
     --bidang-pikeu: oklch(0.8 0.12 65);
@@ -150,6 +173,13 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-hover: var(--sidebar-hover);
+    --color-sidebar-active: var(--sidebar-active);
+    --color-sidebar-active-foreground: var(--sidebar-active-foreground);
 
     --color-bidang-jpk: var(--bidang-jpk);
     --color-bidang-kml: var(--bidang-kml);
