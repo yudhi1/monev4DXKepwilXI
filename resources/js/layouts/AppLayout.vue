@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import {
     ChartNoAxesCombined,
     ChevronDown,
+    ChevronsUpDown,
     FolderKanban,
     Grid2x2,
     LogOut,
@@ -146,13 +147,68 @@ const logout = () => router.post('/logout');
                 )
             "
         >
-            <!-- Brand: mengikuti modul yang sedang dibuka -->
-            <div class="border-sidebar-border flex h-14 shrink-0 items-center gap-2 border-b px-4">
-                <Link :href="brand.beranda" class="flex items-center gap-2 overflow-hidden">
+            <!--
+              Kepala sidebar merangkap pemilih aplikasi. Sebelumnya switcher
+              ini bersembunyi di dalam menu user sehingga praktis tak
+              ditemukan; di sini ia jadi hal pertama yang terlihat.
+            -->
+            <div class="border-sidebar-border flex h-14 shrink-0 items-center border-b px-3">
+                <DropdownMenu v-if="bisaGantiModul">
+                    <DropdownMenuTrigger as-child>
+                        <button
+                            :class="
+                                cn(
+                                    'hover:bg-sidebar-hover flex h-10 items-center gap-2 rounded-md px-1.5 transition-colors',
+                                    ciut ? 'w-full justify-center' : 'w-full'
+                                )
+                            "
+                            :title="ciut ? 'Ganti aplikasi' : undefined"
+                        >
+                            <span
+                                class="from-primary to-success flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
+                            >
+                                <component :is="IKON_MODUL[brand.ikon] ?? ChartNoAxesCombined" class="size-4" />
+                            </span>
+                            <template v-if="!ciut">
+                                <span class="min-w-0 flex-1 text-left text-[15px] font-semibold tracking-tight">
+                                    {{ brand.judul }}
+                                    <span class="text-muted-foreground font-normal">{{ brand.sub }}</span>
+                                </span>
+                                <ChevronsUpDown class="text-muted-foreground size-4 shrink-0" />
+                            </template>
+                        </button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="start" class="w-64">
+                        <DropdownMenuLabel class="text-muted-foreground text-xs font-normal">
+                            Pindah aplikasi
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem v-for="m in modulTersedia" :key="m.kunci" as-child>
+                            <Link
+                                :href="m.beranda"
+                                :class="
+                                    cn(
+                                        'w-full cursor-pointer items-start gap-2',
+                                        m.kunci === modulAktif && 'bg-secondary'
+                                    )
+                                "
+                            >
+                                <component :is="IKON_MODUL[m.ikon] ?? Grid2x2" class="mt-0.5 size-4 shrink-0" />
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-medium">{{ m.nama }}</span>
+                                    <span class="text-muted-foreground block text-xs">{{ m.deskripsi }}</span>
+                                </span>
+                            </Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <!-- Hanya satu modul: tak ada yang perlu dipilih. -->
+                <Link v-else :href="brand.beranda" class="flex items-center gap-2 overflow-hidden px-1.5">
                     <span
                         class="from-primary to-success flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
                     >
-                        <ChartNoAxesCombined class="size-4" />
+                        <component :is="IKON_MODUL[brand.ikon] ?? ChartNoAxesCombined" class="size-4" />
                     </span>
                     <span v-if="!ciut" class="text-[15px] font-semibold tracking-tight whitespace-nowrap">
                         {{ brand.judul }} <span class="text-muted-foreground font-normal">{{ brand.sub }}</span>
@@ -306,28 +362,6 @@ const logout = () => router.post('/logout');
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
 
-                        <!-- Pindah modul tanpa perlu keluar dulu -->
-                        <template v-if="bisaGantiModul">
-                            <DropdownMenuLabel class="text-muted-foreground text-xs font-normal">
-                                Aplikasi
-                            </DropdownMenuLabel>
-                            <DropdownMenuItem v-for="m in modulTersedia" :key="m.kunci" as-child>
-                                <Link
-                                    :href="m.beranda"
-                                    :class="
-                                        cn(
-                                            'w-full cursor-pointer',
-                                            m.kunci === modulAktif && 'bg-secondary font-medium'
-                                        )
-                                    "
-                                >
-                                    <component :is="IKON_MODUL[m.ikon] ?? Grid2x2" class="mr-2 size-4" />
-                                    {{ m.nama }}
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                        </template>
-
                         <DropdownMenuItem class="cursor-pointer" @select="logout">
                             <LogOut class="mr-2 size-4" />
                             Keluar
@@ -344,7 +378,7 @@ const logout = () => router.post('/logout');
                     <span
                         class="from-primary to-success flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm"
                     >
-                        <ChartNoAxesCombined class="size-4" />
+                        <component :is="IKON_MODUL[brand.ikon] ?? ChartNoAxesCombined" class="size-4" />
                     </span>
                     <span class="text-[15px] font-semibold tracking-tight">
                         {{ brand.judul }} <span class="text-muted-foreground font-normal">{{ brand.sub }}</span>

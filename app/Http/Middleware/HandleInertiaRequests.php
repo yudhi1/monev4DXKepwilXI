@@ -54,8 +54,15 @@ class HandleInertiaRequests extends Middleware
                     'permissions' => $user->getAllPermissions()->pluck('name'),
                 ] : null,
             ],
+            /*
+             | `aktif` dibungkus closure supaya dinilai saat respons dibentuk,
+             | bukan saat middleware ini jalan. share() dieksekusi di grup
+             | middleware `web` — yaitu SEBELUM middleware rute `modul:4dx`
+             | sempat menandai modul yang sedang dibuka, sehingga penilaian
+             | langsung selalu menghasilkan null.
+             */
             'modul' => [
-                'aktif' => Modul::aktif($request),
+                'aktif' => fn () => Modul::aktif($request),
                 'daftar' => Modul::untukUser($user),
             ],
             'flash' => [
