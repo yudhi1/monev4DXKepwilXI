@@ -29,7 +29,20 @@ class AuthController extends Controller
             }
             $request->session()->regenerate();
 
-            return redirect()->intended('/dashboard');
+            /*
+             | Selalu ke /apps, bukan langsung ke dashboard sebuah modul.
+             |
+             | /apps yang memutuskan: user dengan satu modul langsung
+             | dialihkan ke sana, yang punya dua diberi pilihan. Sebelumnya
+             | tujuannya dipatok ke /dashboard (modul 4DX), sehingga akun
+             | pegawai — yang hanya berhak atas modul PM — langsung menabrak
+             | 403 tepat setelah login.
+             |
+             | intended() sengaja tidak dipakai: modul 4DX menempati URL root
+             | sehingga tujuan tersimpan seperti /wigs tidak bisa diperiksa
+             | hak aksesnya di sini tanpa menebak-nebak.
+             */
+            return redirect('/apps');
         }
 
         return back()->withErrors(['name' => 'Nama atau password salah.'])->onlyInput('name');
