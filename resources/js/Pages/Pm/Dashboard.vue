@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
     CalendarClock,
+    ChevronRight,
     CircleAlert,
     CircleCheckBig,
     FolderKanban,
@@ -34,6 +35,7 @@ defineProps({
 const KARTU = [
     {
         kunci: 'project',
+        tampil: 'project',
         label: 'Projects',
         icon: FolderKanban,
         kartu: 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40',
@@ -42,6 +44,7 @@ const KARTU = [
     },
     {
         kunci: 'task',
+        tampil: 'task',
         label: 'Tasks',
         icon: ListChecks,
         kartu: 'border-violet-200 bg-violet-50 dark:border-violet-900 dark:bg-violet-950/40',
@@ -50,6 +53,7 @@ const KARTU = [
     },
     {
         kunci: 'taskSelesai',
+        tampil: 'selesai',
         label: 'Completed',
         icon: CircleCheckBig,
         kartu: 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40',
@@ -58,6 +62,7 @@ const KARTU = [
     },
     {
         kunci: 'taskTerlambat',
+        tampil: 'terlambat',
         label: 'Overdue',
         icon: CircleAlert,
         kartu: 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/40',
@@ -99,19 +104,28 @@ const tanggal = (nilai) =>
 
         <!-- Kartu statistik -->
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card v-for="k in KARTU" :key="k.kunci" :class="k.kartu">
-                <CardContent class="flex items-center gap-3 p-4">
-                    <span :class="['flex size-10 shrink-0 items-center justify-center rounded-lg', k.ikon]">
-                        <component :is="k.icon" class="size-5" />
-                    </span>
-                    <div class="min-w-0">
-                        <p class="text-muted-foreground text-xs tracking-wide uppercase">{{ k.label }}</p>
-                        <p :class="['text-2xl leading-tight font-semibold tabular-nums', k.angka]">
-                            {{ ringkasan[k.kunci] }}
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+            <!-- Kartu dapat diklik: angkanya menuju daftar rincian di baliknya. -->
+            <Link
+                v-for="k in KARTU"
+                :key="k.kunci"
+                :href="'/pm/ringkasan?tampil=' + k.tampil"
+                class="block"
+            >
+                <Card :class="[k.kartu, 'h-full transition-shadow hover:shadow-md']">
+                    <CardContent class="flex items-center gap-3 p-4">
+                        <span :class="['flex size-10 shrink-0 items-center justify-center rounded-lg', k.ikon]">
+                            <component :is="k.icon" class="size-5" />
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-muted-foreground text-xs tracking-wide uppercase">{{ k.label }}</p>
+                            <p :class="['text-2xl leading-tight font-semibold tabular-nums', k.angka]">
+                                {{ ringkasan[k.kunci] }}
+                            </p>
+                        </div>
+                        <ChevronRight class="text-muted-foreground ml-auto size-4 shrink-0" />
+                    </CardContent>
+                </Card>
+            </Link>
         </div>
 
         <div class="mt-6 grid gap-6 lg:grid-cols-3">

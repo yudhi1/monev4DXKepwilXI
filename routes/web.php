@@ -15,6 +15,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\Pm\DashboardController as PmDashboardController;
 use App\Http\Controllers\Pm\MemberController as PmMemberController;
 use App\Http\Controllers\Pm\ProjectController as PmProjectController;
+use App\Http\Controllers\Pm\RingkasanController as PmRingkasanController;
 use App\Http\Controllers\Pm\TaskController as PmTaskController;
 use App\Http\Controllers\Pm\TugasSayaController as PmTugasSayaController;
 use App\Http\Controllers\RealisasiLeadController;
@@ -171,6 +172,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('pm')->name('pm.')->middleware('modul:pm')->group(function () {
         Route::get('/', [PmDashboardController::class, 'index'])->name('dashboard');
         Route::get('/tugas-saya', [PmTugasSayaController::class, 'index'])->name('tugas-saya');
+
+        // Rincian di balik kartu statistik dashboard.
+        Route::get('/ringkasan', [PmRingkasanController::class, 'index'])->name('ringkasan');
 
         Route::get('/projects', [PmProjectController::class, 'index'])->name('projects');
         Route::post('/projects', [PmProjectController::class, 'store'])->name('projects.store');
