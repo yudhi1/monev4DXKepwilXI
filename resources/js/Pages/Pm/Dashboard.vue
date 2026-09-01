@@ -21,11 +21,49 @@ defineProps({
     opsi: { type: Object, required: true },
 });
 
+/*
+ | Tiap kartu statistik diberi rona warnanya sendiri supaya keempatnya bisa
+ | dibedakan sekilas tanpa membaca labelnya. Warnanya dijaga tetap lembut
+ | (tingkat 50/100) agar angka tetap jadi bagian yang paling menonjol, bukan
+ | latarnya.
+ |
+ | Kelas ditulis utuh, bukan dirangkai seperti `bg-${warna}-50`, karena
+ | Tailwind memindai berkas sebagai teks — nama kelas hasil rangkaian tidak
+ | akan pernah ikut dibuatkan CSS-nya.
+ */
 const KARTU = [
-    { kunci: 'project', label: 'Projects', icon: FolderKanban, kelas: 'text-blue-600 bg-blue-100 dark:bg-blue-950' },
-    { kunci: 'task', label: 'Tasks', icon: ListChecks, kelas: 'text-violet-600 bg-violet-100 dark:bg-violet-950' },
-    { kunci: 'taskSelesai', label: 'Completed', icon: CircleCheckBig, kelas: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-950' },
-    { kunci: 'taskTerlambat', label: 'Overdue', icon: CircleAlert, kelas: 'text-rose-600 bg-rose-100 dark:bg-rose-950' },
+    {
+        kunci: 'project',
+        label: 'Projects',
+        icon: FolderKanban,
+        kartu: 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40',
+        ikon: 'bg-blue-500/15 text-blue-600 dark:text-blue-300',
+        angka: 'text-blue-700 dark:text-blue-200',
+    },
+    {
+        kunci: 'task',
+        label: 'Tasks',
+        icon: ListChecks,
+        kartu: 'border-violet-200 bg-violet-50 dark:border-violet-900 dark:bg-violet-950/40',
+        ikon: 'bg-violet-500/15 text-violet-600 dark:text-violet-300',
+        angka: 'text-violet-700 dark:text-violet-200',
+    },
+    {
+        kunci: 'taskSelesai',
+        label: 'Completed',
+        icon: CircleCheckBig,
+        kartu: 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40',
+        ikon: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300',
+        angka: 'text-emerald-700 dark:text-emerald-200',
+    },
+    {
+        kunci: 'taskTerlambat',
+        label: 'Overdue',
+        icon: CircleAlert,
+        kartu: 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/40',
+        ikon: 'bg-rose-500/15 text-rose-600 dark:text-rose-300',
+        angka: 'text-rose-700 dark:text-rose-200',
+    },
 ];
 
 const HEALTH = {
@@ -61,14 +99,16 @@ const tanggal = (nilai) =>
 
         <!-- Kartu statistik -->
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card v-for="k in KARTU" :key="k.kunci">
+            <Card v-for="k in KARTU" :key="k.kunci" :class="k.kartu">
                 <CardContent class="flex items-center gap-3 p-4">
-                    <span :class="['flex size-10 shrink-0 items-center justify-center rounded-lg', k.kelas]">
+                    <span :class="['flex size-10 shrink-0 items-center justify-center rounded-lg', k.ikon]">
                         <component :is="k.icon" class="size-5" />
                     </span>
                     <div class="min-w-0">
                         <p class="text-muted-foreground text-xs tracking-wide uppercase">{{ k.label }}</p>
-                        <p class="text-2xl leading-tight font-semibold tabular-nums">{{ ringkasan[k.kunci] }}</p>
+                        <p :class="['text-2xl leading-tight font-semibold tabular-nums', k.angka]">
+                            {{ ringkasan[k.kunci] }}
+                        </p>
                     </div>
                 </CardContent>
             </Card>
