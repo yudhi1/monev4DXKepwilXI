@@ -243,8 +243,9 @@ const tanggal = (nilai) =>
 
         <!-- Dialog project baru -->
         <Dialog v-model:open="dialogTerbuka">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-                <DialogHeader>
+            <!-- Sama seperti dialog task: isi yang bergulir, tombol tetap terlihat. -->
+            <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-3xl">
+                <DialogHeader class="shrink-0">
                     <DialogTitle>Project Baru</DialogTitle>
                     <DialogDescription>
                         <template v-if="unitSaya">
@@ -255,177 +256,179 @@ const tanggal = (nilai) =>
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
-                    <div class="grid gap-4 sm:grid-cols-3">
-                        <div class="space-y-1.5">
-                            <Label for="kode">Kode</Label>
-                            <Input id="kode" v-model="form.kode" placeholder="PRJ-001" />
-                            <p v-if="form.errors.kode" class="text-destructive text-sm">{{ form.errors.kode }}</p>
-                        </div>
-                        <div class="space-y-1.5 sm:col-span-2">
-                            <Label for="nama">Nama Project</Label>
-                            <Input id="nama" v-model="form.nama" />
-                            <p v-if="form.errors.nama" class="text-destructive text-sm">{{ form.errors.nama }}</p>
-                        </div>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="deskripsi">Deskripsi</Label>
-                        <Textarea id="deskripsi" v-model="form.deskripsi" rows="3" />
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="space-y-1.5">
-                            <Label>Status</Label>
-                            <Select v-model="form.status">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="(meta, kunci) in opsi.statusProject" :key="kunci" :value="kunci">
-                                        {{ meta.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="space-y-1.5">
-                            <Label>Prioritas</Label>
-                            <Select v-model="form.prioritas">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="(meta, kunci) in opsi.prioritas" :key="kunci" :value="kunci">
-                                        {{ meta.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="space-y-1.5">
-                            <Label for="mulai">Tanggal Mulai</Label>
-                            <Input id="mulai" v-model="form.tanggal_mulai" type="date" />
-                        </div>
-                        <div class="space-y-1.5">
-                            <Label for="selesai">Tanggal Selesai</Label>
-                            <Input id="selesai" v-model="form.tanggal_selesai" type="date" />
-                            <p v-if="form.errors.tanggal_selesai" class="text-destructive text-sm">
-                                {{ form.errors.tanggal_selesai }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!--
-                      Anggota ditentukan sejak awal, bukan setelah project jadi.
-                      Boleh lintas bidang dan lintas level (Kepwil ⇄ kantor cabang).
-                    -->
-                    <div class="space-y-2 border-t pt-4">
-                        <div class="flex items-center justify-between">
-                            <Label>Anggota Tim</Label>
-                            <span class="text-muted-foreground text-xs">
-                                {{ form.anggotas.length }} dipilih (di luar Anda)
-                            </span>
+                <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="simpan">
+                    <div class="gulir-terlihat min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+                        <div class="grid gap-4 sm:grid-cols-3">
+                            <div class="space-y-1.5">
+                                <Label for="kode">Kode</Label>
+                                <Input id="kode" v-model="form.kode" placeholder="PRJ-001" />
+                                <p v-if="form.errors.kode" class="text-destructive text-sm">{{ form.errors.kode }}</p>
+                            </div>
+                            <div class="space-y-1.5 sm:col-span-2">
+                                <Label for="nama">Nama Project</Label>
+                                <Input id="nama" v-model="form.nama" />
+                                <p v-if="form.errors.nama" class="text-destructive text-sm">{{ form.errors.nama }}</p>
+                            </div>
                         </div>
 
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <!-- Kiri: kandidat -->
-                            <div class="rounded-md border">
-                                <div class="relative border-b p-2">
-                                    <Search class="text-muted-foreground absolute top-1/2 left-4 size-3.5 -translate-y-1/2" />
-                                    <Input
-                                        v-model="cariAnggota"
-                                        placeholder="Cari nama, bidang, atau kantor..."
-                                        class="h-8 pl-8 text-sm"
-                                    />
+                        <div class="space-y-1.5">
+                            <Label for="deskripsi">Deskripsi</Label>
+                            <Textarea id="deskripsi" v-model="form.deskripsi" rows="3" />
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="space-y-1.5">
+                                <Label>Status</Label>
+                                <Select v-model="form.status">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="(meta, kunci) in opsi.statusProject" :key="kunci" :value="kunci">
+                                            {{ meta.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <Label>Prioritas</Label>
+                                <Select v-model="form.prioritas">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="(meta, kunci) in opsi.prioritas" :key="kunci" :value="kunci">
+                                            {{ meta.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="space-y-1.5">
+                                <Label for="mulai">Tanggal Mulai</Label>
+                                <Input id="mulai" v-model="form.tanggal_mulai" type="date" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <Label for="selesai">Tanggal Selesai</Label>
+                                <Input id="selesai" v-model="form.tanggal_selesai" type="date" />
+                                <p v-if="form.errors.tanggal_selesai" class="text-destructive text-sm">
+                                    {{ form.errors.tanggal_selesai }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!--
+                          Anggota ditentukan sejak awal, bukan setelah project jadi.
+                          Boleh lintas bidang dan lintas level (Kepwil ⇄ kantor cabang).
+                        -->
+                        <div class="space-y-2 border-t pt-4">
+                            <div class="flex items-center justify-between">
+                                <Label>Anggota Tim</Label>
+                                <span class="text-muted-foreground text-xs">
+                                    {{ form.anggotas.length }} dipilih (di luar Anda)
+                                </span>
+                            </div>
+
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <!-- Kiri: kandidat -->
+                                <div class="rounded-md border">
+                                    <div class="relative border-b p-2">
+                                        <Search class="text-muted-foreground absolute top-1/2 left-4 size-3.5 -translate-y-1/2" />
+                                        <Input
+                                            v-model="cariAnggota"
+                                            placeholder="Cari nama, bidang, atau kantor..."
+                                            class="h-8 pl-8 text-sm"
+                                        />
+                                    </div>
+
+                                    <div class="max-h-56 overflow-y-auto p-1">
+                                        <p
+                                            v-if="kandidatTersaring.length === 0"
+                                            class="text-muted-foreground p-4 text-center text-xs"
+                                        >
+                                            {{
+                                                kandidatAnggota.length === 0
+                                                    ? 'Belum ada data pegawai. Admin dapat menambahkannya lewat Master → User.'
+                                                    : 'Tidak ada pegawai yang cocok.'
+                                            }}
+                                        </p>
+
+                                        <div v-for="k in kandidatTersaring" :key="k.induk" class="mb-1">
+                                            <p class="text-muted-foreground px-2 py-1 text-xs font-semibold">
+                                                {{ k.induk }}
+                                            </p>
+                                            <button
+                                                v-for="orang in k.orang"
+                                                :key="orang.id"
+                                                type="button"
+                                                class="hover:bg-secondary flex w-full items-center gap-2 rounded px-2 py-1.5 text-left"
+                                                @click="tambahAnggota(orang)"
+                                            >
+                                                <Plus class="text-muted-foreground size-3.5 shrink-0" />
+                                                <span class="min-w-0 flex-1">
+                                                    <span class="block truncate text-sm">{{ orang.nama }}</span>
+                                                    <span class="text-muted-foreground block truncate text-xs">
+                                                        {{ orang.unitKerja }}{{ orang.jabatan ? ` · ${orang.jabatan}` : '' }}
+                                                    </span>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div class="max-h-56 overflow-y-auto p-1">
-                                    <p
-                                        v-if="kandidatTersaring.length === 0"
-                                        class="text-muted-foreground p-4 text-center text-xs"
-                                    >
-                                        {{
-                                            kandidatAnggota.length === 0
-                                                ? 'Belum ada data pegawai. Admin dapat menambahkannya lewat Master → User.'
-                                                : 'Tidak ada pegawai yang cocok.'
-                                        }}
+                                <!-- Kanan: yang sudah dipilih -->
+                                <div class="rounded-md border">
+                                    <p class="text-muted-foreground border-b px-3 py-2 text-xs font-semibold">
+                                        Tim project
                                     </p>
+                                    <div class="max-h-56 space-y-1 overflow-y-auto p-2">
+                                        <div class="bg-secondary/60 flex items-center gap-2 rounded px-2 py-1.5">
+                                            <span class="min-w-0 flex-1 truncate text-sm">Anda</span>
+                                            <span class="text-muted-foreground shrink-0 text-xs">Project Manager</span>
+                                        </div>
 
-                                    <div v-for="k in kandidatTersaring" :key="k.induk" class="mb-1">
-                                        <p class="text-muted-foreground px-2 py-1 text-xs font-semibold">
-                                            {{ k.induk }}
-                                        </p>
-                                        <button
-                                            v-for="orang in k.orang"
-                                            :key="orang.id"
-                                            type="button"
-                                            class="hover:bg-secondary flex w-full items-center gap-2 rounded px-2 py-1.5 text-left"
-                                            @click="tambahAnggota(orang)"
+                                        <div
+                                            v-for="a in form.anggotas"
+                                            :key="a.user_id"
+                                            class="flex items-center gap-2 rounded px-2 py-1"
                                         >
-                                            <Plus class="text-muted-foreground size-3.5 shrink-0" />
                                             <span class="min-w-0 flex-1">
-                                                <span class="block truncate text-sm">{{ orang.nama }}</span>
+                                                <span class="block truncate text-sm">
+                                                    {{ detailKandidat(a.user_id)?.nama }}
+                                                </span>
                                                 <span class="text-muted-foreground block truncate text-xs">
-                                                    {{ orang.unitKerja }}{{ orang.jabatan ? ` · ${orang.jabatan}` : '' }}
+                                                    {{ detailKandidat(a.user_id)?.unitKerja }}
                                                 </span>
                                             </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Kanan: yang sudah dipilih -->
-                            <div class="rounded-md border">
-                                <p class="text-muted-foreground border-b px-3 py-2 text-xs font-semibold">
-                                    Tim project
-                                </p>
-                                <div class="max-h-56 space-y-1 overflow-y-auto p-2">
-                                    <div class="bg-secondary/60 flex items-center gap-2 rounded px-2 py-1.5">
-                                        <span class="min-w-0 flex-1 truncate text-sm">Anda</span>
-                                        <span class="text-muted-foreground shrink-0 text-xs">Project Manager</span>
-                                    </div>
+                                            <Select v-model="a.peran">
+                                                <SelectTrigger class="h-7 w-28 shrink-0 text-xs">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        v-for="(meta, kunci) in opsi.peran"
+                                                        :key="kunci"
+                                                        :value="kunci"
+                                                    >
+                                                        {{ meta.label }}
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
 
-                                    <div
-                                        v-for="a in form.anggotas"
-                                        :key="a.user_id"
-                                        class="flex items-center gap-2 rounded px-2 py-1"
-                                    >
-                                        <span class="min-w-0 flex-1">
-                                            <span class="block truncate text-sm">
-                                                {{ detailKandidat(a.user_id)?.nama }}
-                                            </span>
-                                            <span class="text-muted-foreground block truncate text-xs">
-                                                {{ detailKandidat(a.user_id)?.unitKerja }}
-                                            </span>
-                                        </span>
-
-                                        <Select v-model="a.peran">
-                                            <SelectTrigger class="h-7 w-28 shrink-0 text-xs">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    v-for="(meta, kunci) in opsi.peran"
-                                                    :key="kunci"
-                                                    :value="kunci"
-                                                >
-                                                    {{ meta.label }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-
-                                        <button
-                                            type="button"
-                                            class="text-muted-foreground hover:text-destructive shrink-0"
-                                            @click="hapusAnggota(a.user_id)"
-                                        >
-                                            <X class="size-4" />
-                                        </button>
+                                            <button
+                                                type="button"
+                                                class="text-muted-foreground hover:text-destructive shrink-0"
+                                                @click="hapusAnggota(a.user_id)"
+                                            >
+                                                <X class="size-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter class="shrink-0 border-t pt-4">
                         <Button type="button" variant="outline" @click="dialogTerbuka = false">Batal</Button>
                         <Button type="submit" :disabled="form.processing">Simpan</Button>
                     </DialogFooter>

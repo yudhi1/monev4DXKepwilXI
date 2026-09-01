@@ -638,176 +638,183 @@ const kandidatTersisa = computed(() => {
 
         <!-- ============ Dialog task ============ -->
         <Dialog v-model:open="dialogTask">
-            <DialogContent class="sm:max-w-2xl">
-                <DialogHeader>
+            <!--
+              Tinggi dibatasi layar dan isinya yang bergulir, bukan seluruh
+              dialog: form ini panjang, dan kalau dialog ikut memanjang tombol
+              Simpan terdorong keluar layar sampai tak terlihat.
+            -->
+            <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-2xl">
+                <DialogHeader class="shrink-0">
                     <DialogTitle>{{ taskDiedit ? 'Ubah Task' : 'Task Baru' }}</DialogTitle>
                     <DialogDescription>
                         Bobot menentukan porsi task ini terhadap progres dan kontribusi project.
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpanTask">
-                    <div class="space-y-1.5">
-                        <Label for="judul">Judul</Label>
-                        <Input id="judul" v-model="formTask.judul" />
-                        <p v-if="formTask.errors.judul" class="text-destructive text-sm">{{ formTask.errors.judul }}</p>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="deskripsi-task">Deskripsi</Label>
-                        <Textarea id="deskripsi-task" v-model="formTask.deskripsi" rows="3" />
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-3">
+                <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="simpanTask">
+                    <div class="gulir-terlihat min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
                         <div class="space-y-1.5">
-                            <Label>Status</Label>
-                            <Select v-model="formTask.status">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="(meta, kunci) in opsi.statusTask" :key="kunci" :value="kunci">
-                                        {{ meta.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="space-y-1.5">
-                            <Label>Prioritas</Label>
-                            <Select v-model="formTask.prioritas">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="(meta, kunci) in opsi.prioritas" :key="kunci" :value="kunci">
-                                        {{ meta.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="space-y-1.5">
-                            <Label for="deadline">Deadline</Label>
-                            <Input id="deadline" v-model="formTask.deadline" type="date" />
-                        </div>
-                    </div>
-
-                    <!--
-                      Target opsional. Diisi untuk pekerjaan yang punya angka
-                      (penagihan Rp, kolekting badan usaha); dikosongkan untuk
-                      pekerjaan yang tak terukur angka.
-                    -->
-                    <div class="space-y-3 rounded-lg border p-3">
-                        <div class="flex items-center justify-between">
-                            <Label class="text-sm">Target &amp; Realisasi</Label>
-                            <span class="text-muted-foreground text-xs">opsional</span>
+                            <Label for="judul">Judul</Label>
+                            <Input id="judul" v-model="formTask.judul" />
+                            <p v-if="formTask.errors.judul" class="text-destructive text-sm">{{ formTask.errors.judul }}</p>
                         </div>
 
-                        <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="space-y-1.5">
+                            <Label for="deskripsi-task">Deskripsi</Label>
+                            <Textarea id="deskripsi-task" v-model="formTask.deskripsi" rows="3" />
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-3">
                             <div class="space-y-1.5">
-                                <Label for="satuan" class="text-muted-foreground text-xs">Satuan</Label>
-                                <Select
-                                    :model-value="formTask.satuan ?? 'tanpa'"
-                                    @update:model-value="(v) => (formTask.satuan = v === 'tanpa' ? null : v)"
-                                >
-                                    <SelectTrigger id="satuan"><SelectValue /></SelectTrigger>
+                                <Label>Status</Label>
+                                <Select v-model="formTask.status">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="tanpa">Tanpa satuan</SelectItem>
-                                        <SelectItem v-for="sat in opsi.satuan" :key="sat" :value="sat">
-                                            {{ sat }}
+                                        <SelectItem v-for="(meta, kunci) in opsi.statusTask" :key="kunci" :value="kunci">
+                                            {{ meta.label }}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div class="space-y-1.5">
-                                <Label for="target" class="text-muted-foreground text-xs">Target</Label>
-                                <Input id="target" v-model="formTask.target" type="number" min="0" step="any" />
-                                <p v-if="formTask.errors.target" class="text-destructive text-sm">
-                                    {{ formTask.errors.target }}
+                                <Label>Prioritas</Label>
+                                <Select v-model="formTask.prioritas">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="(meta, kunci) in opsi.prioritas" :key="kunci" :value="kunci">
+                                            {{ meta.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <Label for="deadline">Deadline</Label>
+                                <Input id="deadline" v-model="formTask.deadline" type="date" />
+                            </div>
+                        </div>
+
+                        <!--
+                          Target opsional. Diisi untuk pekerjaan yang punya angka
+                          (penagihan Rp, kolekting badan usaha); dikosongkan untuk
+                          pekerjaan yang tak terukur angka.
+                        -->
+                        <div class="space-y-3 rounded-lg border p-3">
+                            <div class="flex items-center justify-between">
+                                <Label class="text-sm">Target &amp; Realisasi</Label>
+                                <span class="text-muted-foreground text-xs">opsional</span>
+                            </div>
+
+                            <div class="grid gap-3 sm:grid-cols-3">
+                                <div class="space-y-1.5">
+                                    <Label for="satuan" class="text-muted-foreground text-xs">Satuan</Label>
+                                    <Select
+                                        :model-value="formTask.satuan ?? 'tanpa'"
+                                        @update:model-value="(v) => (formTask.satuan = v === 'tanpa' ? null : v)"
+                                    >
+                                        <SelectTrigger id="satuan"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="tanpa">Tanpa satuan</SelectItem>
+                                            <SelectItem v-for="sat in opsi.satuan" :key="sat" :value="sat">
+                                                {{ sat }}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <Label for="target" class="text-muted-foreground text-xs">Target</Label>
+                                    <Input id="target" v-model="formTask.target" type="number" min="0" step="any" />
+                                    <p v-if="formTask.errors.target" class="text-destructive text-sm">
+                                        {{ formTask.errors.target }}
+                                    </p>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <Label for="realisasi" class="text-muted-foreground text-xs">Realisasi</Label>
+                                    <Input
+                                        id="realisasi"
+                                        v-model="formTask.realisasi"
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        :disabled="! formPakaiTarget"
+                                    />
+                                    <p v-if="formTask.errors.realisasi" class="text-destructive text-sm">
+                                        {{ formTask.errors.realisasi }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p v-if="formPakaiTarget" class="text-muted-foreground text-xs">
+                                Progress dihitung otomatis: {{ angka(formTask.realisasi || 0) }} dari
+                                {{ angka(formTask.target) }} {{ formTask.satuan ?? '' }} =
+                                <span class="text-foreground font-medium">{{ progressHitungan }}%</span>
+                            </p>
+                            <p v-else class="text-muted-foreground text-xs">
+                                Kosongkan bila pekerjaan ini tidak diukur dengan angka — progress diisi manual.
+                            </p>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-3">
+                            <div class="space-y-1.5">
+                                <Label for="progress">Progress (%)</Label>
+                                <Input
+                                    id="progress"
+                                    v-model="formTask.progress"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    :disabled="formPakaiTarget"
+                                />
+                                <p v-if="formPakaiTarget" class="text-muted-foreground text-xs">
+                                    Terkunci — mengikuti realisasi.
+                                </p>
+                                <p v-if="formTask.errors.progress" class="text-destructive text-sm">
+                                    {{ formTask.errors.progress }}
                                 </p>
                             </div>
                             <div class="space-y-1.5">
-                                <Label for="realisasi" class="text-muted-foreground text-xs">Realisasi</Label>
-                                <Input
-                                    id="realisasi"
-                                    v-model="formTask.realisasi"
-                                    type="number"
-                                    min="0"
-                                    step="any"
-                                    :disabled="! formPakaiTarget"
-                                />
-                                <p v-if="formTask.errors.realisasi" class="text-destructive text-sm">
-                                    {{ formTask.errors.realisasi }}
-                                </p>
+                                <Label for="bobot">Bobot</Label>
+                                <Input id="bobot" v-model="formTask.bobot" type="number" min="0" step="0.5" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <Label>Milestone</Label>
+                                <Select
+                                    :model-value="formTask.milestone_id ? String(formTask.milestone_id) : 'tanpa'"
+                                    @update:model-value="(v) => (formTask.milestone_id = v === 'tanpa' ? null : Number(v))"
+                                >
+                                    <SelectTrigger><SelectValue placeholder="Tanpa milestone" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="tanpa">Tanpa milestone</SelectItem>
+                                        <SelectItem v-for="m in project.milestones" :key="m.id" :value="String(m.id)">
+                                            {{ m.nama }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 
-                        <p v-if="formPakaiTarget" class="text-muted-foreground text-xs">
-                            Progress dihitung otomatis: {{ angka(formTask.realisasi || 0) }} dari
-                            {{ angka(formTask.target) }} {{ formTask.satuan ?? '' }} =
-                            <span class="text-foreground font-medium">{{ progressHitungan }}%</span>
-                        </p>
-                        <p v-else class="text-muted-foreground text-xs">
-                            Kosongkan bila pekerjaan ini tidak diukur dengan angka — progress diisi manual.
-                        </p>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-3">
-                        <div class="space-y-1.5">
-                            <Label for="progress">Progress (%)</Label>
-                            <Input
-                                id="progress"
-                                v-model="formTask.progress"
-                                type="number"
-                                min="0"
-                                max="100"
-                                :disabled="formPakaiTarget"
-                            />
-                            <p v-if="formPakaiTarget" class="text-muted-foreground text-xs">
-                                Terkunci — mengikuti realisasi.
-                            </p>
-                            <p v-if="formTask.errors.progress" class="text-destructive text-sm">
-                                {{ formTask.errors.progress }}
-                            </p>
-                        </div>
-                        <div class="space-y-1.5">
-                            <Label for="bobot">Bobot</Label>
-                            <Input id="bobot" v-model="formTask.bobot" type="number" min="0" step="0.5" />
-                        </div>
-                        <div class="space-y-1.5">
-                            <Label>Milestone</Label>
-                            <Select
-                                :model-value="formTask.milestone_id ? String(formTask.milestone_id) : 'tanpa'"
-                                @update:model-value="(v) => (formTask.milestone_id = v === 'tanpa' ? null : Number(v))"
-                            >
-                                <SelectTrigger><SelectValue placeholder="Tanpa milestone" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="tanpa">Tanpa milestone</SelectItem>
-                                    <SelectItem v-for="m in project.milestones" :key="m.id" :value="String(m.id)">
-                                        {{ m.nama }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div class="space-y-2">
+                            <Label>PIC / Assignee</Label>
+                            <div class="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
+                                <label
+                                    v-for="a in project.anggotas"
+                                    :key="a.user_id"
+                                    class="flex cursor-pointer items-center gap-2 text-sm"
+                                >
+                                    <Checkbox
+                                        :model-value="formTask.assignees.includes(a.user_id)"
+                                        @update:model-value="(v) => toggleAssignee(a.user_id, v)"
+                                    />
+                                    {{ a.nama }}
+                                    <span class="text-muted-foreground text-xs">({{ opsi.peran[a.peran]?.label }})</span>
+                                </label>
+                                <p v-if="project.anggotas.length === 0" class="text-muted-foreground text-sm">
+                                    Tambahkan anggota project terlebih dahulu.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <Label>PIC / Assignee</Label>
-                        <div class="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
-                            <label
-                                v-for="a in project.anggotas"
-                                :key="a.user_id"
-                                class="flex cursor-pointer items-center gap-2 text-sm"
-                            >
-                                <Checkbox
-                                    :model-value="formTask.assignees.includes(a.user_id)"
-                                    @update:model-value="(v) => toggleAssignee(a.user_id, v)"
-                                />
-                                {{ a.nama }}
-                                <span class="text-muted-foreground text-xs">({{ opsi.peran[a.peran]?.label }})</span>
-                            </label>
-                            <p v-if="project.anggotas.length === 0" class="text-muted-foreground text-sm">
-                                Tambahkan anggota project terlebih dahulu.
-                            </p>
-                        </div>
-                    </div>
-
-                    <DialogFooter>
+                    <DialogFooter class="shrink-0 border-t pt-4">
                         <Button type="button" variant="outline" @click="dialogTask = false">Batal</Button>
                         <Button type="submit" :disabled="formTask.processing">Simpan</Button>
                     </DialogFooter>
