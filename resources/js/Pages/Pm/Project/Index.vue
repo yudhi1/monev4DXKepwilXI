@@ -19,7 +19,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, CalendarClock, Plus, Search, Users, X } from '@lucide/vue';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Building2, Plus, Search, Users, X } from '@lucide/vue';
 
 const props = defineProps({
     projects: { type: Object, required: true },
@@ -131,6 +132,9 @@ const simpan = () =>
         },
     });
 
+/* Seluruh baris dapat diklik; nama project tetap tautan sungguhan demi papan ketik. */
+const buka = (id) => router.visit('/pm/projects/' + id);
+
 const tanggal = (nilai) =>
     nilai ? new Date(nilai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 </script>
@@ -184,62 +188,99 @@ const tanggal = (nilai) =>
             <span class="text-muted-foreground ml-auto text-sm">{{ projects.total }} project</span>
         </div>
 
-        <!-- Daftar -->
-        <Card v-if="projects.data.length === 0">
-            <CardContent class="text-muted-foreground p-12 text-center text-sm">
-                Tidak ada project yang cocok dengan filter ini.
+        <!--
+          Tabel, bukan kartu: satu project cukup satu baris, sehingga puluhan
+          project tetap terbaca dalam satu layar dan mudah dibandingkan kolom
+          per kolom.
+        -->
+        <Card class="overflow-hidden py-0">
+            <CardContent class="p-0">
+                <p v-if="projects.data.length === 0" class="text-muted-foreground p-12 text-center text-sm">
+                    Tidak ada project yang cocok dengan filter ini.
+                </p>
+
+                <div v-else class="gulir-terlihat overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow class="hover:bg-transparent">
+                                <TableHead class="w-28 pl-4">Kode</TableHead>
+                                <TableHead>Project</TableHead>
+                                <TableHead class="w-32">Status</TableHead>
+                                <TableHead class="w-28">Prioritas</TableHead>
+                                <TableHead class="w-44">Progress</TableHead>
+                                <TableHead class="w-28 text-center">Task</TableHead>
+                                <TableHead class="w-24 text-center">Anggota</TableHead>
+                                <TableHead class="w-32">Deadline</TableHead>
+                                <TableHead class="w-24 pr-4 text-right">Health</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow
+                                v-for="p in projects.data"
+                                :key="p.id"
+                                class="cursor-pointer"
+                                @click="buka(p.id)"
+                            >
+                                <TableCell class="text-muted-foreground pl-4 font-mono text-xs">
+                                    {{ p.kode }}
+                                </TableCell>
+
+                                <TableCell>
+                                    <!-- Tautan sungguhan agar tetap bisa dijangkau lewat papan ketik. -->
+                                    <Link :href="'/pm/projects/' + p.id" class="font-medium hover:underline">
+                                        {{ p.nama }}
+                                    </Link>
+                                    <p
+                                        v-if="p.unitKerja"
+                                        class="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs"
+                                    >
+                                        <Building2 class="size-3 shrink-0" />
+                                        <span class="truncate">{{ p.unitKerja }} · {{ p.unitKerjaInduk }}</span>
+                                    </p>
+                                    <Lencana
+                                        v-if="p.peranSaya"
+                                        :nilai="p.peranSaya"
+                                        :peta="opsi.peran"
+                                        class="mt-1"
+                                    />
+                                </TableCell>
+
+                                <TableCell><Lencana :nilai="p.status" :peta="opsi.statusProject" /></TableCell>
+                                <TableCell><Lencana :nilai="p.prioritas" :peta="opsi.prioritas" /></TableCell>
+                                <TableCell><BilahProgress :nilai="p.progress" /></TableCell>
+
+                                <TableCell class="text-center text-sm tabular-nums">
+                                    {{ p.jumlahSelesai }} / {{ p.jumlahTask }}
+                                    <p v-if="p.jumlahTerlambat > 0" class="text-xs font-medium text-rose-600">
+                                        {{ p.jumlahTerlambat }} overdue
+                                    </p>
+                                </TableCell>
+
+                                <TableCell class="text-muted-foreground text-center text-sm tabular-nums">
+                                    <span class="inline-flex items-center gap-1">
+                                        <Users class="size-3" />
+                                        {{ p.jumlahAnggota }}
+                                    </span>
+                                </TableCell>
+
+                                <TableCell class="text-muted-foreground text-sm whitespace-nowrap">
+                                    {{ tanggal(p.tanggal_selesai) }}
+                                </TableCell>
+
+                                <TableCell class="pr-4 text-right">
+                                    <span :class="['text-xs font-medium whitespace-nowrap', HEALTH[p.health]?.kelas]">
+                                        {{ HEALTH[p.health]?.label }}
+                                    </span>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+
+                <Paginasi :data="projects" />
             </CardContent>
         </Card>
 
-        <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <Link v-for="p in projects.data" :key="p.id" :href="`/pm/projects/${p.id}`" class="block">
-                <Card class="h-full transition-shadow hover:shadow-md">
-                    <CardContent class="flex h-full flex-col p-4">
-                        <div class="flex items-start justify-between gap-2">
-                            <span class="text-muted-foreground font-mono text-xs">{{ p.kode }}</span>
-                            <span :class="['text-xs font-medium whitespace-nowrap', HEALTH[p.health]?.kelas]">
-                                {{ HEALTH[p.health]?.label }}
-                            </span>
-                        </div>
-
-                        <p class="mt-1 font-medium">{{ p.nama }}</p>
-
-                        <p
-                            v-if="p.unitKerja"
-                            class="text-muted-foreground mt-1 flex items-center gap-1 text-xs"
-                        >
-                            <Building2 class="size-3 shrink-0" />
-                            <span class="truncate">{{ p.unitKerja }} · {{ p.unitKerjaInduk }}</span>
-                        </p>
-
-                        <div class="mt-2 flex flex-wrap gap-1.5">
-                            <Lencana :nilai="p.status" :peta="opsi.statusProject" />
-                            <Lencana :nilai="p.prioritas" :peta="opsi.prioritas" />
-                            <Lencana v-if="p.peranSaya" :nilai="p.peranSaya" :peta="opsi.peran" />
-                        </div>
-
-                        <BilahProgress :nilai="p.progress" class="mt-4" />
-
-                        <div class="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                            <span>{{ p.jumlahSelesai }} / {{ p.jumlahTask }} task</span>
-                            <span class="flex items-center gap-1">
-                                <Users class="size-3" />
-                                {{ p.jumlahAnggota }}
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <CalendarClock class="size-3" />
-                                {{ tanggal(p.tanggal_selesai) }}
-                            </span>
-                            <span v-if="p.jumlahTerlambat > 0" class="font-medium text-rose-600">
-                                {{ p.jumlahTerlambat }} overdue
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </Link>
-        </div>
-
-        <Paginasi v-if="projects.data.length > 0" :data="projects" class="mt-4" />
 
         <!-- Dialog project baru -->
         <Dialog v-model:open="dialogTerbuka">
