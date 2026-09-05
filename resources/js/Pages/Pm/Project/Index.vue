@@ -264,7 +264,8 @@ const tanggal = (nilai) =>
                     <Table>
                         <TableHeader>
                             <TableRow class="hover:bg-transparent">
-                                <TableHead class="w-28 pl-4">Kode</TableHead>
+                                <TableHead class="w-14 pl-4">#</TableHead>
+                                <TableHead class="w-28">Kode</TableHead>
                                 <TableHead>Project</TableHead>
                                 <TableHead class="w-32">Status</TableHead>
                                 <TableHead class="w-28">Prioritas</TableHead>
@@ -278,12 +279,25 @@ const tanggal = (nilai) =>
                         </TableHeader>
                         <TableBody>
                             <TableRow
-                                v-for="p in projects.data"
+                                v-for="(p, index) in projects.data"
                                 :key="p.id"
                                 class="cursor-pointer"
                                 @click="buka(p.id)"
                             >
-                                <TableCell class="text-muted-foreground pl-4 font-mono text-xs">
+                                <!--
+                                  Nomor diambil dari `from` milik paginator, bukan
+                                  index halaman, supaya urutannya menyambung di
+                                  halaman kedua dan seterusnya.
+                                -->
+                                <TableCell class="pl-4">
+                                    <span
+                                        class="bg-primary/10 text-primary inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
+                                    >
+                                        {{ projects.from + index }}
+                                    </span>
+                                </TableCell>
+
+                                <TableCell class="text-muted-foreground font-mono text-xs">
                                     {{ p.kode }}
                                 </TableCell>
 
