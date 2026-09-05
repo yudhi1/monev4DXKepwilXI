@@ -899,79 +899,86 @@ const kandidatTersisa = computed(() => {
                             </div>
                         </div>
 
-                        <!-- Baris task: mendatar, satu baris satu task -->
-                        <div class="space-y-2">
-                            <div class="text-muted-foreground grid grid-cols-12 gap-2 px-1 text-xs font-medium">
-                                <span class="col-span-1">#</span>
-                                <span class="col-span-4">Judul</span>
-                                <span class="col-span-2">Tenggat</span>
-                                <span class="col-span-2">Target</span>
-                                <span class="col-span-1">Realisasi</span>
-                                <span class="col-span-1">Bobot</span>
-                                <span class="col-span-1"></span>
-                            </div>
-
-                            <div v-for="(baris, i) in formMassal.tasks" :key="i" class="space-y-1">
-                                <div class="grid grid-cols-12 items-center gap-2">
+                        <!--
+                          Tiap task berdiri di kotaknya sendiri. Sebelumnya semua
+                          baris berbagi satu kisi dengan label di kepala tabel —
+                          begitu barisnya lebih dari dua, sulit dilacak field mana
+                          milik task mana.
+                        -->
+                        <div class="space-y-3">
+                            <div
+                                v-for="(baris, i) in formMassal.tasks"
+                                :key="i"
+                                class="bg-muted/30 space-y-3 rounded-lg border p-3"
+                            >
+                                <div class="flex items-center gap-2">
                                     <span
-                                        class="bg-primary/10 text-primary col-span-1 inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
+                                        class="bg-primary/10 text-primary inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
                                     >
                                         {{ i + 1 }}
                                     </span>
-
-                                    <Input
-                                        v-model="baris.judul"
-                                        class="col-span-4"
-                                        placeholder="Nama pekerjaan"
-                                    />
-                                    <Input v-model="baris.deadline" type="date" class="col-span-2" />
-                                    <Input
-                                        v-model="baris.target"
-                                        type="number"
-                                        min="0"
-                                        step="any"
-                                        class="col-span-2"
-                                        placeholder="—"
-                                    />
-                                    <Input
-                                        v-model="baris.realisasi"
-                                        type="number"
-                                        min="0"
-                                        step="any"
-                                        class="col-span-1"
-                                        :disabled="! Number(baris.target)"
-                                        placeholder="0"
-                                    />
-                                    <Input
-                                        v-model="baris.bobot"
-                                        type="number"
-                                        min="0"
-                                        step="0.5"
-                                        class="col-span-1"
-                                    />
+                                    <span class="text-muted-foreground text-xs font-medium">
+                                        {{ baris.judul || 'Task ' + (i + 1) }}
+                                    </span>
 
                                     <button
                                         type="button"
-                                        class="text-muted-foreground hover:text-destructive col-span-1 justify-self-center disabled:opacity-30"
+                                        class="text-muted-foreground hover:text-destructive ml-auto disabled:opacity-30"
                                         :disabled="formMassal.tasks.length === 1"
-                                        title="Hapus baris"
+                                        title="Hapus task ini"
                                         @click="hapusBaris(i)"
                                     >
                                         <Trash2 class="size-4" />
                                     </button>
                                 </div>
 
-                                <p
-                                    v-if="galatBaris(i, 'judul') || galatBaris(i, 'realisasi') || galatBaris(i, 'target')"
-                                    class="text-destructive px-1 text-xs"
-                                >
-                                    {{ galatBaris(i, 'judul') || galatBaris(i, 'realisasi') || galatBaris(i, 'target') }}
-                                </p>
+                                <div class="grid gap-3 sm:grid-cols-12">
+                                    <div class="space-y-1.5 sm:col-span-4">
+                                        <Label class="text-muted-foreground text-xs">Judul</Label>
+                                        <Input v-model="baris.judul" placeholder="Nama pekerjaan" />
+                                        <p v-if="galatBaris(i, 'judul')" class="text-destructive text-xs">
+                                            {{ galatBaris(i, 'judul') }}
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-1.5 sm:col-span-2">
+                                        <Label class="text-muted-foreground text-xs">Tenggat</Label>
+                                        <Input v-model="baris.deadline" type="date" />
+                                    </div>
+
+                                    <div class="space-y-1.5 sm:col-span-2">
+                                        <Label class="text-muted-foreground text-xs">Target</Label>
+                                        <Input v-model="baris.target" type="number" min="0" step="any" placeholder="—" />
+                                        <p v-if="galatBaris(i, 'target')" class="text-destructive text-xs">
+                                            {{ galatBaris(i, 'target') }}
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-1.5 sm:col-span-2">
+                                        <Label class="text-muted-foreground text-xs">Realisasi</Label>
+                                        <Input
+                                            v-model="baris.realisasi"
+                                            type="number"
+                                            min="0"
+                                            step="any"
+                                            placeholder="0"
+                                            :disabled="! Number(baris.target)"
+                                        />
+                                        <p v-if="galatBaris(i, 'realisasi')" class="text-destructive text-xs">
+                                            {{ galatBaris(i, 'realisasi') }}
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-1.5 sm:col-span-2">
+                                        <Label class="text-muted-foreground text-xs">Bobot</Label>
+                                        <Input v-model="baris.bobot" type="number" min="0" step="0.5" />
+                                    </div>
+                                </div>
                             </div>
 
-                            <Button type="button" variant="outline" size="sm" @click="tambahBaris">
+                            <Button type="button" variant="outline" size="sm" class="w-full" @click="tambahBaris">
                                 <Plus class="mr-1.5 size-4" />
-                                Tambah Baris
+                                Tambah Task
                             </Button>
 
                             <p v-if="formMassal.errors.tasks" class="text-destructive text-sm">
