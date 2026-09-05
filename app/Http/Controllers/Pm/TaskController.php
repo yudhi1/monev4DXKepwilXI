@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Pm;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Pm\TaskMassalRequest;
 use App\Http\Requests\Pm\TaskRequest;
 use App\Models\Pm\Project;
 use App\Models\Pm\Task;
@@ -32,6 +33,49 @@ class TaskController extends Controller
         });
 
         return back()->with('success', 'Task berhasil ditambahkan.');
+    }
+
+    /**
+     * Membuat beberapa task sekaligus dari satu formulir.
+     *
+     * Status, prioritas, satuan, milestone, dan PIC diambil dari pengaturan
+     * bersama; tiap baris hanya menyumbang judul, tenggat, bobot, dan angkanya.
+     */
+    public function storeMassal(TaskMassalRequest $request, Project $project): RedirectResponse
+    {
+        $data = $request->validated();
+        $baris = $data['tasks'];
+        $assignees = $data['assignees'] ?? [];
+
+        DB::transaction(function () use ($project, $data, $baris, $assignees, $request) {
+            // Dihitung sekali lalu dinaikkan sendiri, bukan query per baris.
+            $urutan = (int) $project->tasks()->where('status', $data['status'])->max('urutan');
+
+            foreach ($baris as $isi) {
+                $task = $project->tasks()->create([
+                    'judul' => $isi['judul'],
+                    'deskripsi' => $isi['deskripsi'] ?? null,
+                    'status' => $data['status'],
+                    'prioritas' => $data['prioritas'],
+                    'deadline' => $isi['deadline'] ?? null,
+                    'bobot' => $isi['bobot'],
+                    'satuan' => $data['satuan'] ?? null,
+                    'target' => $isi['target'] ?? null,
+                    'realisasi' => $isi['realisasi'] ?? null,
+                    'milestone_id' => $data['milestone_id'] ?? null,
+                    'progress' => 0,
+                    'urutan' => ++$urutan,
+                    'dibuat_oleh' => $request->user()->id,
+                ]);
+
+                $this->selaraskanProgress($task);
+                $task->assignees()->sync($assignees);
+            }
+        });
+
+        $jumlah = count($baris);
+
+        return back()->with('success', "{$jumlah} task berhasil ditambahkan.");
     }
 
     public function update(TaskRequest $request, Project $project, Task $task): RedirectResponse

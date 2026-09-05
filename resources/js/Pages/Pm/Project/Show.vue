@@ -220,13 +220,82 @@ watch(progressHitungan, (nilai) => {
 /* Angka besar seperti rupiah sulit dibaca tanpa pemisah ribuan. */
 const angka = (nilai) => (nilai === null || nilai === '' ? '—' : Number(nilai).toLocaleString('id-ID'));
 
+/* ================= Tambah task (banyak baris) ================= */
+
+/*
+ | Menambah task memakai formulir banyak baris: satu baris satu task.
+ |
+ | Status, prioritas, satuan, milestone, dan PIC ditaruh di atas sebagai
+ | pengaturan bersama, karena dalam pemakaian nyata — misalnya membuat task
+ | mingguan — yang berbeda antar baris hanya judul, tenggat, dan angkanya.
+ |
+ | Form UBAH tetap satu task, memakai dialog terpisah di bawah.
+ */
+const dialogTambah = ref(false);
+
+const barisKosong = () => ({ judul: '', deadline: '', bobot: 1, target: '', realisasi: '' });
+
+const formMassal = useForm({
+    status: 'backlog',
+    prioritas: 'sedang',
+    satuan: null,
+    milestone_id: null,
+    assignees: [],
+    tasks: [barisKosong()],
+});
+
 const bukaTambahTask = (statusAwal = 'backlog') => {
-    taskDiedit.value = null;
-    formTask.reset();
-    formTask.clearErrors();
-    formTask.status = statusAwal;
-    dialogTask.value = true;
+    formMassal.reset();
+    formMassal.clearErrors();
+    formMassal.status = statusAwal;
+    formMassal.tasks = [barisKosong()];
+    dialogTambah.value = true;
 };
+
+const tambahBaris = () => {
+    const terakhir = formMassal.tasks[formMassal.tasks.length - 1];
+
+    /*
+     | Baris baru mewarisi bobot dan target baris sebelumnya. Saat membuat
+     | task mingguan, nilainya biasanya sama persis — mengetik ulang empat
+     | kali hanya membuang waktu.
+     */
+    formMassal.tasks = [
+        ...formMassal.tasks,
+        {
+            ...barisKosong(),
+            bobot: terakhir?.bobot ?? 1,
+            target: terakhir?.target ?? '',
+            realisasi: terakhir?.target ? 0 : '',
+        },
+    ];
+};
+
+const hapusBaris = (i) => {
+    if (formMassal.tasks.length > 1) {
+        formMassal.tasks = formMassal.tasks.filter((_, n) => n !== i);
+    }
+};
+
+const toggleAssigneeMassal = (userId, dipilih) => {
+    formMassal.assignees = dipilih
+        ? [...formMassal.assignees, userId]
+        : formMassal.assignees.filter((id) => id !== userId);
+};
+
+const simpanMassal = () =>
+    formMassal.post(`/pm/projects/${props.project.id}/tasks/massal`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            dialogTambah.value = false;
+            formMassal.reset();
+        },
+    });
+
+/* Galat per baris dikirim Laravel sebagai kunci 'tasks.0.judul'. */
+const galatBaris = (i, field) => formMassal.errors[`tasks.${i}.${field}`];
+
+/* ================= Ubah task ================= */
 
 const bukaEditTask = (task) => {
     taskDiedit.value = task;
@@ -744,7 +813,209 @@ const kandidatTersisa = computed(() => {
             </p>
         </div>
 
-        <!-- ============ Dialog task ============ -->
+        <!-- ============ Tambah task: banyak baris sekaligus ============ -->
+        <Dialog v-model:open="dialogTambah">
+            <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-5xl">
+                <DialogHeader class="shrink-0">
+                    <DialogTitle>Task Baru</DialogTitle>
+                    <DialogDescription>
+                        Isi satu baris untuk satu task. Pengaturan di bawah ini berlaku untuk
+                        semua baris.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="simpanMassal">
+                    <div class="gulir-terlihat min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+                        <!-- Pengaturan yang sama untuk semua baris -->
+                        <div class="grid gap-3 rounded-lg border p-3 sm:grid-cols-4">
+                            <div class="space-y-1.5">
+                                <Label class="text-muted-foreground text-xs">Status</Label>
+                                <Select v-model="formMassal.status">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="(meta, kunci) in opsi.statusTask"
+                                            :key="kunci"
+                                            :value="kunci"
+                                        >
+                                            {{ meta.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <Label class="text-muted-foreground text-xs">Prioritas</Label>
+                                <Select v-model="formMassal.prioritas">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="(meta, kunci) in opsi.prioritas"
+                                            :key="kunci"
+                                            :value="kunci"
+                                        >
+                                            {{ meta.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <Label class="text-muted-foreground text-xs">Satuan target</Label>
+                                <Select
+                                    :model-value="formMassal.satuan ?? 'tanpa'"
+                                    @update:model-value="(v) => (formMassal.satuan = v === 'tanpa' ? null : v)"
+                                >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="tanpa">Tanpa satuan</SelectItem>
+                                        <SelectItem v-for="sat in opsi.satuan" :key="sat" :value="sat">
+                                            {{ sat }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <Label class="text-muted-foreground text-xs">Milestone</Label>
+                                <Select
+                                    :model-value="formMassal.milestone_id ? String(formMassal.milestone_id) : 'tanpa'"
+                                    @update:model-value="
+                                        (v) => (formMassal.milestone_id = v === 'tanpa' ? null : Number(v))
+                                    "
+                                >
+                                    <SelectTrigger><SelectValue placeholder="Tanpa milestone" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="tanpa">Tanpa milestone</SelectItem>
+                                        <SelectItem
+                                            v-for="m in project.milestones"
+                                            :key="m.id"
+                                            :value="String(m.id)"
+                                        >
+                                            {{ m.nama }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <!-- Baris task: mendatar, satu baris satu task -->
+                        <div class="space-y-2">
+                            <div class="text-muted-foreground grid grid-cols-12 gap-2 px-1 text-xs font-medium">
+                                <span class="col-span-1">#</span>
+                                <span class="col-span-4">Judul</span>
+                                <span class="col-span-2">Tenggat</span>
+                                <span class="col-span-2">Target</span>
+                                <span class="col-span-1">Realisasi</span>
+                                <span class="col-span-1">Bobot</span>
+                                <span class="col-span-1"></span>
+                            </div>
+
+                            <div v-for="(baris, i) in formMassal.tasks" :key="i" class="space-y-1">
+                                <div class="grid grid-cols-12 items-center gap-2">
+                                    <span
+                                        class="bg-primary/10 text-primary col-span-1 inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
+                                    >
+                                        {{ i + 1 }}
+                                    </span>
+
+                                    <Input
+                                        v-model="baris.judul"
+                                        class="col-span-4"
+                                        placeholder="Nama pekerjaan"
+                                    />
+                                    <Input v-model="baris.deadline" type="date" class="col-span-2" />
+                                    <Input
+                                        v-model="baris.target"
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        class="col-span-2"
+                                        placeholder="—"
+                                    />
+                                    <Input
+                                        v-model="baris.realisasi"
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        class="col-span-1"
+                                        :disabled="! Number(baris.target)"
+                                        placeholder="0"
+                                    />
+                                    <Input
+                                        v-model="baris.bobot"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="col-span-1"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        class="text-muted-foreground hover:text-destructive col-span-1 justify-self-center disabled:opacity-30"
+                                        :disabled="formMassal.tasks.length === 1"
+                                        title="Hapus baris"
+                                        @click="hapusBaris(i)"
+                                    >
+                                        <Trash2 class="size-4" />
+                                    </button>
+                                </div>
+
+                                <p
+                                    v-if="galatBaris(i, 'judul') || galatBaris(i, 'realisasi') || galatBaris(i, 'target')"
+                                    class="text-destructive px-1 text-xs"
+                                >
+                                    {{ galatBaris(i, 'judul') || galatBaris(i, 'realisasi') || galatBaris(i, 'target') }}
+                                </p>
+                            </div>
+
+                            <Button type="button" variant="outline" size="sm" @click="tambahBaris">
+                                <Plus class="mr-1.5 size-4" />
+                                Tambah Baris
+                            </Button>
+
+                            <p v-if="formMassal.errors.tasks" class="text-destructive text-sm">
+                                {{ formMassal.errors.tasks }}
+                            </p>
+                        </div>
+
+                        <!-- PIC berlaku untuk semua baris -->
+                        <div class="space-y-2">
+                            <Label>PIC / Assignee — berlaku untuk semua baris</Label>
+                            <div class="max-h-32 space-y-2 overflow-y-auto rounded-md border p-3">
+                                <label
+                                    v-for="a in project.anggotas"
+                                    :key="a.user_id"
+                                    class="flex cursor-pointer items-center gap-2 text-sm"
+                                >
+                                    <Checkbox
+                                        :model-value="formMassal.assignees.includes(a.user_id)"
+                                        @update:model-value="(v) => toggleAssigneeMassal(a.user_id, v)"
+                                    />
+                                    {{ a.nama }}
+                                    <span class="text-muted-foreground text-xs">
+                                        ({{ opsi.peran[a.peran]?.label }})
+                                    </span>
+                                </label>
+                                <p v-if="project.anggotas.length === 0" class="text-muted-foreground text-sm">
+                                    Tambahkan anggota project terlebih dahulu.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter class="shrink-0 border-t pt-4">
+                        <span class="text-muted-foreground mr-auto self-center text-xs">
+                            {{ formMassal.tasks.length }} task akan dibuat
+                        </span>
+                        <Button type="button" variant="outline" @click="dialogTambah = false">Batal</Button>
+                        <Button type="submit" :disabled="formMassal.processing">Simpan</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
+        <!-- ============ Ubah task (satu task) ============ -->
         <Dialog v-model:open="dialogTask">
             <!--
               Tinggi dibatasi layar dan isinya yang bergulir, bukan seluruh
@@ -753,7 +1024,7 @@ const kandidatTersisa = computed(() => {
             -->
             <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-2xl">
                 <DialogHeader class="shrink-0">
-                    <DialogTitle>{{ taskDiedit ? 'Ubah Task' : 'Task Baru' }}</DialogTitle>
+                    <DialogTitle>Ubah Task</DialogTitle>
                     <DialogDescription>
                         Bobot menentukan porsi task ini terhadap progres dan kontribusi project.
                     </DialogDescription>

@@ -184,6 +184,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('projects/{project}')->group(function () {
             Route::post('/tasks', [PmTaskController::class, 'store'])->name('tasks.store');
+            Route::post('/tasks/massal', [PmTaskController::class, 'storeMassal'])->name('tasks.massal');
             Route::put('/tasks/{task}', [PmTaskController::class, 'update'])->name('tasks.update');
             Route::patch('/tasks/{task}/pindah', [PmTaskController::class, 'pindah'])->name('tasks.pindah');
             Route::patch('/tasks/{task}/progress', [PmTaskController::class, 'progress'])->name('tasks.progress');
