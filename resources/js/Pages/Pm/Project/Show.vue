@@ -35,6 +35,7 @@ import {
     Building2,
     CalendarClock,
     Flag,
+    GripVertical,
     MessageSquare,
     Paperclip,
     Pencil,
@@ -79,37 +80,102 @@ const namaPic = (task) => (task.assignees ?? []).map((a) => a.nama).join(', ');
 /* ================= Daftar task ================= */
 
 /*
- | Papan Kanban diganti tabel atas permintaan: satu task satu baris,
- | sehingga puluhan task tetap terbaca tanpa menggulir mendatar.
+ | Tabel, tetapi dikelompokkan per status seperti papan Kanban dulu:
+ | tiap status punya baris judul sendiri, dan barisnya bisa diseret.
  |
- | Konsekuensinya geser-kartu hilang, jadi perpindahan status disediakan
- | lewat dropdown pada tiap baris — memakai rute `pindah` yang sama.
+ | Menyeret ke kelompok lain = pindah status. Menyeret di dalam kelompok
+ | yang sama = ubah urutan. Keduanya memakai rute `pindah` yang sama.
  */
-const semuaTask = computed(() => props.papan.flatMap((kolom) => kolom.tasks));
+const totalKolomTabel = computed(() => (props.izin.kelolaTask ? 9 : 8));
 
-/* Jumlah per kolom dipakai untuk ringkasan di atas tabel. */
-const ringkasanStatus = computed(() =>
-    props.papan.map((kolom) => ({ kunci: kolom.kunci, label: kolom.label, jumlah: kolom.tasks.length }))
-);
+/* Nomor urut berjalan menembus kelompok, jadi dihitung sekali di depan. */
+const nomorTask = computed(() => {
+    const peta = new Map();
+    let n = 0;
 
-/*
- | Task yang dipindah ditaruh di dasar kolom tujuan, sama seperti perilaku
- | menjatuhkan kartu di ujung bawah kolom pada papan sebelumnya.
- */
-const pindahStatus = (task, status) => {
-    if (status === task.status) {
+    props.papan.forEach((kolom) => kolom.tasks.forEach((t) => peta.set(t.id, ++n)));
+
+    return peta;
+});
+
+const taskDiseret = ref(null);
+const barisSasaran = ref(null);
+const kolomSasaran = ref(null);
+
+const mulaiSeret = (task, event) => {
+    if (! props.izin.ubahProgress) {
         return;
     }
 
-    const tujuan = props.papan.find((k) => k.kunci === status);
+    taskDiseret.value = task;
+    event.dataTransfer.effectAllowed = 'move';
+    // Firefox mengabaikan drag tanpa payload.
+    event.dataTransfer.setData('text/plain', String(task.id));
+};
+
+const akhiriSeret = () => {
+    taskDiseret.value = null;
+    barisSasaran.value = null;
+    kolomSasaran.value = null;
+};
+
+const seretDiAtasBaris = (task) => {
+    if (taskDiseret.value && taskDiseret.value.id !== task.id) {
+        barisSasaran.value = task.id;
+        kolomSasaran.value = null;
+    }
+};
+
+const seretDiAtasKolom = (kunci) => {
+    if (taskDiseret.value) {
+        kolomSasaran.value = kunci;
+        barisSasaran.value = null;
+    }
+};
+
+/** Kirim perpindahan; `urutan` menentukan posisi di dalam status tujuan. */
+const pindahkan = (task, status, urutan) => {
+    akhiriSeret();
+
+    if (task.status === status && task.urutan === urutan) {
+        return;
+    }
 
     router.patch(
         `/pm/projects/${props.project.id}/tasks/${task.id}/pindah`,
-        { status, urutan: tujuan ? tujuan.tasks.length : 0 },
+        { status, urutan },
         { preserveScroll: true, preserveState: false }
     );
 };
 
+/* Dijatuhkan di atas sebuah baris: ambil status dan posisi baris itu. */
+const jatuhkanDiBaris = (sasaran) => {
+    const task = taskDiseret.value;
+
+    if (task && task.id !== sasaran.id) {
+        pindahkan(task, sasaran.status, sasaran.urutan);
+    } else {
+        akhiriSeret();
+    }
+};
+
+/* Dijatuhkan di kepala kelompok atau area kosongnya: taruh di dasar. */
+const jatuhkanDiKolom = (kolom) => {
+    const task = taskDiseret.value;
+
+    if (task) {
+        pindahkan(task, kolom.kunci, kolom.tasks.length);
+    } else {
+        akhiriSeret();
+    }
+};
+
+/* Dropdown status tetap ada sebagai jalur yang bisa dipakai lewat papan ketik. */
+const pindahStatus = (task, status) => {
+    const tujuan = props.papan.find((k) => k.kunci === status);
+
+    pindahkan(task, status, tujuan ? tujuan.tasks.length : 0);
+};
 
 /* ================= Form task ================= */
 
@@ -358,17 +424,10 @@ const kandidatTersisa = computed(() => {
 
         <!-- ============ Daftar task ============ -->
         <div v-else-if="tab === 'tasks'">
-            <!-- Jumlah per status, menggantikan gambaran cepat yang dulu diberi papan Kanban. -->
-            <div class="mb-4 flex flex-wrap gap-2">
-                <span
-                    v-for="r in ringkasanStatus"
-                    :key="r.kunci"
-                    class="bg-muted/60 flex items-center gap-1.5 rounded-md px-2.5 py-1"
-                >
-                    <Lencana :nilai="r.kunci" :peta="opsi.statusTask" />
-                    <span class="text-xs font-semibold tabular-nums">{{ r.jumlah }}</span>
-                </span>
-            </div>
+            <p v-if="izin.ubahProgress && totalTask > 0" class="text-muted-foreground mb-3 text-xs">
+                Seret baris ke kelompok lain untuk memindah statusnya, atau ke posisi lain di
+                kelompok yang sama untuk mengubah urutan. Bisa juga lewat kolom Status.
+            </p>
 
             <Card class="overflow-hidden py-0">
                 <CardContent class="p-0">
@@ -380,7 +439,8 @@ const kandidatTersisa = computed(() => {
                         <Table>
                             <TableHeader>
                                 <TableRow class="hover:bg-transparent">
-                                    <TableHead class="w-14 pl-4">#</TableHead>
+                                    <TableHead v-if="izin.ubahProgress" class="w-10 pl-4" />
+                                    <TableHead class="w-14" :class="izin.ubahProgress ? '' : 'pl-4'">#</TableHead>
                                     <TableHead>Tugas</TableHead>
                                     <TableHead class="w-44">Status</TableHead>
                                     <TableHead class="w-28">Prioritas</TableHead>
@@ -390,103 +450,165 @@ const kandidatTersisa = computed(() => {
                                     <TableHead v-if="izin.kelolaTask" class="w-24 pr-4 text-right">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
+
                             <TableBody>
-                                <TableRow v-for="(t, index) in semuaTask" :key="t.id">
-                                    <TableCell class="pl-4">
-                                        <span
-                                            class="bg-primary/10 text-primary inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
-                                        >
-                                            {{ index + 1 }}
-                                        </span>
-                                    </TableCell>
+                                <template v-for="kolom in papan" :key="kolom.kunci">
+                                    <!-- Kepala kelompok; menjatuhkan di sini menaruh task di dasar. -->
+                                    <TableRow
+                                        :class="[
+                                            'bg-muted/50 hover:bg-muted/50',
+                                            kolomSasaran === kolom.kunci && 'bg-primary/10 hover:bg-primary/10',
+                                        ]"
+                                        @dragover.prevent="seretDiAtasKolom(kolom.kunci)"
+                                        @drop.prevent="jatuhkanDiKolom(kolom)"
+                                    >
+                                        <TableCell :colspan="totalKolomTabel" class="py-2 pl-4">
+                                            <span class="flex items-center gap-2">
+                                                <Lencana :nilai="kolom.kunci" :peta="opsi.statusTask" />
+                                                <span class="text-muted-foreground text-xs tabular-nums">
+                                                    {{ kolom.tasks.length }} tugas
+                                                </span>
+                                                <span class="text-muted-foreground/70 text-xs">
+                                                    — {{ kolom.keterangan }}
+                                                </span>
+                                            </span>
+                                        </TableCell>
+                                    </TableRow>
 
-                                    <TableCell>
-                                        <p class="font-medium">{{ t.judul }}</p>
-                                        <p v-if="t.deskripsi" class="text-muted-foreground line-clamp-1 text-xs">
-                                            {{ t.deskripsi }}
-                                        </p>
-                                        <p
-                                            v-if="t.milestone"
-                                            class="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs"
-                                        >
-                                            <Flag class="size-3 shrink-0" />
-                                            {{ t.milestone }}
-                                        </p>
-                                    </TableCell>
+                                    <TableRow
+                                        v-for="t in kolom.tasks"
+                                        :key="t.id"
+                                        :draggable="izin.ubahProgress"
+                                        :class="[
+                                            izin.ubahProgress && 'cursor-grab active:cursor-grabbing',
+                                            taskDiseret?.id === t.id && 'opacity-40',
+                                            barisSasaran === t.id && 'bg-primary/10',
+                                        ]"
+                                        @dragstart="mulaiSeret(t, $event)"
+                                        @dragend="akhiriSeret"
+                                        @dragover.prevent="seretDiAtasBaris(t)"
+                                        @drop.prevent="jatuhkanDiBaris(t)"
+                                    >
+                                        <TableCell v-if="izin.ubahProgress" class="pl-4">
+                                            <GripVertical class="text-muted-foreground/60 size-4" />
+                                        </TableCell>
 
-                                    <!--
-                                      Pengganti geser-kartu: status dipindah lewat
-                                      dropdown, memakai rute `pindah` yang sama.
-                                    -->
-                                    <TableCell>
-                                        <Select
-                                            v-if="izin.ubahProgress"
-                                            :model-value="t.status"
-                                            @update:model-value="(v) => pindahStatus(t, v)"
-                                        >
-                                            <SelectTrigger class="h-8"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    v-for="(meta, kunci) in opsi.statusTask"
-                                                    :key="kunci"
-                                                    :value="kunci"
-                                                >
-                                                    {{ meta.label }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Lencana v-else :nilai="t.status" :peta="opsi.statusTask" />
-                                    </TableCell>
-
-                                    <TableCell><Lencana :nilai="t.prioritas" :peta="opsi.prioritas" /></TableCell>
-
-                                    <TableCell>
-                                        <BilahProgress :nilai="t.progress" />
-                                        <p
-                                            v-if="t.pakaiTarget"
-                                            class="text-muted-foreground mt-0.5 text-xs tabular-nums"
-                                        >
-                                            {{ angka(t.realisasi) }} / {{ angka(t.target) }} {{ t.satuan }}
-                                        </p>
-                                    </TableCell>
-
-                                    <TableCell class="text-muted-foreground text-sm">
-                                        <span class="flex items-center gap-1">
-                                            <UserRound class="size-3 shrink-0" />
-                                            <span class="truncate">{{ namaPic(t) || 'Belum ada PIC' }}</span>
-                                        </span>
-                                    </TableCell>
-
-                                    <TableCell>
-                                        <span
-                                            :class="[
-                                                'flex items-center gap-1 text-sm whitespace-nowrap',
-                                                t.terlambat ? 'font-medium text-rose-600' : 'text-muted-foreground',
-                                            ]"
-                                        >
-                                            <TriangleAlert v-if="t.terlambat" class="size-3.5" />
-                                            <CalendarClock v-else class="size-3.5" />
-                                            {{ tanggal(t.deadline) }}
-                                        </span>
-                                    </TableCell>
-
-                                    <TableCell v-if="izin.kelolaTask" class="pr-4">
-                                        <div class="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" title="Ubah" @click="bukaEditTask(t)">
-                                                <Pencil class="size-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                title="Hapus"
-                                                class="text-destructive hover:text-destructive"
-                                                @click="konfirmasiHapus(t)"
+                                        <TableCell :class="izin.ubahProgress ? '' : 'pl-4'">
+                                            <span
+                                                class="bg-primary/10 text-primary inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
                                             >
-                                                <Trash2 class="size-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
+                                                {{ nomorTask.get(t.id) }}
+                                            </span>
+                                        </TableCell>
+
+                                        <TableCell>
+                                            <p class="font-medium">{{ t.judul }}</p>
+                                            <p v-if="t.deskripsi" class="text-muted-foreground line-clamp-1 text-xs">
+                                                {{ t.deskripsi }}
+                                            </p>
+                                            <p
+                                                v-if="t.milestone"
+                                                class="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs"
+                                            >
+                                                <Flag class="size-3 shrink-0" />
+                                                {{ t.milestone }}
+                                            </p>
+                                        </TableCell>
+
+                                        <!-- Jalur yang bisa dipakai lewat papan ketik, bukan hanya tetikus. -->
+                                        <TableCell>
+                                            <Select
+                                                v-if="izin.ubahProgress"
+                                                :model-value="t.status"
+                                                @update:model-value="(v) => pindahStatus(t, v)"
+                                            >
+                                                <SelectTrigger class="h-8"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        v-for="(meta, kunci) in opsi.statusTask"
+                                                        :key="kunci"
+                                                        :value="kunci"
+                                                    >
+                                                        {{ meta.label }}
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Lencana v-else :nilai="t.status" :peta="opsi.statusTask" />
+                                        </TableCell>
+
+                                        <TableCell><Lencana :nilai="t.prioritas" :peta="opsi.prioritas" /></TableCell>
+
+                                        <TableCell>
+                                            <BilahProgress :nilai="t.progress" />
+                                            <p
+                                                v-if="t.pakaiTarget"
+                                                class="text-muted-foreground mt-0.5 text-xs tabular-nums"
+                                            >
+                                                {{ angka(t.realisasi) }} / {{ angka(t.target) }} {{ t.satuan }}
+                                            </p>
+                                        </TableCell>
+
+                                        <TableCell class="text-muted-foreground text-sm">
+                                            <span class="flex items-center gap-1">
+                                                <UserRound class="size-3 shrink-0" />
+                                                <span class="truncate">{{ namaPic(t) || 'Belum ada PIC' }}</span>
+                                            </span>
+                                        </TableCell>
+
+                                        <TableCell>
+                                            <span
+                                                :class="[
+                                                    'flex items-center gap-1 text-sm whitespace-nowrap',
+                                                    t.terlambat ? 'font-medium text-rose-600' : 'text-muted-foreground',
+                                                ]"
+                                            >
+                                                <TriangleAlert v-if="t.terlambat" class="size-3.5" />
+                                                <CalendarClock v-else class="size-3.5" />
+                                                {{ tanggal(t.deadline) }}
+                                            </span>
+                                        </TableCell>
+
+                                        <TableCell v-if="izin.kelolaTask" class="pr-4">
+                                            <div class="flex justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    title="Ubah"
+                                                    @click="bukaEditTask(t)"
+                                                >
+                                                    <Pencil class="size-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    title="Hapus"
+                                                    class="text-destructive hover:text-destructive"
+                                                    @click="konfirmasiHapus(t)"
+                                                >
+                                                    <Trash2 class="size-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+
+                                    <!-- Kelompok kosong tetap perlu sasaran jatuh. -->
+                                    <TableRow
+                                        v-if="kolom.tasks.length === 0"
+                                        :class="[
+                                            'hover:bg-transparent',
+                                            kolomSasaran === kolom.kunci && 'bg-primary/10',
+                                        ]"
+                                        @dragover.prevent="seretDiAtasKolom(kolom.kunci)"
+                                        @drop.prevent="jatuhkanDiKolom(kolom)"
+                                    >
+                                        <TableCell
+                                            :colspan="totalKolomTabel"
+                                            class="text-muted-foreground py-4 text-center text-xs"
+                                        >
+                                            Belum ada tugas di tahap ini.
+                                        </TableCell>
+                                    </TableRow>
+                                </template>
                             </TableBody>
                         </Table>
                     </div>
