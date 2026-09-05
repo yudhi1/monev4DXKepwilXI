@@ -134,7 +134,6 @@ class ProjectController extends Controller
         return Inertia::render('Pm/Project/Show', [
             'project' => [
                 ...$this->ringkas($project, $user),
-                'deskripsi' => $project->deskripsi,
                 'milestones' => $project->milestones->map(fn ($m) => [
                     'id' => $m->id,
                     'nama' => $m->nama,
@@ -172,7 +171,16 @@ class ProjectController extends Controller
 
     public function update(ProjectRequest $request, Project $project): RedirectResponse
     {
-        $project->update($request->validated());
+        $data = $request->validated();
+
+        /*
+         | Keanggotaan tidak diubah dari sini. Form ubah project hanya memuat
+         | data projectnya; anggota dikelola di tab Members pada halaman detail
+         | supaya perubahan peran tidak tercampur dengan perubahan jadwal.
+         */
+        unset($data['anggotas']);
+
+        $project->update($data);
 
         return back()->with('success', 'Project berhasil diperbarui.');
     }
@@ -198,6 +206,9 @@ class ProjectController extends Controller
             'id' => $project->id,
             'kode' => $project->kode,
             'nama' => $project->nama,
+            // Ikut dikirim karena form ubah project mengisinya dari daftar ini;
+            // tanpa ini, menyimpan akan mengosongkan deskripsi yang sudah ada.
+            'deskripsi' => $project->deskripsi,
             'status' => $project->status,
             'prioritas' => $project->prioritas,
             'tanggal_mulai' => $project->tanggal_mulai?->toDateString(),
@@ -212,6 +223,8 @@ class ProjectController extends Controller
             'progress' => $project->progress(),
             'health' => $project->health(),
             'peranSaya' => $project->peranUser($user),
+            // Ditentukan policy di sini; Vue tidak boleh menebak ulang aturannya.
+            'bisaKelola' => $user->can('update', $project),
             'jumlahAnggota' => $project->anggotas_count ?? $project->anggotas()->count(),
             'jumlahTask' => $tasks->count(),
             'jumlahSelesai' => $tasks->where('status', $selesai)->count(),

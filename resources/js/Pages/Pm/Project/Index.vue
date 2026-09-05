@@ -18,9 +18,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Plus, Search, Users, X } from '@lucide/vue';
+import { Building2, Pencil, Plus, Search, Trash2, Users, X } from '@lucide/vue';
 
 const props = defineProps({
     projects: { type: Object, required: true },
@@ -74,10 +84,32 @@ const form = useForm({
     anggotas: [],
 });
 
+/*
+ | Dialog yang sama dipakai untuk membuat dan mengubah. Bedanya satu:
+ | pemilihan anggota hanya muncul saat membuat, karena setelah project ada
+ | keanggotaan diurus di tab Members pada halaman detail.
+ */
+const projectDiedit = ref(null);
+
 const bukaTambah = () => {
+    projectDiedit.value = null;
     form.reset();
     form.clearErrors();
     cariAnggota.value = '';
+    dialogTerbuka.value = true;
+};
+
+const bukaEdit = (p) => {
+    projectDiedit.value = p;
+    form.clearErrors();
+    form.kode = p.kode;
+    form.nama = p.nama;
+    form.deskripsi = p.deskripsi ?? '';
+    form.status = p.status;
+    form.prioritas = p.prioritas;
+    form.tanggal_mulai = p.tanggal_mulai ?? '';
+    form.tanggal_selesai = p.tanggal_selesai ?? '';
+    form.anggotas = [];
     dialogTerbuka.value = true;
 };
 
@@ -123,14 +155,43 @@ const hapusAnggota = (userId) => {
     form.anggotas = form.anggotas.filter((a) => a.user_id !== userId);
 };
 
-const simpan = () =>
-    form.post('/pm/projects', {
+const simpan = () => {
+    const opsiKirim = {
         preserveScroll: true,
         onSuccess: () => {
             dialogTerbuka.value = false;
             form.reset();
         },
+    };
+
+    if (projectDiedit.value) {
+        form.put('/pm/projects/' + projectDiedit.value.id, opsiKirim);
+    } else {
+        form.post('/pm/projects', opsiKirim);
+    }
+};
+
+/* --- Hapus project --- */
+const projectDihapus = ref(null);
+const dialogHapus = ref(false);
+
+const konfirmasiHapus = (p) => {
+    projectDihapus.value = p;
+    dialogHapus.value = true;
+};
+
+const hapus = () => {
+    const sasaran = projectDihapus.value;
+
+    if (! sasaran) {
+        return;
+    }
+
+    router.delete('/pm/projects/' + sasaran.id, {
+        preserveScroll: true,
+        onFinish: () => (projectDihapus.value = null),
     });
+};
 
 /* Seluruh baris dapat diklik; nama project tetap tautan sungguhan demi papan ketik. */
 const buka = (id) => router.visit('/pm/projects/' + id);
@@ -211,7 +272,8 @@ const tanggal = (nilai) =>
                                 <TableHead class="w-28 text-center">Task</TableHead>
                                 <TableHead class="w-24 text-center">Anggota</TableHead>
                                 <TableHead class="w-32">Deadline</TableHead>
-                                <TableHead class="w-24 pr-4 text-right">Health</TableHead>
+                                <TableHead class="w-24 text-right">Health</TableHead>
+                                <TableHead class="w-24 pr-4 text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -267,10 +329,32 @@ const tanggal = (nilai) =>
                                     {{ tanggal(p.tanggal_selesai) }}
                                 </TableCell>
 
-                                <TableCell class="pr-4 text-right">
+                                <TableCell class="text-right">
                                     <span :class="['text-xs font-medium whitespace-nowrap', HEALTH[p.health]?.kelas]">
                                         {{ HEALTH[p.health]?.label }}
                                     </span>
+                                </TableCell>
+
+                                <!--
+                                  Klik tombol tidak boleh ikut membuka project,
+                                  jadi peristiwanya dihentikan di sini.
+                                -->
+                                <TableCell class="pr-4" @click.stop>
+                                    <div v-if="p.bisaKelola" class="flex justify-end gap-1">
+                                        <Button variant="ghost" size="icon" title="Ubah" @click="bukaEdit(p)">
+                                            <Pencil class="size-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Hapus"
+                                            class="text-destructive hover:text-destructive"
+                                            @click="konfirmasiHapus(p)"
+                                        >
+                                            <Trash2 class="size-4" />
+                                        </Button>
+                                    </div>
+                                    <span v-else class="text-muted-foreground block text-right text-xs">—</span>
                                 </TableCell>
                             </TableRow>
                         </TableBody>
@@ -287,13 +371,18 @@ const tanggal = (nilai) =>
             <!-- Sama seperti dialog task: isi yang bergulir, tombol tetap terlihat. -->
             <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-3xl">
                 <DialogHeader class="shrink-0">
-                    <DialogTitle>Project Baru</DialogTitle>
+                    <DialogTitle>{{ projectDiedit ? 'Ubah Project' : 'Project Baru' }}</DialogTitle>
                     <DialogDescription>
-                        <template v-if="unitSaya">
-                            Project ini dimiliki
-                            <span class="font-medium">{{ unitSaya.nama }} — {{ unitSaya.induk }}</span>.
+                        <template v-if="projectDiedit">
+                            Anggota tim diatur di tab Members pada halaman project.
                         </template>
-                        Anda otomatis menjadi Project Manager-nya.
+                        <template v-else>
+                            <template v-if="unitSaya">
+                                Project ini dimiliki
+                                <span class="font-medium">{{ unitSaya.nama }} — {{ unitSaya.induk }}</span>.
+                            </template>
+                            Anda otomatis menjadi Project Manager-nya.
+                        </template>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -360,7 +449,7 @@ const tanggal = (nilai) =>
                           Anggota ditentukan sejak awal, bukan setelah project jadi.
                           Boleh lintas bidang dan lintas level (Kepwil ⇄ kantor cabang).
                         -->
-                        <div class="space-y-2 border-t pt-4">
+                        <div v-if="! projectDiedit" class="space-y-2 border-t pt-4">
                             <div class="flex items-center justify-between">
                                 <Label>Anggota Tim</Label>
                                 <span class="text-muted-foreground text-xs">
@@ -476,5 +565,27 @@ const tanggal = (nilai) =>
                 </form>
             </DialogContent>
         </Dialog>
+        <!-- ===== Konfirmasi hapus ===== -->
+        <AlertDialog v-model:open="dialogHapus">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus project ini?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        <span class="font-medium">{{ projectDihapus?.nama }}</span> akan dihapus permanen
+                        beserta seluruh task, milestone, dan keanggotaannya
+                        <template v-if="projectDihapus?.jumlahTask">
+                            — termasuk {{ projectDihapus.jumlahTask }} task di dalamnya.
+                        </template>
+                        Tindakan ini tidak dapat dibatalkan.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction class="bg-destructive hover:bg-destructive/90" @click="hapus">
+                        Ya, Hapus
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </AppLayout>
 </template>
