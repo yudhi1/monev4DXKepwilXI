@@ -25,6 +25,7 @@ class RingkasanController extends Controller
         'task' => ['judul' => 'Daftar Task', 'keterangan' => 'Seluruh task dan project asalnya.'],
         'selesai' => ['judul' => 'Task Selesai', 'keterangan' => 'Task yang sudah rampung, beserta project asalnya.'],
         'terlambat' => ['judul' => 'Task Terlambat', 'keterangan' => 'Task yang lewat deadline dan belum selesai.'],
+        'jatuh-tempo' => ['judul' => 'Jatuh Tempo 7 Hari', 'keterangan' => 'Task yang tenggatnya dalam sepekan ke depan dan belum selesai.'],
     ];
 
     public function index(Request $request): Response
@@ -52,6 +53,11 @@ class RingkasanController extends Controller
         $taskTerpilih = match ($tampil) {
             'selesai' => $semuaTask->where('status', $selesai),
             'terlambat' => $semuaTask->filter(fn (Task $t) => $t->terlambat()),
+            'jatuh-tempo' => $semuaTask->filter(
+                fn (Task $t) => ! $t->selesai()
+                    && $t->deadline
+                    && $t->deadline->betweenIncluded(now()->startOfDay(), now()->addDays(7)->endOfDay())
+            ),
             default => $semuaTask,
         };
 
@@ -76,6 +82,11 @@ class RingkasanController extends Controller
                 'task' => $semuaTask->count(),
                 'selesai' => $semuaTask->where('status', $selesai)->count(),
                 'terlambat' => $semuaTask->filter(fn (Task $t) => $t->terlambat())->count(),
+                'jatuh-tempo' => $semuaTask->filter(
+                    fn (Task $t) => ! $t->selesai()
+                        && $t->deadline
+                        && $t->deadline->betweenIncluded(now()->startOfDay(), now()->addDays(7)->endOfDay())
+                )->count(),
             ],
 
             'opsi' => [
