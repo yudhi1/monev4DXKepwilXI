@@ -18,7 +18,11 @@ class DashboardController extends Controller
 
         $projects = Project::query()
             ->bisaDilihat($user)
-            ->with(['pemilik:id,name', 'tasks:id,project_id,status,progress,bobot,deadline'])
+            ->with([
+                'pemilik:id,name',
+                'anggotas.user:id,name',
+                'tasks:id,project_id,status,progress,bobot,deadline',
+            ])
             ->withCount('anggotas')
             ->get();
 
@@ -112,6 +116,8 @@ class DashboardController extends Controller
                     'progress' => $p->progress(),
                     'health' => $p->health(),
                     'jumlahAnggota' => $p->anggotas_count,
+                    // Nama, bukan sekadar jumlah: "3 anggota" tidak memberi tahu siapa.
+                    'anggotas' => $p->anggotas->map(fn ($a) => $a->user?->name)->filter()->values(),
                     'jumlahTask' => $p->tasks->count(),
                     'jumlahSelesai' => $p->tasks->where('status', $selesai)->count(),
                     'tanggal_selesai' => $p->tanggal_selesai?->toDateString(),

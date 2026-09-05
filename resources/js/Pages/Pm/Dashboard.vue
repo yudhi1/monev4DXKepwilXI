@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import Lencana from '@/components/pm/Lencana.vue';
 import BilahProgress from '@/components/pm/BilahProgress.vue';
 import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
     CalendarClock,
@@ -13,6 +14,7 @@ import {
     ListChecks,
     TrendingUp,
     TriangleAlert,
+    Users,
 } from '@lucide/vue';
 
 defineProps({
@@ -201,50 +203,89 @@ const tanggal = (nilai) =>
         </Card>
 
         <div class="mt-6 grid gap-6 lg:grid-cols-3">
-            <!-- Project aktif -->
+            <!--
+              Tabel, bukan kartu: satu project satu baris supaya nama anggota,
+              jumlah tugas, dan progres berjajar dan mudah dibandingkan.
+            -->
             <div class="lg:col-span-2">
-                <h2 class="mb-3 text-sm font-semibold tracking-wide uppercase">Project Aktif</h2>
+                <div class="mb-3 flex items-center justify-between">
+                    <h2 class="text-sm font-semibold tracking-wide uppercase">Project Aktif</h2>
+                    <Link href="/pm/projects" class="text-primary text-xs font-medium">Semua</Link>
+                </div>
 
-                <div v-if="projectAktif.length === 0">
-                    <Card>
-                        <CardContent class="text-muted-foreground p-8 text-center text-sm">
+                <Card class="overflow-hidden py-0">
+                    <CardContent class="p-0">
+                        <p v-if="projectAktif.length === 0" class="text-muted-foreground p-8 text-center text-sm">
                             Belum ada project aktif.
-                        </CardContent>
-                    </Card>
-                </div>
+                        </p>
 
-                <div v-else class="space-y-3">
-                    <Link v-for="p in projectAktif" :key="p.id" :href="`/pm/projects/${p.id}`" class="block">
-                        <Card class="transition-shadow hover:shadow-md">
-                            <CardContent class="p-4">
-                                <div class="flex flex-wrap items-start justify-between gap-2">
-                                    <div class="min-w-0">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="text-muted-foreground font-mono text-xs">{{ p.kode }}</span>
-                                            <Lencana :nilai="p.status" :peta="opsi.statusProject" />
-                                            <Lencana :nilai="p.prioritas" :peta="opsi.prioritas" />
-                                        </div>
-                                        <p class="mt-1 truncate font-medium">{{ p.nama }}</p>
-                                    </div>
-                                    <span :class="['text-xs font-medium', HEALTH[p.health]?.kelas]">
-                                        {{ HEALTH[p.health]?.label }}
-                                    </span>
-                                </div>
+                        <div v-else class="gulir-terlihat overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow class="hover:bg-transparent">
+                                        <TableHead class="pl-4">Project</TableHead>
+                                        <TableHead class="w-56">Anggota</TableHead>
+                                        <TableHead class="w-24 text-center">Tugas</TableHead>
+                                        <TableHead class="w-44">Progres</TableHead>
+                                        <TableHead class="w-24 pr-4 text-right">Kondisi</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="p in projectAktif" :key="p.id">
+                                        <TableCell class="pl-4">
+                                            <Link
+                                                :href="`/pm/projects/${p.id}`"
+                                                class="font-medium hover:underline"
+                                            >
+                                                {{ p.nama }}
+                                            </Link>
+                                            <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                                <span class="text-muted-foreground font-mono text-xs">
+                                                    {{ p.kode }}
+                                                </span>
+                                                <Lencana :nilai="p.status" :peta="opsi.statusProject" />
+                                                <Lencana :nilai="p.prioritas" :peta="opsi.prioritas" />
+                                            </div>
+                                        </TableCell>
 
-                                <BilahProgress :nilai="p.progress" class="mt-3" />
+                                        <TableCell>
+                                            <span
+                                                class="text-muted-foreground flex items-start gap-1 text-sm"
+                                                :title="p.anggotas.join(', ')"
+                                            >
+                                                <Users class="mt-0.5 size-3 shrink-0" />
+                                                <span class="line-clamp-2">
+                                                    {{ p.anggotas.join(', ') || '—' }}
+                                                </span>
+                                            </span>
+                                        </TableCell>
 
-                                <div class="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                                    <span>{{ p.jumlahSelesai }} / {{ p.jumlahTask }} task selesai</span>
-                                    <span>{{ p.jumlahAnggota }} anggota</span>
-                                    <span class="flex items-center gap-1">
-                                        <CalendarClock class="size-3" />
-                                        {{ tanggal(p.tanggal_selesai) }}
-                                    </span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                </div>
+                                        <TableCell class="text-center text-sm tabular-nums">
+                                            {{ p.jumlahSelesai }} / {{ p.jumlahTask }}
+                                            <p class="text-muted-foreground text-xs">selesai</p>
+                                        </TableCell>
+
+                                        <TableCell><BilahProgress :nilai="p.progress" /></TableCell>
+
+                                        <TableCell class="pr-4 text-right">
+                                            <span
+                                                :class="[
+                                                    'text-xs font-medium whitespace-nowrap',
+                                                    HEALTH[p.health]?.kelas,
+                                                ]"
+                                            >
+                                                {{ HEALTH[p.health]?.label }}
+                                            </span>
+                                            <p class="text-muted-foreground text-xs whitespace-nowrap">
+                                                {{ tanggal(p.tanggal_selesai) }}
+                                            </p>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             <!-- Perlu perhatian -->
