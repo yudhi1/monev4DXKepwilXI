@@ -268,11 +268,11 @@ const tanggal = (nilai) =>
                                 <TableHead>Project</TableHead>
                                 <TableHead class="w-32">Status</TableHead>
                                 <TableHead class="w-28">Prioritas</TableHead>
-                                <TableHead class="w-44">Progress</TableHead>
-                                <TableHead class="w-28 text-center">Task</TableHead>
+                                <TableHead class="w-44">Progres</TableHead>
+                                <TableHead class="w-28 text-center">Tugas</TableHead>
                                 <TableHead class="w-24 text-center">Anggota</TableHead>
-                                <TableHead class="w-32">Deadline</TableHead>
-                                <TableHead class="w-24 text-right">Health</TableHead>
+                                <TableHead class="w-32">Tenggat</TableHead>
+                                <TableHead class="w-24 text-right">Kondisi</TableHead>
                                 <TableHead class="w-24 pr-4 text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -314,7 +314,7 @@ const tanggal = (nilai) =>
                                 <TableCell class="text-center text-sm tabular-nums">
                                     {{ p.jumlahSelesai }} / {{ p.jumlahTask }}
                                     <p v-if="p.jumlahTerlambat > 0" class="text-xs font-medium text-rose-600">
-                                        {{ p.jumlahTerlambat }} overdue
+                                        {{ p.jumlahTerlambat }} terlambat
                                     </p>
                                 </TableCell>
 
