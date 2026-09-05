@@ -172,6 +172,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('pm')->name('pm.')->middleware('modul:pm')->group(function () {
         Route::get('/', [PmDashboardController::class, 'index'])->name('dashboard');
         Route::get('/tugas-saya', [PmTugasSayaController::class, 'index'])->name('tugas-saya');
+        Route::get('/tugas-saya/ekspor', [PmTugasSayaController::class, 'ekspor'])->name('tugas-saya.ekspor');
 
         // Rincian di balik kartu statistik dashboard.
         Route::get('/ringkasan', [PmRingkasanController::class, 'index'])->name('ringkasan');

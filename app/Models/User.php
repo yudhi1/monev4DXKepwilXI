@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Pm\Task;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -49,6 +50,12 @@ class User extends Authenticatable
     public function unitKerja()
     {
         return $this->belongsTo(UnitKerja::class);
+    }
+
+    /** Task modul PM yang ditugaskan kepada pegawai ini. */
+    public function tasksPm()
+    {
+        return $this->belongsToMany(Task::class, 'pm_task_assignees', 'user_id', 'task_id');
     }
 
     /** Akun perorangan pegawai — pengguna modul Project Management. */
