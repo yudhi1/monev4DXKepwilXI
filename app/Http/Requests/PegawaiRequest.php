@@ -9,7 +9,7 @@ class PegawaiRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('admin') ?? false;
+        return $this->user()?->can('akses-master') ?? false;
     }
 
     public function rules(): array
@@ -24,11 +24,26 @@ class PegawaiRequest extends FormRequest
             // Saat edit, password kosong berarti "jangan diubah".
             'password' => [$pegawai ? 'nullable' : 'required', 'min:6'],
 
-            // Bidang menentukan sekaligus tingkat dan kantor induk pegawai.
-            'unit_kerja_id' => ['required', 'exists:unit_kerjas,id'],
+            /*
+             | Bidang dibatasi pada penempatan si pengelola. Memeriksanya di
+             | sini, bukan hanya menyembunyikan pilihannya di layar: tanpa itu,
+             | mengirim id bidang cabang lain lewat request sudah cukup untuk
+             | menembus batas.
+             */
+            'unit_kerja_id' => [
+                'required',
+                Rule::in($this->user()->bidangTerkelola()),
+            ],
             'jabatan' => ['nullable', 'string', 'max:100'],
             'pm_role' => ['required', Rule::in(array_keys(config('pm.role_akun')))],
             'is_active' => ['boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'unit_kerja_id.in' => 'Anda hanya dapat mengelola pegawai pada bidang di penempatan Anda.',
         ];
     }
 

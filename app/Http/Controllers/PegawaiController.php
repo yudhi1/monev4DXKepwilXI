@@ -36,8 +36,12 @@ class PegawaiController extends Controller
         $tingkat = $request->query('tingkat');
         $pmRole = $request->query('pm_role');
 
+        $bidang = $request->user()->bidangTerkelola();
+
         $pegawais = User::query()
             ->pegawai()
+            // Hanya pegawai pada bidang yang boleh dikelola akun ini.
+            ->whereIn('unit_kerja_id', $bidang)
             ->with('unitKerja.cabang:id,nama')
             ->when($cari !== '', fn ($q) => $q->where(
                 fn ($sub) => $sub->where('name', 'like', "%{$cari}%")
@@ -65,8 +69,10 @@ class PegawaiController extends Controller
 
         return Inertia::render('Pegawai/Index', [
             'pegawais' => $pegawais,
-            'unitKerjas' => $this->daftarUnitKerja(),
-            'cabangs' => Cabang::where('kode', '!=', 'INTERN')->orderBy('nama')->get(['id', 'nama']),
+            'unitKerjas' => $this->daftarUnitKerja($request->user()),
+            'cabangs' => $this->daftarCabang($request->user()),
+            'semuaPenempatan' => $request->user()->bisaKelolaSemuaBidang(),
+            'penempatan' => $this->labelPenempatan($request->user()),
             'roleAkun' => config('pm.role_akun'),
             'filter' => [
                 'cari' => $cari,
@@ -100,6 +106,7 @@ class PegawaiController extends Controller
     public function update(PegawaiRequest $request, User $pegawai): RedirectResponse
     {
         abort_unless($pegawai->adalahPegawai(), 404);
+        $this->pastikanDalamCakupan($request->user(), $pegawai);
 
         $data = $request->validated();
         $unit = UnitKerja::findOrFail($data['unit_kerja_id']);
@@ -121,6 +128,7 @@ class PegawaiController extends Controller
     public function destroy(Request $request, User $pegawai): RedirectResponse
     {
         abort_unless($pegawai->adalahPegawai(), 404);
+        $this->pastikanDalamCakupan($request->user(), $pegawai);
 
         if ($pegawai->id === $request->user()->id) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
@@ -129,6 +137,17 @@ class PegawaiController extends Controller
         $pegawai->delete();
 
         return back()->with('success', 'Pegawai berhasil dihapus.');
+    }
+
+    /**
+     * Pegawai di luar penempatan pengelola tidak boleh diubah maupun dihapus.
+     *
+     * Daftarnya memang sudah disaring, tetapi id pegawai lain masih bisa
+     * disisipkan lewat URL.
+     */
+    private function pastikanDalamCakupan(User $pengelola, User $pegawai): void
+    {
+        abort_unless(in_array($pegawai->unit_kerja_id, $pengelola->bidangTerkelola(), true), 403);
     }
 
     /** Unduh template Excel untuk impor pegawai. */
@@ -168,7 +187,11 @@ class PegawaiController extends Controller
             }
         }
 
-        $unitKerjas = UnitKerja::aktif()->with('cabang:id,kode,nama')->get();
+        // Impor pun terbatas pada penempatan; kalau tidak, batasnya mudah dilewati.
+        $unitKerjas = UnitKerja::aktif()
+            ->whereIn('id', $request->user()->bidangTerkelola())
+            ->with('cabang:id,kode,nama')
+            ->get();
         $roleSah = array_keys(config('pm.role_akun'));
 
         $berhasil = 0;
@@ -203,7 +226,8 @@ class PegawaiController extends Controller
 
             if (! $unit) {
                 $gagal[] = "baris {$nomorBaris}: bidang '{$kodeBidang}'".
-                    ($kodeCabang !== '' ? " di cabang '{$kodeCabang}'" : ' di Kedeputian Wilayah').' tidak ditemukan';
+                    ($kodeCabang !== '' ? " di cabang '{$kodeCabang}'" : ' di Kedeputian Wilayah').
+                    ' tidak ditemukan atau di luar penempatan Anda';
 
                 continue;
             }
@@ -225,6 +249,12 @@ class PegawaiController extends Controller
             ];
 
             $sudahAda = User::where('name', $nama)->first();
+
+            if ($sudahAda && ! in_array($sudahAda->unit_kerja_id, $request->user()->bidangTerkelola(), true)) {
+                $gagal[] = "baris {$nomorBaris}: '{$nama}' terdaftar di penempatan lain";
+
+                continue;
+            }
 
             if ($sudahAda) {
                 $sudahAda->update($atribut);
@@ -260,6 +290,32 @@ class PegawaiController extends Controller
 
     /* ---------------------------------------------------------------- */
 
+    /** Kantor cabang yang boleh dipilih; akun cabang hanya kantornya sendiri. */
+    private function daftarCabang(User $pengelola): array
+    {
+        $q = Cabang::where('kode', '!=', 'INTERN');
+
+        if (! $pengelola->bisaKelolaSemuaBidang() && $pengelola->cabang_id) {
+            $q->whereKey($pengelola->cabang_id);
+        }
+
+        return $q->orderBy('nama')->get(['id', 'nama'])->all();
+    }
+
+    /** Keterangan cakupan, ditampilkan agar batasnya tidak terasa seperti bug. */
+    private function labelPenempatan(User $pengelola): ?string
+    {
+        if ($pengelola->bisaKelolaSemuaBidang()) {
+            return null;
+        }
+
+        if ($pengelola->cabang_id) {
+            return $pengelola->cabang?->nama;
+        }
+
+        return 'Kedeputian Wilayah';
+    }
+
     private function induk(?UnitKerja $unit): ?string
     {
         if (! $unit) {
@@ -271,10 +327,11 @@ class PegawaiController extends Controller
             : 'Kedeputian Wilayah';
     }
 
-    /** Unit kerja untuk dropdown bertingkat, sudah berlabel kantor induknya. */
-    private function daftarUnitKerja(): array
+    /** Unit kerja untuk dropdown bertingkat, sudah disaring ke penempatan. */
+    private function daftarUnitKerja(User $pengelola): array
     {
         return UnitKerja::aktif()
+            ->whereIn('id', $pengelola->bidangTerkelola())
             ->with('cabang:id,nama')
             ->urutTampil()
             ->get()

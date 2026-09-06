@@ -56,10 +56,12 @@ class RolePermissionSeeder extends Seeder
         $wilayah = Role::firstOrCreate(['name' => 'kedeputian_wilayah', 'guard_name' => 'web']);
         $wilayah->syncPermissions([
             'akses-4dx', 'manage wig', 'manage lag', 'manage lead', 'view dashboard', 'export laporan',
+            // Boleh mendaftarkan pegawai, tetapi hanya di bidang penempatannya.
+            'akses-master',
         ]);
 
         $cabang = Role::firstOrCreate(['name' => 'kantor_cabang', 'guard_name' => 'web']);
-        $cabang->syncPermissions(['akses-4dx', 'input realisasi', 'view dashboard']);
+        $cabang->syncPermissions(['akses-4dx', 'input realisasi', 'view dashboard', 'akses-master']);
 
         // Sisa permission PM pada akun unit kerja dari versi sebelumnya dibersihkan.
         User::akunUnitKerja()->whereHas('roles', fn ($q) => $q->where('name', '!=', 'admin'))

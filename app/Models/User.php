@@ -52,6 +52,40 @@ class User extends Authenticatable
         return $this->belongsTo(UnitKerja::class);
     }
 
+    /** Admin mengelola pegawai di seluruh penempatan; yang lain tidak. */
+    public function bisaKelolaSemuaBidang(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Bidang yang boleh dikelola akun ini, mengikuti penempatannya.
+     *
+     * Akun kantor cabang hanya menjangkau bidang di kantornya sendiri, dan
+     * akun Kedeputian Wilayah hanya bidang tingkat wilayah. Tanpa batas ini,
+     * satu akun cabang bisa mendaftarkan pegawai di cabang lain.
+     *
+     * @return array<int, int> id unit kerja
+     */
+    public function bidangTerkelola(): array
+    {
+        $q = UnitKerja::query();
+
+        if ($this->bisaKelolaSemuaBidang()) {
+            return $q->pluck('id')->all();
+        }
+
+        if ($this->cabang_id) {
+            return $q->where('cabang_id', $this->cabang_id)->pluck('id')->all();
+        }
+
+        if ($this->wilayah_id) {
+            return $q->where('tingkat', 'wilayah')->where('wilayah_id', $this->wilayah_id)->pluck('id')->all();
+        }
+
+        return [];
+    }
+
     /** Task modul PM yang ditugaskan kepada pegawai ini. */
     public function tasksPm()
     {

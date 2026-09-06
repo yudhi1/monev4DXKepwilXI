@@ -45,6 +45,8 @@ const props = defineProps({
     unitKerjas: { type: Array, required: true },
     cabangs: { type: Array, required: true },
     roleAkun: { type: Object, required: true },
+    semuaPenempatan: { type: Boolean, default: true },
+    penempatan: { type: String, default: null },
     filter: { type: Object, required: true },
 });
 
@@ -117,6 +119,16 @@ const form = useForm({
  | dan menghindari daftar 70 unit dalam satu dropdown datar.
  */
 const bidangTersedia = computed(() => {
+    /*
+     | Akun bercakupan satu kantor hanya punya 4-6 bidang, dan pilihan tingkat
+     | maupun kantornya disembunyikan. Untuk mereka daftarnya ditampilkan datar
+     | — tanpa ini dropdown bidang akan kosong karena tersaring `tingkat` yang
+     | tidak pernah mereka pilih.
+     */
+    if (! props.semuaPenempatan) {
+        return props.unitKerjas;
+    }
+
     if (form.tingkat === 'wilayah') {
         return props.unitKerjas.filter((u) => u.tingkat === 'wilayah');
     }
@@ -132,6 +144,10 @@ const bidangTersedia = computed(() => {
 
 /* Bidang yang tidak lagi cocok setelah tingkat/cabang berubah harus dilepas. */
 watch([() => form.tingkat, () => form.cabang_id], () => {
+    if (! props.semuaPenempatan) {
+        return;
+    }
+
     const masihCocok = bidangTersedia.value.some((u) => String(u.id) === String(form.unit_kerja_id));
 
     if (! masihCocok) {
@@ -230,8 +246,16 @@ const hapus = () => {
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">Akun Project Management</h1>
                     <p class="text-muted-foreground mt-1 text-sm">
-                        Akun perorangan pegawai, terikat satu bidang. Akun unit kerja untuk
-                        Monev 4DX diurus di halaman Akun Monev 4DX.
+                        <template v-if="semuaPenempatan">
+                            Akun perorangan pegawai, terikat satu bidang. Akun unit kerja untuk
+                            Monev 4DX diurus di halaman Akun Monev 4DX.
+                        </template>
+                        <template v-else>
+                            Pegawai pada bidang di
+                            <span class="text-foreground font-medium">{{ penempatan }}</span> —
+                            sesuai penempatan akun Anda. Penempatan lain diurus akun kantornya
+                            masing-masing atau admin.
+                        </template>
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -254,7 +278,7 @@ const hapus = () => {
                     <Input v-model="cari" placeholder="Cari nama atau jabatan..." class="pl-9" />
                 </div>
 
-                <Select v-model="tingkatFilter">
+                <Select v-if="semuaPenempatan" v-model="tingkatFilter">
                     <SelectTrigger class="w-48"><SelectValue placeholder="Semua tingkat" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="semua">Semua tingkat</SelectItem>
@@ -398,7 +422,7 @@ const hapus = () => {
                     </div>
 
                     <!-- Unit kerja: tingkat dulu, lalu bidang -->
-                    <div class="space-y-2">
+                    <div v-if="semuaPenempatan" class="space-y-2">
                         <Label>Unit Kerja</Label>
                         <Select v-model="form.tingkat">
                             <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
@@ -410,7 +434,7 @@ const hapus = () => {
                         </Select>
                     </div>
 
-                    <div v-if="form.tingkat === 'cabang'" class="space-y-2">
+                    <div v-if="semuaPenempatan && form.tingkat === 'cabang'" class="space-y-2">
                         <Label>Kantor Cabang</Label>
                         <Select v-model="form.cabang_id">
                             <SelectTrigger class="w-full">

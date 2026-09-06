@@ -86,11 +86,13 @@ export const menuPm = [
  | lewat Monev 4DX.
  */
 export const menuMaster = [
-    { label: 'Akun Monev 4DX', href: '/users', icon: Users, roles: null },
+    { label: 'Akun Monev 4DX', href: '/users', icon: Users, roles: ['admin'] },
+    // Satu-satunya menu di sini yang terbuka bagi akun 4DX, dan hanya
+    // untuk bidang di penempatannya sendiri.
     { label: 'Akun Project Management', href: '/pegawai', icon: UserRound, roles: null },
-    { label: 'Bidang / Unit Kerja', href: '/unit-kerja', icon: Building2, roles: null },
-    { label: 'Wilayah', href: '/wilayahs', icon: Map, roles: null },
-    { label: 'Cabang', href: '/cabangs', icon: Landmark, roles: null },
+    { label: 'Bidang / Unit Kerja', href: '/unit-kerja', icon: Building2, roles: ['admin'] },
+    { label: 'Wilayah', href: '/wilayahs', icon: Map, roles: ['admin'] },
+    { label: 'Cabang', href: '/cabangs', icon: Landmark, roles: ['admin'] },
 ];
 
 export const MENU_MODUL = {
