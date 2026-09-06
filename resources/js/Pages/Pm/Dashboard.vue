@@ -37,7 +37,7 @@ defineProps({
 const KARTU = [
     {
         kunci: 'projectDikerjakan',
-        label: 'Project Dikerjakan',
+        label: 'Project Aktif',
         icon: FolderKanban,
         tautan: '/pm/projects?status=aktif',
         kartu: 'border-teal-200 bg-teal-50 dark:border-teal-900 dark:bg-teal-950/40',
@@ -65,7 +65,7 @@ const KARTU = [
     },
     {
         kunci: 'jatuhTempo',
-        label: 'Jatuh Tempo 7 Hari',
+        label: 'Jatuh Tempo',
         icon: CalendarClock,
         tautan: '/pm/ringkasan?tampil=jatuh-tempo',
         kartu: 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40',
@@ -105,7 +105,7 @@ const keterangan = (kunci, r) => {
         return `dari ${r.project} project`;
     }
     if (kunci === 'progres') {
-        return `${r.taskSelesai} dari ${r.task} tugas selesai`;
+        return `${r.taskSelesai} dari ${r.task} tugas`;
     }
     if (kunci === 'tugasSaya') {
         return 'belum selesai';
@@ -114,7 +114,7 @@ const keterangan = (kunci, r) => {
         return 'sepekan ke depan';
     }
 
-    return r.terlambat > 0 ? 'perlu segera ditangani' : 'tidak ada yang lewat tenggat';
+    return r.terlambat > 0 ? 'perlu ditangani' : 'aman, tidak ada';
 };
 
 /* "3 hari lagi" lebih cepat dipahami daripada tanggal saat menakar urgensi. */
@@ -160,21 +160,31 @@ const tanggal = (nilai) =>
         <!-- Kartu statistik -->
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <Link v-for="k in KARTU" :key="k.kunci" :href="k.tautan" class="block">
+                <!--
+                  Ikon, label, dan panah ditaruh sebaris di atas; angka dan
+                  keterangannya mendapat lebar penuh kartu di bawahnya.
+                  Sebelumnya ketiganya berbagi satu baris dengan ikon dan
+                  panah, sehingga di layar sempit teksnya terpotong.
+                -->
                 <Card :class="[k.kartu, 'h-full transition-shadow hover:shadow-md']">
-                    <CardContent class="flex items-start gap-3 p-4">
-                        <span :class="['flex size-10 shrink-0 items-center justify-center rounded-lg', k.ikon]">
-                            <component :is="k.icon" class="size-5" />
-                        </span>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-muted-foreground text-xs tracking-wide uppercase">{{ k.label }}</p>
-                            <p :class="['text-2xl leading-tight font-semibold tabular-nums', k.angka]">
-                                {{ ringkasan[k.kunci] }}{{ k.akhiran ?? '' }}
+                    <CardContent class="p-4">
+                        <div class="flex items-center gap-2">
+                            <span :class="['flex size-9 shrink-0 items-center justify-center rounded-lg', k.ikon]">
+                                <component :is="k.icon" class="size-5" />
+                            </span>
+                            <p class="text-muted-foreground min-w-0 flex-1 text-xs tracking-wide uppercase">
+                                {{ k.label }}
                             </p>
-                            <p class="text-muted-foreground mt-0.5 truncate text-xs">
-                                {{ keterangan(k.kunci, ringkasan) }}
-                            </p>
+                            <ChevronRight class="text-muted-foreground size-4 shrink-0" />
                         </div>
-                        <ChevronRight class="text-muted-foreground mt-1 size-4 shrink-0" />
+
+                        <p :class="['mt-2 text-2xl leading-none font-semibold tabular-nums', k.angka]">
+                            {{ ringkasan[k.kunci] }}{{ k.akhiran ?? '' }}
+                        </p>
+                        <!-- Tanpa truncate: keterangan pendek, biar melipat saja. -->
+                        <p class="text-muted-foreground mt-1 text-xs leading-snug">
+                            {{ keterangan(k.kunci, ringkasan) }}
+                        </p>
                     </CardContent>
                 </Card>
             </Link>
