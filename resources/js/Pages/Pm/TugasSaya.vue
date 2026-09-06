@@ -50,6 +50,27 @@ const tautanEkspor = computed(() => {
 
 const judul = computed(() => (lingkup.value === 'tim' ? 'Tugas Tim' : 'Tugas Saya'));
 
+/*
+ | Warna sisa waktu: merah bila lewat, kuning bila tinggal tiga hari atau
+ | kurang. Ambang tiga hari dipilih agar yang mendesak menonjol tanpa membuat
+ | seluruh kolom berwarna.
+ */
+const warnaSisa = (t) => {
+    if (t.status === 'done') {
+        return 'text-muted-foreground';
+    }
+
+    if (t.terlambat) {
+        return 'font-medium text-rose-600';
+    }
+
+    if (t.sisaHari !== null && t.sisaHari <= 3) {
+        return 'font-medium text-amber-600';
+    }
+
+    return 'text-muted-foreground';
+};
+
 const tanggal = (nilai) =>
     nilai ? new Date(nilai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
@@ -159,7 +180,8 @@ const angka = (nilai) => (nilai === null || nilai === undefined ? '—' : Number
                                 <TableHead class="w-32">Status</TableHead>
                                 <TableHead class="w-28">Prioritas</TableHead>
                                 <TableHead class="w-44">Progres</TableHead>
-                                <TableHead class="w-36 pr-4">Tenggat</TableHead>
+                                <TableHead class="w-36">Tenggat</TableHead>
+                                <TableHead class="w-36 pr-4">Sisa Waktu</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -201,7 +223,7 @@ const angka = (nilai) => (nilai === null || nilai === undefined ? '—' : Number
                                     </p>
                                 </TableCell>
 
-                                <TableCell class="pr-4">
+                                <TableCell>
                                     <span
                                         :class="[
                                             'flex items-center gap-1 text-sm whitespace-nowrap',
@@ -210,6 +232,23 @@ const angka = (nilai) => (nilai === null || nilai === undefined ? '—' : Number
                                     >
                                         <TriangleAlert v-if="t.terlambat" class="size-3.5" />
                                         {{ tanggal(t.deadline) }}
+                                    </span>
+                                </TableCell>
+
+                                <!--
+                                  Jarak ke tenggat dieja, bukan dibiarkan
+                                  dihitung sendiri dari tanggal. Kalimatnya
+                                  datang dari server supaya sama persis dengan
+                                  hasil export.
+                                -->
+                                <TableCell class="pr-4">
+                                    <span
+                                        :class="[
+                                            'text-sm whitespace-nowrap',
+                                            warnaSisa(t),
+                                        ]"
+                                    >
+                                        {{ t.keteranganTenggat }}
                                     </span>
                                 </TableCell>
                             </TableRow>

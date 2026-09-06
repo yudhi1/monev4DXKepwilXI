@@ -87,20 +87,7 @@ class TugasExport implements FromCollection, ShouldAutoSize, WithHeadings, WithM
     /** Menandai yang butuh tindakan, agar terbaca tanpa membandingkan tanggal. */
     private function keterangan(Task $task): string
     {
-        if ($task->selesai()) {
-            return 'Selesai';
-        }
-
-        if ($task->terlambat()) {
-            return 'TERLAMBAT '.now()->startOfDay()->diffInDays($task->deadline->startOfDay()).' hari';
-        }
-
-        if (! $task->deadline) {
-            return 'Tanpa tenggat';
-        }
-
-        $sisa = (int) now()->startOfDay()->diffInDays($task->deadline->startOfDay(), false);
-
-        return $sisa === 0 ? 'Jatuh tempo hari ini' : "{$sisa} hari lagi";
+        // Kalimatnya milik model supaya sama persis dengan yang tampil di layar.
+        return $task->keteranganTenggat();
     }
 }

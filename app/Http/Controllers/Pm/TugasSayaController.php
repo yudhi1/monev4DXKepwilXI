@@ -31,6 +31,8 @@ class TugasSayaController extends Controller
                 'deadline' => $t->deadline?->toDateString(),
                 'progress' => $t->progress,
                 'terlambat' => $t->terlambat(),
+                'sisaHari' => $t->sisaHari(),
+                'keteranganTenggat' => $t->keteranganTenggat(),
                 'satuan' => $t->satuan,
                 'target' => $t->target !== null ? (float) $t->target : null,
                 'realisasi' => $t->realisasi !== null ? (float) $t->realisasi : null,

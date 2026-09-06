@@ -77,6 +77,50 @@ class Task extends Model
     }
 
     /**
+     * Selisih hari tenggat terhadap hari ini; negatif berarti sudah lewat.
+     *
+     * Dihitung dari awal hari supaya "besok" selalu 1, tidak bergeser oleh jam
+     * berapa halaman dibuka.
+     */
+    public function sisaHari(): ?int
+    {
+        if ($this->deadline === null) {
+            return null;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->deadline->startOfDay(), false);
+    }
+
+    /**
+     * Tenggat dalam kata-kata: "3 hari lagi", "Terlambat 5 hari".
+     *
+     * Ditaruh di model, bukan di layar atau di export, agar tabel dan berkas
+     * unduhan tidak bisa berbeda kalimat untuk task yang sama.
+     */
+    public function keteranganTenggat(): string
+    {
+        if ($this->selesai()) {
+            return 'Selesai';
+        }
+
+        if ($this->deadline === null) {
+            return 'Tanpa tenggat';
+        }
+
+        $sisa = $this->sisaHari();
+
+        if ($sisa < 0) {
+            return 'Terlambat '.abs($sisa).' hari';
+        }
+
+        return match ($sisa) {
+            0 => 'Jatuh tempo hari ini',
+            1 => 'Besok',
+            default => "{$sisa} hari lagi",
+        };
+    }
+
+    /**
      * Ditandai selesai, tetapi realisasinya belum menutup target.
      *
      * Task bertarget yang digeser ke Done sengaja tidak dipaksa 100% supaya
