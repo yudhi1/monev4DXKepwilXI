@@ -77,7 +77,9 @@ export const menu4dx = [
 export const menuPm = [
     { label: 'Dashboard', href: '/pm', icon: LayoutDashboard, roles: null },
     { label: 'Projects', href: '/pm/projects', icon: FolderKanban, roles: null },
-    { label: 'Tugas Saya', href: '/pm/tugas-saya', icon: CircleCheckBig, roles: null },
+    // Bukan "Tugas Saya": halamannya juga memuat tugas tim bagi yang berhak.
+    // Judul di dalamnya yang menyesuaikan lingkup terpilih.
+    { label: 'Tugas', href: '/pm/tugas-saya', icon: CircleCheckBig, roles: null },
 ];
 
 /*
