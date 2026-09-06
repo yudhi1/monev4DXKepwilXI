@@ -82,6 +82,9 @@ Aplikasi ini menampung dua modul dengan **satu login** dan satu tabel `users`:
 
 - Modul dipilih di `/apps` setelah login; user yang hanya berhak atas satu modul langsung dialihkan.
 - Daftar modul: `config/modul.php`. Akses modul disaring middleware `modul:<kunci>`.
+- **`beranda` sebuah modul wajib terbuka bagi semua pemegang permission-nya.**
+  Kalau berandanya dijaga lebih ketat (mis. `role:admin`) daripada permission
+  modulnya, user menabrak 403 tepat setelah mengklik kartunya di `/apps`.
 - Menu sidebar per modul: `resources/js/layouts/menu.js`.
 - Tabel PM berprefiks `pm_`. Nama rute PM berprefiks `pm.`.
 - Status/prioritas/peran PM ada di `config/pm.php`, bukan enum MySQL.

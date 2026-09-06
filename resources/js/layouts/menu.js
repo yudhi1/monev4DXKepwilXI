@@ -104,6 +104,6 @@ export const MENU_MODUL = {
 /** Identitas yang tampil di kepala sidebar per modul. */
 export const BRAND_MODUL = {
     '4dx': { judul: 'Monev', sub: '4DX', beranda: '/dashboard', ikon: 'ChartNoAxesCombined' },
-    master: { judul: 'Master', sub: 'Data', beranda: '/users', ikon: 'Database' },
+    master: { judul: 'Master', sub: 'Data', beranda: '/pegawai', ikon: 'Database' },
     pm: { judul: 'Project', sub: 'Management', beranda: '/pm', ikon: 'FolderKanban' },
 };

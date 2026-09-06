@@ -35,7 +35,14 @@ return [
             'deskripsi' => 'Akun, pegawai, bidang, wilayah, dan kantor cabang.',
             'ikon' => 'Database',
             'warna' => 'slate',
-            'beranda' => '/users',
+            /*
+             | Beranda modul WAJIB terbuka bagi semua pemegang permission-nya.
+             | Sebelumnya diarahkan ke /users yang khusus admin, sehingga akun
+             | kantor cabang menabrak 403 tepat setelah mengklik kartunya.
+             | /pegawai adalah satu-satunya halaman di modul ini yang terbuka
+             | untuk seluruh pemegang akses-master.
+             */
+            'beranda' => '/pegawai',
             'permission' => 'akses-master',
         ],
 
