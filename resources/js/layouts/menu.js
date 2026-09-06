@@ -87,7 +87,7 @@ export const menuPm = [
  */
 export const menuMaster = [
     { label: 'Akun Monev 4DX', href: '/users', icon: Users, roles: null },
-    { label: 'Pegawai', href: '/pegawai', icon: UserRound, roles: null },
+    { label: 'Akun Project Management', href: '/pegawai', icon: UserRound, roles: null },
     { label: 'Bidang / Unit Kerja', href: '/unit-kerja', icon: Building2, roles: null },
     { label: 'Wilayah', href: '/wilayahs', icon: Map, roles: null },
     { label: 'Cabang', href: '/cabangs', icon: Landmark, roles: null },

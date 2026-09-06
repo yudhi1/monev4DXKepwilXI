@@ -222,16 +222,16 @@ const hapus = () => {
 </script>
 
 <template>
-    <Head title="Kelola Pegawai" />
+    <Head title="Akun Project Management" />
 
     <AppLayout>
         <template #header>
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight">Kelola Pegawai</h1>
+                    <h1 class="text-2xl font-semibold tracking-tight">Akun Project Management</h1>
                     <p class="text-muted-foreground mt-1 text-sm">
-                        Akun perorangan untuk modul Project Management. Akun unit kerja Monev 4DX
-                        diurus di halaman Akun Monev 4DX.
+                        Akun perorangan pegawai, terikat satu bidang. Akun unit kerja untuk
+                        Monev 4DX diurus di halaman Akun Monev 4DX.
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
