@@ -34,6 +34,7 @@ import {
     ArrowLeft,
     Building2,
     CircleAlert,
+    Gauge,
     CalendarClock,
     Flag,
     GripVertical,
@@ -336,6 +337,68 @@ const toggleAssignee = (userId, dipilih) => {
         : formTask.assignees.filter((id) => id !== userId);
 };
 
+/* ================= Isi capaian (member) ================= */
+
+/*
+ | Dipisahkan dari form ubah task karena hak aksesnya berbeda: member boleh
+ | mengisi capaian pekerjaannya, tapi tidak boleh mengubah judul, bobot,
+ | tenggat, atau PIC. Menembak endpoint progress, bukan update.
+ |
+ | Targetnya ikut bisa diisi di sini — sering baru ketahuan ukurannya oleh
+ | yang mengerjakan, dan sebelumnya hanya manager yang bisa menetapkannya.
+ */
+const dialogCapaian = ref(false);
+const taskCapaian = ref(null);
+
+const formCapaian = useForm({ target: '', satuan: null, realisasi: '', progress: 0 });
+
+const capaianPakaiTarget = computed(() => Number(formCapaian.target) > 0);
+
+const capaianHitungan = computed(() => {
+    if (! capaianPakaiTarget.value) {
+        return null;
+    }
+
+    const persen = (Number(formCapaian.realisasi) || 0) / Number(formCapaian.target) * 100;
+
+    return Math.round(Math.max(0, Math.min(100, persen)));
+});
+
+const bukaCapaian = (task) => {
+    taskCapaian.value = task;
+    formCapaian.clearErrors();
+    formCapaian.target = task.target ?? '';
+    formCapaian.satuan = task.satuan;
+    formCapaian.realisasi = task.realisasi ?? '';
+    formCapaian.progress = task.progress;
+    dialogCapaian.value = true;
+};
+
+const simpanCapaian = () => {
+    if (! taskCapaian.value) {
+        return;
+    }
+
+    /*
+     | Target dikirim apa adanya, termasuk saat dikosongkan — bagi controller
+     | itu berarti "task ini kembali diukur manual", bukan "jangan diubah".
+     */
+    formCapaian
+        .transform((data) => ({
+            target: data.target === '' ? null : data.target,
+            satuan: data.satuan,
+            realisasi: data.realisasi === '' ? null : data.realisasi,
+            progress: data.progress,
+        }))
+        .patch(`/pm/projects/${props.project.id}/tasks/${taskCapaian.value.id}/progress`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                dialogCapaian.value = false;
+                taskCapaian.value = null;
+            },
+        });
+};
+
 /* ================= Hapus task ================= */
 
 const dialogHapus = ref(false);
@@ -567,7 +630,7 @@ const kandidatTersisa = computed(() => {
                                     <TableHead class="w-40">PIC</TableHead>
                                     <TableHead class="w-32">Tenggat</TableHead>
                                     <TableHead v-if="izin.ubahProgress" class="w-40">Pindah ke</TableHead>
-                                    <TableHead v-if="izin.kelolaTask" class="w-24 pr-3 text-right">Aksi</TableHead>
+                                    <TableHead v-if="izin.ubahProgress" class="w-28 pr-3 text-right">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
 
@@ -677,12 +740,28 @@ const kandidatTersisa = computed(() => {
                                         </Select>
                                     </TableCell>
 
-                                    <TableCell v-if="izin.kelolaTask" class="pr-3">
+                                    <TableCell v-if="izin.ubahProgress" class="pr-3">
                                         <div class="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" title="Ubah" @click="bukaEditTask(t)">
+                                            <!-- Terbuka bagi member; ubah & hapus tetap milik manager. -->
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                title="Isi target & realisasi"
+                                                @click.stop="bukaCapaian(t)"
+                                            >
+                                                <Gauge class="size-4" />
+                                            </Button>
+                                            <Button
+                                                v-if="izin.kelolaTask"
+                                                variant="ghost"
+                                                size="icon"
+                                                title="Ubah"
+                                                @click="bukaEditTask(t)"
+                                            >
                                                 <Pencil class="size-4" />
                                             </Button>
                                             <Button
+                                                v-if="izin.kelolaTask"
                                                 variant="ghost"
                                                 size="icon"
                                                 title="Hapus"
@@ -1212,6 +1291,102 @@ const kandidatTersisa = computed(() => {
                     <DialogFooter class="shrink-0 border-t pt-4">
                         <Button type="button" variant="outline" @click="dialogTask = false">Batal</Button>
                         <Button type="submit" :disabled="formTask.processing">Simpan</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
+        <!-- ============ Isi capaian ============ -->
+        <!--
+          Dialog ringkas khusus angka capaian, terbuka bagi member. Sengaja
+          tidak memuat judul/bobot/PIC supaya batas wewenangnya terbaca dari
+          layarnya sendiri, bukan hanya ditolak diam-diam oleh server.
+        -->
+        <Dialog v-model:open="dialogCapaian">
+            <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-lg">
+                <DialogHeader class="shrink-0">
+                    <DialogTitle>Isi Capaian</DialogTitle>
+                    <DialogDescription>{{ taskCapaian?.judul }}</DialogDescription>
+                </DialogHeader>
+
+                <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="simpanCapaian">
+                    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+                        <div class="grid gap-4 sm:grid-cols-3">
+                            <div class="space-y-1.5">
+                                <Label for="capaian-target">Target</Label>
+                                <Input
+                                    id="capaian-target"
+                                    v-model="formCapaian.target"
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                />
+                                <p v-if="formCapaian.errors.target" class="text-destructive text-sm">
+                                    {{ formCapaian.errors.target }}
+                                </p>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <Label for="capaian-satuan">Satuan</Label>
+                                <Select v-model="formCapaian.satuan">
+                                    <SelectTrigger id="capaian-satuan">
+                                        <SelectValue placeholder="—" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="sat in opsi.satuan" :key="sat" :value="sat">
+                                            {{ sat }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p v-if="formCapaian.errors.satuan" class="text-destructive text-sm">
+                                    {{ formCapaian.errors.satuan }}
+                                </p>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <Label for="capaian-realisasi">Realisasi</Label>
+                                <Input
+                                    id="capaian-realisasi"
+                                    v-model="formCapaian.realisasi"
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    :disabled="! capaianPakaiTarget"
+                                />
+                                <p v-if="formCapaian.errors.realisasi" class="text-destructive text-sm">
+                                    {{ formCapaian.errors.realisasi }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p v-if="capaianPakaiTarget" class="text-muted-foreground text-xs">
+                            Progress dihitung otomatis: {{ angka(formCapaian.realisasi || 0) }} dari
+                            {{ angka(formCapaian.target) }} {{ formCapaian.satuan ?? '' }} =
+                            <span class="text-foreground font-medium">{{ capaianHitungan }}%</span>
+                        </p>
+
+                        <div v-else class="space-y-1.5">
+                            <Label for="capaian-progress">Progress (%)</Label>
+                            <Input
+                                id="capaian-progress"
+                                v-model="formCapaian.progress"
+                                type="number"
+                                min="0"
+                                max="100"
+                            />
+                            <p class="text-muted-foreground text-xs">
+                                Pekerjaan ini belum diukur dengan angka. Isi target di atas bila ingin
+                                progressnya dihitung dari realisasi.
+                            </p>
+                            <p v-if="formCapaian.errors.progress" class="text-destructive text-sm">
+                                {{ formCapaian.errors.progress }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter class="shrink-0 border-t pt-4">
+                        <Button type="button" variant="outline" @click="dialogCapaian = false">Batal</Button>
+                        <Button type="submit" :disabled="formCapaian.processing">Simpan</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

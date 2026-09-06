@@ -141,31 +141,68 @@ class TaskController extends Controller
         return back();
     }
 
-    /** Ubah progres saja — dipakai member dari kartu tanpa membuka form penuh. */
+    /**
+     * Mengisi capaian task: target, satuan, realisasi, atau progress.
+     *
+     * Terbuka bagi member — bukan hanya manager — karena angka capaian paling
+     * tahu adalah yang mengerjakan. Ukurannya pun boleh ia tetapkan sendiri:
+     * banyak pekerjaan baru ketahuan satuan dan targetnya setelah digarap.
+     *
+     * Yang tetap tertutup bagi member ada di update(): judul, bobot, tenggat,
+     * PIC, milestone. Itu kesepakatan project, bukan capaian.
+     */
     public function progress(Request $request, Project $project, Task $task): RedirectResponse
     {
         $this->authorize('ubahProgress', $project);
         $this->pastikanMilikProject($project, $task);
 
-        // Task bertarget diperbarui lewat realisasinya; progress ikut menyesuaikan.
-        if ($task->pakaiTarget()) {
-            $data = $request->validate([
-                'realisasi' => ['required', 'numeric', 'min:0'],
-            ]);
-
-            $task->update($data);
-            $this->selaraskanProgress($task);
-
-            return back()->with('success', 'Realisasi task diperbarui.');
-        }
-
         $data = $request->validate([
-            'progress' => ['required', 'integer', 'min:0', 'max:100'],
+            'target' => ['nullable', 'numeric', 'min:0'],
+            'satuan' => ['nullable', Rule::in(config('pm.satuan'))],
+            'realisasi' => ['nullable', 'numeric', 'min:0'],
+            'progress' => ['nullable', 'integer', 'min:0', 'max:100'],
         ]);
 
-        $task->update($data);
+        /*
+         | Field yang tidak dikirim berarti "jangan diubah", bukan "kosongkan".
+         | Membedakan keduanya penting: mengirim target null memang berarti
+         | task kembali diukur manual.
+         */
+        $target = array_key_exists('target', $data) ? $data['target'] : $task->target;
+        $pakaiTarget = $target !== null && (float) $target > 0;
 
-        return back()->with('success', 'Progres task diperbarui.');
+        // Angka mana yang wajib bergantung pada ada tidaknya target.
+        $request->validate($pakaiTarget
+            ? ['realisasi' => ['required', 'numeric', 'min:0']]
+            : ['progress' => ['required', 'integer', 'min:0', 'max:100']]);
+
+        $isi = [];
+
+        if (array_key_exists('target', $data)) {
+            // Target 0 sama artinya dengan tanpa target; disimpan null supaya
+            // form tidak menampilkan angka 0 yang tampak seperti target sah.
+            $isi['target'] = $pakaiTarget ? $data['target'] : null;
+            $isi['satuan'] = $pakaiTarget ? ($data['satuan'] ?? $task->satuan) : null;
+        }
+
+        if ($pakaiTarget) {
+            $isi['realisasi'] = $data['realisasi'];
+        } else {
+            // Ukuran angkanya dilepas, jadi realisasinya ikut dibersihkan.
+            $isi['realisasi'] = array_key_exists('target', $data) ? null : $task->realisasi;
+            $isi['progress'] = $data['progress'];
+        }
+
+        $task->update($isi);
+
+        // Task bertarget: progress selalu turunan realisasi, tidak diisi tangan.
+        if ($pakaiTarget) {
+            $this->selaraskanProgress($task);
+        }
+
+        return back()->with('success', $pakaiTarget
+            ? 'Realisasi task diperbarui.'
+            : 'Progres task diperbarui.');
     }
 
     public function destroy(Request $request, Project $project, Task $task): RedirectResponse
