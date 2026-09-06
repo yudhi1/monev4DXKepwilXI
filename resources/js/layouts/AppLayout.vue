@@ -17,6 +17,7 @@ import {
     ChartNoAxesCombined,
     ChevronDown,
     ChevronsUpDown,
+    Database,
     FolderKanban,
     Grid2x2,
     LogOut,
@@ -36,7 +37,7 @@ const modulTersedia = computed(() => page.props.modul?.daftar ?? []);
 const bisaGantiModul = computed(() => modulTersedia.value.length > 1);
 const brand = computed(() => BRAND_MODUL[modulAktif.value] ?? BRAND_MODUL['4dx']);
 
-const IKON_MODUL = { ChartNoAxesCombined, FolderKanban };
+const IKON_MODUL = { ChartNoAxesCombined, Database, FolderKanban };
 
 const ROLE_LABEL = {
     admin: 'Admin',

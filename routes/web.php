@@ -20,6 +20,7 @@ use App\Http\Controllers\Pm\TaskController as PmTaskController;
 use App\Http\Controllers\Pm\TugasSayaController as PmTugasSayaController;
 use App\Http\Controllers\RealisasiLeadController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UnitKerjaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WigCapaianController;
 use App\Http\Controllers\WigController;
@@ -64,30 +65,6 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/dashboard-cabang', [DashboardCabangController::class, 'index'])->name('dashboard.cabang');
         Route::get('/dashboard-kepwil', [DashboardKepwilController::class, 'index'])->name('dashboard.kepwil');
-
-        Route::middleware('role:admin')->group(function () {
-            // Akun unit kerja — pengguna modul Monev 4DX.
-            Route::get('/users', [UserController::class, 'index'])->name('users');
-            Route::post('/users', [UserController::class, 'store'])->name('users.store');
-            Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-            Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-
-            // Akun perorangan — pengguna modul Project Management.
-            Route::get('/pegawai', [PegawaiController::class, 'index'])->name('pegawai');
-            Route::get('/pegawai/impor/template', [PegawaiController::class, 'templateImpor'])->name('pegawai.impor.template');
-            Route::post('/pegawai/impor', [PegawaiController::class, 'impor'])->name('pegawai.impor');
-            Route::post('/pegawai', [PegawaiController::class, 'store'])->name('pegawai.store');
-            Route::put('/pegawai/{pegawai}', [PegawaiController::class, 'update'])->name('pegawai.update');
-            Route::delete('/pegawai/{pegawai}', [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
-            Route::get('/wilayahs', [WilayahController::class, 'index'])->name('wilayahs');
-            Route::post('/wilayahs', [WilayahController::class, 'store'])->name('wilayahs.store');
-            Route::put('/wilayahs/{wilayah}', [WilayahController::class, 'update'])->name('wilayahs.update');
-            Route::delete('/wilayahs/{wilayah}', [WilayahController::class, 'destroy'])->name('wilayahs.destroy');
-            Route::get('/cabangs', [CabangController::class, 'index'])->name('cabangs');
-            Route::post('/cabangs', [CabangController::class, 'store'])->name('cabangs.store');
-            Route::put('/cabangs/{cabang}', [CabangController::class, 'update'])->name('cabangs.update');
-            Route::delete('/cabangs/{cabang}', [CabangController::class, 'destroy'])->name('cabangs.destroy');
-        });
 
         Route::middleware('role:admin,kedeputian_wilayah')->group(function () {
             Route::get('/wigs', [WigController::class, 'index'])->name('wigs');
@@ -155,6 +132,45 @@ Route::middleware('auth')->group(function () {
                     Route::delete('/{upload}', [ApcDashboardController::class, 'destroy'])->name('monitoring-kinerja.destroy');
                 });
         });
+    });
+
+    /*
+     |--------------------------------------------------------------------
+     | Modul Master Data
+     |--------------------------------------------------------------------
+     | Berdiri sendiri, bukan bagian 4DX: isinya melayani kedua modul.
+     | Dijaga `modul:master` (permission akses-master) dan `role:admin`.
+     |
+     | URL-nya sengaja tidak diberi prefix agar tautan lama tetap hidup.
+     */
+    Route::middleware(['modul:master', 'role:admin'])->group(function () {
+        // Akun unit kerja — pengguna modul Monev 4DX.
+        Route::get('/users', [UserController::class, 'index'])->name('users');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // Akun perorangan — pengguna modul Project Management.
+        Route::get('/pegawai', [PegawaiController::class, 'index'])->name('pegawai');
+        Route::get('/pegawai/impor/template', [PegawaiController::class, 'templateImpor'])->name('pegawai.impor.template');
+        Route::post('/pegawai/impor', [PegawaiController::class, 'impor'])->name('pegawai.impor');
+        Route::post('/pegawai', [PegawaiController::class, 'store'])->name('pegawai.store');
+        Route::put('/pegawai/{pegawai}', [PegawaiController::class, 'update'])->name('pegawai.update');
+        Route::delete('/pegawai/{pegawai}', [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
+        Route::get('/wilayahs', [WilayahController::class, 'index'])->name('wilayahs');
+        Route::post('/wilayahs', [WilayahController::class, 'store'])->name('wilayahs.store');
+        Route::put('/wilayahs/{wilayah}', [WilayahController::class, 'update'])->name('wilayahs.update');
+        Route::delete('/wilayahs/{wilayah}', [WilayahController::class, 'destroy'])->name('wilayahs.destroy');
+        Route::get('/cabangs', [CabangController::class, 'index'])->name('cabangs');
+        Route::post('/cabangs', [CabangController::class, 'store'])->name('cabangs.store');
+        Route::put('/cabangs/{cabang}', [CabangController::class, 'update'])->name('cabangs.update');
+        Route::delete('/cabangs/{cabang}', [CabangController::class, 'destroy'])->name('cabangs.destroy');
+
+        // Bidang/unit kerja: sebelumnya hanya bisa diubah lewat seeder.
+        Route::get('/unit-kerja', [UnitKerjaController::class, 'index'])->name('unit-kerja');
+        Route::post('/unit-kerja', [UnitKerjaController::class, 'store'])->name('unit-kerja.store');
+        Route::put('/unit-kerja/{unit_kerja}', [UnitKerjaController::class, 'update'])->name('unit-kerja.update');
+        Route::delete('/unit-kerja/{unit_kerja}', [UnitKerjaController::class, 'destroy'])->name('unit-kerja.destroy');
     });
 
     /*

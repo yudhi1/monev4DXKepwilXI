@@ -30,6 +30,9 @@ class RolePermissionSeeder extends Seeder
          | satu orang bisa jadi manager di satu project dan member di project
          | lain. Yang di sini hanya hak yang berlaku lintas project.
          */
+        // Modul Master Data: hanya admin.
+        $izinMaster = ['akses-master'];
+
         $izinPm = [
             'akses-pm',
             'pm.project.buat',
@@ -37,12 +40,12 @@ class RolePermissionSeeder extends Seeder
             'pm.kelola',
         ];
 
-        foreach ([...$izin4dx, ...$izinPm] as $p) {
+        foreach ([...$izin4dx, ...$izinMaster, ...$izinPm] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
 
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $admin->syncPermissions([...$izin4dx, ...$izinPm]);
+        $admin->syncPermissions([...$izin4dx, ...$izinMaster, ...$izinPm]);
 
         /*
          | Role di bawah ini murni milik modul Monev 4DX dan hanya dipakai akun

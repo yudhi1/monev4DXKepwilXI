@@ -23,6 +23,22 @@ return [
             'permission' => 'akses-4dx',
         ],
 
+        /*
+         | Master Data berdiri sendiri, bukan menu di dalam 4DX, karena isinya
+         | melayani kedua modul: akun, pegawai, dan struktur organisasi.
+         | Menempatkannya di dalam salah satu modul membuat modul itu seolah
+         | pemilik data bersama — dan sempat menghasilkan kejanggalan nyata:
+         | menambah Pegawai (urusan PM) mengharuskan admin masuk ke 4DX.
+         */
+        'master' => [
+            'nama' => 'Master Data',
+            'deskripsi' => 'Akun, pegawai, bidang, wilayah, dan kantor cabang.',
+            'ikon' => 'Database',
+            'warna' => 'slate',
+            'beranda' => '/users',
+            'permission' => 'akses-master',
+        ],
+
         'pm' => [
             'nama' => 'Project Management',
             'deskripsi' => 'Pengelolaan project, task, tim, progres, dan kontribusi.',

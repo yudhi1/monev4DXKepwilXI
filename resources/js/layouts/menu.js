@@ -7,32 +7,25 @@
 
 import {
     BookOpen,
+    Building2,
     CircleCheckBig,
-    Database,
     FileText,
     FolderKanban,
     Gauge,
+    Landmark,
     LayoutDashboard,
+    Map,
     Star,
     Target,
     TrendingDown,
     TrendingUp,
+    UserRound,
+    Users,
 } from '@lucide/vue';
 
 /** Modul Monev 4DX — masih di URL root sampai Fase 2 restrukturisasi dikerjakan. */
 export const menu4dx = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: null },
-    {
-        label: 'Master',
-        icon: Database,
-        roles: ['admin'],
-        items: [
-            { label: 'Akun Monev 4DX', href: '/users' },
-            { label: 'Pegawai', href: '/pegawai' },
-            { label: 'Wilayah', href: '/wilayahs' },
-            { label: 'Cabang', href: '/cabangs' },
-        ],
-    },
     {
         label: 'WIG',
         icon: Target,
@@ -87,13 +80,28 @@ export const menuPm = [
     { label: 'Tugas Saya', href: '/pm/tugas-saya', icon: CircleCheckBig, roles: null },
 ];
 
+/*
+ | Modul Master Data. Berdiri sendiri karena isinya melayani kedua modul —
+ | dulu ia menu di dalam 4DX, sehingga menambah Pegawai (urusan PM) harus
+ | lewat Monev 4DX.
+ */
+export const menuMaster = [
+    { label: 'Akun Monev 4DX', href: '/users', icon: Users, roles: null },
+    { label: 'Pegawai', href: '/pegawai', icon: UserRound, roles: null },
+    { label: 'Bidang / Unit Kerja', href: '/unit-kerja', icon: Building2, roles: null },
+    { label: 'Wilayah', href: '/wilayahs', icon: Map, roles: null },
+    { label: 'Cabang', href: '/cabangs', icon: Landmark, roles: null },
+];
+
 export const MENU_MODUL = {
     '4dx': menu4dx,
+    master: menuMaster,
     pm: menuPm,
 };
 
 /** Identitas yang tampil di kepala sidebar per modul. */
 export const BRAND_MODUL = {
     '4dx': { judul: 'Monev', sub: '4DX', beranda: '/dashboard', ikon: 'ChartNoAxesCombined' },
+    master: { judul: 'Master', sub: 'Data', beranda: '/users', ikon: 'Database' },
     pm: { judul: 'Project', sub: 'Management', beranda: '/pm', ikon: 'FolderKanban' },
 };

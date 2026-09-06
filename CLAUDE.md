@@ -73,7 +73,12 @@ Aplikasi ini menampung dua modul dengan **satu login** dan satu tabel `users`:
 | Modul | URL | Kode |
 |---|---|---|
 | Monev 4DX | root (`/dashboard`, `/wigs`, …) | `App\Http\Controllers\*`, `Pages/*` |
+| Master Data | root (`/users`, `/pegawai`, `/unit-kerja`, `/wilayahs`, `/cabangs`) | `UserController`, `PegawaiController`, `UnitKerjaController`, … |
 | Project Management | `/pm` | `App\Http\Controllers\Pm\*`, `App\Models\Pm\*`, `Pages/Pm/*` |
+
+- **Master Data berdiri sendiri, bukan menu di dalam 4DX.** Isinya melayani kedua
+  modul; dulu ia menu 4DX sehingga menambah Pegawai (urusan PM) harus lewat 4DX.
+  Dijaga `modul:master` + `role:admin`.
 
 - Modul dipilih di `/apps` setelah login; user yang hanya berhak atas satu modul langsung dialihkan.
 - Daftar modul: `config/modul.php`. Akses modul disaring middleware `modul:<kunci>`.
