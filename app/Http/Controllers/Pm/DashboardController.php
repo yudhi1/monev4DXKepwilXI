@@ -95,6 +95,7 @@ class DashboardController extends Controller
                 'tugasSaya' => $terbukaSaya->count(),
                 'jatuhTempo' => $jatuhTempo->count(),
                 'terlambat' => $tasks->filter(fn (Task $t) => $t->terlambat())->count(),
+                'projectDikerjakan' => $projects->whereIn('status', config('pm.status_project_aktif'))->count(),
 
                 // Dipakai keterangan kecil di bawah angka, bukan kartu tersendiri.
                 'project' => $projects->count(),
@@ -104,7 +105,7 @@ class DashboardController extends Controller
             'sebaran' => $sebaran,
             'perluPerhatian' => $perluPerhatian,
             'projectAktif' => $projects
-                ->whereIn('status', ['perencanaan', 'berjalan', 'tertahan'])
+                ->whereIn('status', config('pm.status_project_aktif'))
                 ->sortByDesc('updated_at')
                 ->take(6)
                 ->map(fn (Project $p) => [

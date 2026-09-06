@@ -230,6 +230,8 @@ const tanggal = (nilai) =>
                 <SelectTrigger class="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="semua">Semua status</SelectItem>
+                    <!-- Gabungan, bukan status tunggal; dipakai kartu dashboard. -->
+                    <SelectItem value="aktif">Sedang dikerjakan</SelectItem>
                     <SelectItem v-for="(meta, kunci) in opsi.statusProject" :key="kunci" :value="kunci">
                         {{ meta.label }}
                     </SelectItem>

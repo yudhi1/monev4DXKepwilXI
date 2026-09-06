@@ -35,6 +35,13 @@ return [
         'batal' => ['label' => 'Batal', 'warna' => 'rose'],
     ],
 
+    /*
+     | Status yang dianggap "sedang dikerjakan". Dipakai kartu ringkasan dan
+     | tabel Project Aktif di dashboard; disatukan di sini supaya angka pada
+     | kartu tidak bisa berbeda dari isi tabelnya.
+     */
+    'status_project_aktif' => ['perencanaan', 'berjalan', 'tertahan'],
+
     'prioritas' => [
         'rendah' => ['label' => 'Rendah', 'warna' => 'slate'],
         'sedang' => ['label' => 'Sedang', 'warna' => 'amber'],

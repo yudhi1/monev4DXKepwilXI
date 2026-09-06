@@ -26,7 +26,7 @@ defineProps({
 });
 
 /*
- | Empat kartu ini sengaja bukan sekadar pencacah.
+ | Kartu-kartu ini sengaja bukan sekadar pencacah.
  |
  | Sebelumnya isinya Projects, Tasks, Completed, dan Overdue — dua di
  | antaranya hampir selalu 0 pada project yang baru jalan, dan "Tasks 12"
@@ -35,6 +35,15 @@ defineProps({
  | yang mendesak, dan apa yang sudah lewat.
  */
 const KARTU = [
+    {
+        kunci: 'projectDikerjakan',
+        label: 'Project Dikerjakan',
+        icon: FolderKanban,
+        tautan: '/pm/projects?status=aktif',
+        kartu: 'border-teal-200 bg-teal-50 dark:border-teal-900 dark:bg-teal-950/40',
+        ikon: 'bg-teal-500/15 text-teal-600 dark:text-teal-300',
+        angka: 'text-teal-700 dark:text-teal-200',
+    },
     {
         kunci: 'progres',
         label: 'Progres',
@@ -91,6 +100,10 @@ const WARNA_SEBARAN = {
 
 /** Keterangan singkat di bawah tiap angka, supaya angkanya punya konteks. */
 const keterangan = (kunci, r) => {
+    if (kunci === 'projectDikerjakan') {
+        // Angkanya butuh pembagi: 3 aktif dari 4 berbeda arti dengan 3 dari 20.
+        return `dari ${r.project} project`;
+    }
     if (kunci === 'progres') {
         return `${r.taskSelesai} dari ${r.task} tugas selesai`;
     }
@@ -145,7 +158,7 @@ const tanggal = (nilai) =>
         </template>
 
         <!-- Kartu statistik -->
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <Link v-for="k in KARTU" :key="k.kunci" :href="k.tautan" class="block">
                 <Card :class="[k.kartu, 'h-full transition-shadow hover:shadow-md']">
                     <CardContent class="flex items-start gap-3 p-4">

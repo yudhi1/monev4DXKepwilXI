@@ -29,7 +29,13 @@ class ProjectController extends Controller
                 fn ($sub) => $sub->where('kode', 'like', "%{$cari}%")
                     ->orWhere('nama', 'like', "%{$cari}%")
             ))
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
+            /*
+             | "aktif" bukan status di database, melainkan gabungan status yang
+             | dianggap sedang dikerjakan. Ada supaya kartu dashboard bisa
+             | menautkan ke daftar yang isinya persis sebanyak angkanya.
+             */
+            ->when($status === 'aktif', fn ($q) => $q->whereIn('status', config('pm.status_project_aktif')))
+            ->when($status !== '' && $status !== 'aktif', fn ($q) => $q->where('status', $status))
             ->when($prioritas !== '', fn ($q) => $q->where('prioritas', $prioritas))
             ->latest()
             ->paginate(12)
