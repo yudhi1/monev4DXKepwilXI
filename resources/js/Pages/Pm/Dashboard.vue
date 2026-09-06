@@ -260,9 +260,20 @@ const tanggal = (nilai) =>
                                             </span>
                                         </TableCell>
 
-                                        <TableCell class="text-center text-sm tabular-nums">
-                                            {{ p.jumlahSelesai }} / {{ p.jumlahTask }}
+                                        <TableCell class="text-center text-sm">
+                                            <span class="tabular-nums">
+                                                {{ p.jumlahSelesai }}
+                                                <span class="text-muted-foreground">dari</span>
+                                                {{ p.jumlahTask }}
+                                            </span>
                                             <p class="text-muted-foreground text-xs">selesai</p>
+                                            <p
+                                                v-if="p.jumlahRealisasiTertinggal > 0"
+                                                class="text-xs font-medium text-amber-600"
+                                                title="Task berstatus selesai yang realisasinya belum mencapai target — karena itu progres belum penuh."
+                                            >
+                                                {{ p.jumlahRealisasiTertinggal }} tanpa realisasi
+                                            </p>
                                         </TableCell>
 
                                         <TableCell><BilahProgress :nilai="p.progress" /></TableCell>

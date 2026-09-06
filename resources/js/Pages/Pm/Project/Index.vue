@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Pencil, Plus, Search, Trash2, Users, X } from '@lucide/vue';
+import { Building2, CircleAlert, Pencil, Plus, Search, Trash2, Users, X } from '@lucide/vue';
 
 const props = defineProps({
     projects: { type: Object, required: true },
@@ -270,7 +270,7 @@ const tanggal = (nilai) =>
                                 <TableHead class="w-32">Status</TableHead>
                                 <TableHead class="w-28">Prioritas</TableHead>
                                 <TableHead class="w-44">Progres</TableHead>
-                                <TableHead class="w-28 text-center">Tugas</TableHead>
+                                <TableHead class="w-32 text-center">Tugas Selesai</TableHead>
                                 <TableHead class="w-24 text-center">Anggota</TableHead>
                                 <TableHead class="w-32">Tenggat</TableHead>
                                 <TableHead class="w-24 text-right">Kondisi</TableHead>
@@ -325,10 +325,32 @@ const tanggal = (nilai) =>
                                 <TableCell><Lencana :nilai="p.prioritas" :peta="opsi.prioritas" /></TableCell>
                                 <TableCell><BilahProgress :nilai="p.progress" /></TableCell>
 
-                                <TableCell class="text-center text-sm tabular-nums">
-                                    {{ p.jumlahSelesai }} / {{ p.jumlahTask }}
+                                <!--
+                                  "1 / 4" saja terbaca ambigu — bisa disangka
+                                  rasio apa pun. Kata "dari" membuatnya jelas.
+                                -->
+                                <TableCell class="text-center text-sm">
+                                    <span class="tabular-nums">
+                                        {{ p.jumlahSelesai }} <span class="text-muted-foreground">dari</span>
+                                        {{ p.jumlahTask }}
+                                    </span>
                                     <p v-if="p.jumlahTerlambat > 0" class="text-xs font-medium text-rose-600">
                                         {{ p.jumlahTerlambat }} terlambat
+                                    </p>
+                                    <!--
+                                      Menjelaskan mengapa "selesai" bisa
+                                      berdampingan dengan progres rendah.
+                                    -->
+                                    <p
+                                        v-if="p.jumlahRealisasiTertinggal > 0"
+                                        class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-amber-600"
+                                        :title="
+                                            p.jumlahRealisasiTertinggal +
+                                            ' tugas ditandai selesai, tetapi realisasinya belum mencapai target — karena itu progres project belum penuh.'
+                                        "
+                                    >
+                                        <CircleAlert class="size-3 shrink-0" />
+                                        {{ p.jumlahRealisasiTertinggal }} realisasi belum diisi
                                     </p>
                                 </TableCell>
 

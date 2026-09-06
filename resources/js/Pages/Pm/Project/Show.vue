@@ -33,6 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
     ArrowLeft,
     Building2,
+    CircleAlert,
     CalendarClock,
     Flag,
     GripVertical,
@@ -477,6 +478,15 @@ const kandidatTersisa = computed(() => {
                             {{ project.jumlahTerlambat }}
                         </span>
                     </div>
+                    <div v-if="project.jumlahRealisasiTertinggal > 0" class="flex justify-between">
+                        <span class="text-muted-foreground">Realisasi belum diisi</span>
+                        <span
+                            class="font-medium tabular-nums text-amber-600"
+                            title="Task berstatus selesai yang realisasinya belum mencapai target."
+                        >
+                            {{ project.jumlahRealisasiTertinggal }}
+                        </span>
+                    </div>
                     <div class="flex justify-between">
                         <span class="text-muted-foreground">Anggota</span>
                         <span class="font-medium tabular-nums">{{ project.jumlahAnggota }}</span>
@@ -611,6 +621,20 @@ const kandidatTersisa = computed(() => {
                                             class="text-muted-foreground mt-0.5 text-xs tabular-nums"
                                         >
                                             {{ angka(t.realisasi) }} / {{ angka(t.target) }} {{ t.satuan }}
+                                        </p>
+                                        <!--
+                                          Sudah di kolom Done tetapi realisasinya
+                                          belum menutup target. Ditandai di sini
+                                          supaya jelas yang kurang adalah angka
+                                          yang belum diisi, bukan hitungannya.
+                                        -->
+                                        <p
+                                            v-if="t.realisasiTertinggal"
+                                            class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-amber-600"
+                                            title="Ditandai selesai, tetapi realisasinya belum mencapai target. Isi realisasinya agar progres project ikut naik."
+                                        >
+                                            <CircleAlert class="size-3 shrink-0" />
+                                            Realisasi belum diisi
                                         </p>
                                     </TableCell>
 

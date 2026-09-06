@@ -120,6 +120,7 @@ class DashboardController extends Controller
                     'anggotas' => $p->anggotas->map(fn ($a) => $a->user?->name)->filter()->values(),
                     'jumlahTask' => $p->tasks->count(),
                     'jumlahSelesai' => $p->tasks->where('status', $selesai)->count(),
+                    'jumlahRealisasiTertinggal' => $p->tasks->filter(fn ($t) => $t->realisasiTertinggal())->count(),
                     'tanggal_selesai' => $p->tanggal_selesai?->toDateString(),
                 ])
                 ->values(),

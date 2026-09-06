@@ -162,6 +162,13 @@ const angka = (nilai) => (nilai === null || nilai === undefined ? '—' : Number
                         <span v-if="p.jumlahTerlambat > 0" class="text-xs font-medium text-rose-600">
                             {{ p.jumlahTerlambat }} terlambat
                         </span>
+                        <span
+                            v-if="p.jumlahRealisasiTertinggal > 0"
+                            class="text-xs font-medium text-amber-600"
+                            title="Task berstatus selesai yang realisasinya belum mencapai target."
+                        >
+                            {{ p.jumlahRealisasiTertinggal }} realisasi belum diisi
+                        </span>
                         <span v-if="p.unitKerja" class="text-muted-foreground text-xs">{{ p.unitKerja }}</span>
                     </div>
                 </button>

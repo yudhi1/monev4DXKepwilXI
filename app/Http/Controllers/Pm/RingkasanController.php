@@ -111,6 +111,7 @@ class RingkasanController extends Controller
             'jumlahTask' => $project->tasks->count(),
             'jumlahSelesai' => $project->tasks->where('status', $selesai)->count(),
             'jumlahTerlambat' => $project->tasks->filter(fn (Task $t) => $t->terlambat())->count(),
+            'jumlahRealisasiTertinggal' => $project->tasks->filter(fn (Task $t) => $t->realisasiTertinggal())->count(),
             'tasks' => $project->tasks
                 ->sortBy(fn (Task $t) => $t->deadline?->timestamp ?? PHP_INT_MAX)
                 ->map(fn (Task $t) => $this->ringkasTask($t, false))

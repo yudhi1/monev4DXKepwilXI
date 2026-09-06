@@ -229,6 +229,9 @@ class ProjectController extends Controller
             'jumlahTask' => $tasks->count(),
             'jumlahSelesai' => $tasks->where('status', $selesai)->count(),
             'jumlahTerlambat' => $tasks->filter(fn ($t) => $t->terlambat())->count(),
+            // Task yang ditandai selesai tetapi realisasinya belum diisi penuh;
+            // inilah yang membuat "3/4 selesai" bisa berdampingan dengan 0%.
+            'jumlahRealisasiTertinggal' => $tasks->filter(fn ($t) => $t->realisasiTertinggal())->count(),
         ];
     }
 
@@ -247,6 +250,7 @@ class ProjectController extends Controller
             'target' => $task->target !== null ? (float) $task->target : null,
             'realisasi' => $task->realisasi !== null ? (float) $task->realisasi : null,
             'pakaiTarget' => $task->pakaiTarget(),
+            'realisasiTertinggal' => $task->realisasiTertinggal(),
             'urutan' => $task->urutan,
             'terlambat' => $task->terlambat(),
             'milestone_id' => $task->milestone_id,

@@ -76,6 +76,19 @@ class Task extends Model
         return $this->status === config('pm.status_selesai', 'done');
     }
 
+    /**
+     * Ditandai selesai, tetapi realisasinya belum menutup target.
+     *
+     * Task bertarget yang digeser ke Done sengaja tidak dipaksa 100% supaya
+     * angka realisasi yang sudah diisi tidak tertimpa. Akibatnya kolom Kanban
+     * bisa berkata "selesai" sementara progress project tetap rendah — tanpa
+     * penanda, selisih itu terbaca seperti salah hitung.
+     */
+    public function realisasiTertinggal(): bool
+    {
+        return $this->selesai() && $this->pakaiTarget() && $this->progress < 100;
+    }
+
     /** Lewat deadline dan belum selesai. */
     public function terlambat(): bool
     {
