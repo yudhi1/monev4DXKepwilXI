@@ -99,6 +99,11 @@ jobs:
             # Tanpa seeder ini modul baru tidak terlihat oleh siapa pun,
             # termasuk admin, karena permission-nya belum ada di database.
             php artisan db:seed --class=RolePermissionSeeder --force
+            # Struktur bidang: 4 di Kedeputian Wilayah + 6 per kantor cabang.
+            # updateOrCreate atas (kode, cabang_id), jadi menjalankannya tiap
+            # deploy hanya menyelaraskan — tidak menggandakan maupun menimpa
+            # bidang yang ditambahkan lewat /unit-kerja.
+            php artisan db:seed --class=UnitKerjaSeeder --force
             php artisan db:seed --class=MonevSegmenSeeder --force
             # rsync --delete ikut menghapus symlink public/storage; dibuat ulang.
             php artisan storage:link --force
