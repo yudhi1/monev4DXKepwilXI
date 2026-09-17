@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Paginasi from '@/components/Paginasi.vue';
+import InputPassword from '@/components/InputPassword.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -104,6 +105,7 @@ const pegawaiDiedit = ref(null);
 
 const form = useForm({
     name: '',
+    npp: '',
     password: '',
     tingkat: 'wilayah',
     cabang_id: null,
@@ -170,6 +172,7 @@ const bukaEdit = (pegawai) => {
     pegawaiDiedit.value = pegawai;
     form.clearErrors();
     form.name = pegawai.name;
+    form.npp = pegawai.npp ?? '';
     form.password = '';
     form.tingkat = pegawai.tingkat ?? 'wilayah';
 
@@ -275,7 +278,7 @@ const hapus = () => {
             <div class="flex flex-wrap items-center gap-3 border-b px-4 py-3">
                 <div class="relative w-full max-w-xs">
                     <Search class="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-                    <Input v-model="cari" placeholder="Cari nama atau jabatan..." class="pl-9" />
+                    <Input v-model="cari" placeholder="Cari nama, NPP, atau jabatan..." class="pl-9" />
                 </div>
 
                 <Select v-if="semuaPenempatan" v-model="tingkatFilter">
@@ -318,6 +321,7 @@ const hapus = () => {
                         <TableHeader>
                             <TableRow class="hover:bg-transparent">
                                 <TableHead class="w-14 pl-4">#</TableHead>
+                                <TableHead class="w-32">NPP</TableHead>
                                 <TableHead>Nama Pegawai</TableHead>
                                 <TableHead>Unit Kerja</TableHead>
                                 <TableHead>Role</TableHead>
@@ -329,6 +333,9 @@ const hapus = () => {
                             <TableRow v-for="(pegawai, index) in pegawais.data" :key="pegawai.id">
                                 <TableCell class="text-muted-foreground pl-4 tabular-nums">
                                     {{ pegawais.from + index }}
+                                </TableCell>
+                                <TableCell class="text-muted-foreground tabular-nums">
+                                    {{ pegawai.npp ?? '—' }}
                                 </TableCell>
                                 <TableCell>
                                     <p class="font-medium">
@@ -375,7 +382,7 @@ const hapus = () => {
                             </TableRow>
 
                             <TableRow v-if="pegawais.data.length === 0" class="hover:bg-transparent">
-                                <TableCell colspan="6" class="py-12">
+                                <TableCell colspan="7" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <Users class="size-8 opacity-40" />
                                         <p class="text-sm">Belum ada pegawai yang cocok dengan filter ini.</p>
@@ -392,117 +399,125 @@ const hapus = () => {
 
         <!-- ===== Form pegawai ===== -->
         <Dialog v-model:open="dialogTerbuka">
-            <DialogContent class="sm:max-w-lg">
-                <DialogHeader>
+            <DialogContent class="flex max-h-[90vh] flex-col sm:max-w-lg">
+                <DialogHeader class="shrink-0">
                     <DialogTitle>{{ pegawaiDiedit ? 'Ubah Pegawai' : 'Tambah Pegawai' }}</DialogTitle>
                     <DialogDescription>
-                        Email dibuat otomatis dari nama. Wilayah dan cabang mengikuti bidang yang dipilih.
+                        NPP dipakai pegawai untuk masuk ke Project Management. Email dibuat otomatis
+                        dari nama, wilayah dan cabang mengikuti bidang yang dipilih.
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
-                    <div class="space-y-2">
-                        <Label for="nama-pegawai">Nama Pegawai</Label>
-                        <Input id="nama-pegawai" v-model="form.name" />
-                        <p v-if="form.errors.name" class="text-destructive text-sm">{{ form.errors.name }}</p>
-                    </div>
+                <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="simpan">
+                    <!-- Isi bergulir sendiri: form ini panjang dan pada layar 100% tombolnya sempat terpotong. -->
+                    <div class="gulir-terlihat min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+                        <div class="space-y-2">
+                            <Label for="nama-pegawai">Nama Pegawai</Label>
+                            <Input id="nama-pegawai" v-model="form.name" />
+                            <p v-if="form.errors.name" class="text-destructive text-sm">{{ form.errors.name }}</p>
+                        </div>
 
-                    <div class="space-y-2">
-                        <Label for="password-pegawai">Password</Label>
-                        <Input
-                            id="password-pegawai"
-                            v-model="form.password"
-                            type="password"
-                            autocomplete="new-password"
-                            :placeholder="pegawaiDiedit ? 'Kosongkan bila tidak diubah' : ''"
-                        />
-                        <p v-if="form.errors.password" class="text-destructive text-sm">
-                            {{ form.errors.password }}
-                        </p>
-                    </div>
+                        <div class="space-y-2">
+                            <Label for="npp-pegawai">NPP</Label>
+                            <Input id="npp-pegawai" v-model="form.npp" placeholder="Nomor pokok pegawai" />
+                            <p v-if="form.errors.npp" class="text-destructive text-sm">{{ form.errors.npp }}</p>
+                        </div>
 
-                    <!-- Unit kerja: tingkat dulu, lalu bidang -->
-                    <div v-if="semuaPenempatan" class="space-y-2">
-                        <Label>Unit Kerja</Label>
-                        <Select v-model="form.tingkat">
-                            <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="t in TINGKAT" :key="t.nilai" :value="t.nilai">
-                                    {{ t.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div v-if="semuaPenempatan && form.tingkat === 'cabang'" class="space-y-2">
-                        <Label>Kantor Cabang</Label>
-                        <Select v-model="form.cabang_id">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Pilih kantor cabang..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
-                                    {{ c.nama }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label>Bidang</Label>
-                        <Select v-model="form.unit_kerja_id" :disabled="bidangTersedia.length === 0">
-                            <SelectTrigger class="w-full">
-                                <SelectValue
-                                    :placeholder="
-                                        form.tingkat === 'cabang' && ! form.cabang_id
-                                            ? 'Pilih kantor cabang dulu'
-                                            : 'Pilih bidang...'
-                                    "
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="u in bidangTersedia" :key="u.id" :value="String(u.id)">
-                                    {{ u.nama }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p v-if="form.errors.unit_kerja_id" class="text-destructive text-sm">
-                            {{ form.errors.unit_kerja_id }}
-                        </p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label for="jabatan-pegawai">Jabatan</Label>
-                        <Input id="jabatan-pegawai" v-model="form.jabatan" placeholder="Staf / Kepala Bidang" />
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label>Role</Label>
-                        <Select v-model="form.pm_role">
-                            <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="(meta, kunci) in roleAkun" :key="kunci" :value="kunci">
-                                    {{ meta.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p class="text-muted-foreground text-xs">
-                            {{ roleAkun[form.pm_role]?.keterangan }}
-                        </p>
-                        <p v-if="form.errors.pm_role" class="text-destructive text-sm">{{ form.errors.pm_role }}</p>
-                    </div>
-
-                    <div class="flex items-center justify-between rounded-lg border p-3">
-                        <div>
-                            <Label for="pegawai-aktif">Status aktif</Label>
-                            <p class="text-muted-foreground text-sm">
-                                Pegawai nonaktif tidak dapat masuk ke aplikasi.
+                        <div class="space-y-2">
+                            <Label for="password-pegawai">Password</Label>
+                            <InputPassword
+                                id="password-pegawai"
+                                v-model="form.password"
+                                :placeholder="pegawaiDiedit ? 'Kosongkan bila tidak diubah' : ''"
+                            />
+                            <p v-if="form.errors.password" class="text-destructive text-sm">
+                                {{ form.errors.password }}
                             </p>
                         </div>
-                        <Switch id="pegawai-aktif" v-model="form.is_active" />
+
+                        <!-- Unit kerja: tingkat dulu, lalu bidang -->
+                        <div v-if="semuaPenempatan" class="space-y-2">
+                            <Label>Unit Kerja</Label>
+                            <Select v-model="form.tingkat">
+                                <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="t in TINGKAT" :key="t.nilai" :value="t.nilai">
+                                        {{ t.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div v-if="semuaPenempatan && form.tingkat === 'cabang'" class="space-y-2">
+                            <Label>Kantor Cabang</Label>
+                            <Select v-model="form.cabang_id">
+                                <SelectTrigger class="w-full">
+                                    <SelectValue placeholder="Pilih kantor cabang..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="c in cabangs" :key="c.id" :value="String(c.id)">
+                                        {{ c.nama }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label>Bidang</Label>
+                            <Select v-model="form.unit_kerja_id" :disabled="bidangTersedia.length === 0">
+                                <SelectTrigger class="w-full">
+                                    <SelectValue
+                                        :placeholder="
+                                            form.tingkat === 'cabang' && ! form.cabang_id
+                                                ? 'Pilih kantor cabang dulu'
+                                                : 'Pilih bidang...'
+                                        "
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="u in bidangTersedia" :key="u.id" :value="String(u.id)">
+                                        {{ u.nama }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p v-if="form.errors.unit_kerja_id" class="text-destructive text-sm">
+                                {{ form.errors.unit_kerja_id }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="jabatan-pegawai">Jabatan</Label>
+                            <Input id="jabatan-pegawai" v-model="form.jabatan" placeholder="Staf / Kepala Bidang" />
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label>Role</Label>
+                            <Select v-model="form.pm_role">
+                                <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="(meta, kunci) in roleAkun" :key="kunci" :value="kunci">
+                                        {{ meta.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p class="text-muted-foreground text-xs">
+                                {{ roleAkun[form.pm_role]?.keterangan }}
+                            </p>
+                            <p v-if="form.errors.pm_role" class="text-destructive text-sm">{{ form.errors.pm_role }}</p>
+                        </div>
+
+                        <div class="flex items-center justify-between rounded-lg border p-3">
+                            <div>
+                                <Label for="pegawai-aktif">Status aktif</Label>
+                                <p class="text-muted-foreground text-sm">
+                                    Pegawai nonaktif tidak dapat masuk ke aplikasi.
+                                </p>
+                            </div>
+                            <Switch id="pegawai-aktif" v-model="form.is_active" />
+                        </div>
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter class="shrink-0">
                         <Button type="button" variant="outline" @click="dialogTerbuka = false">Batal</Button>
                         <Button type="submit" :disabled="form.processing">Simpan</Button>
                     </DialogFooter>

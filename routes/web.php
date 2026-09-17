@@ -6,6 +6,9 @@ use App\Http\Controllers\CabangController;
 use App\Http\Controllers\DashboardCabangController;
 use App\Http\Controllers\DashboardKepwilController;
 use App\Http\Controllers\IuranMonitoringController;
+use App\Http\Controllers\Kinerja\FileCapaianController as KinerjaFileController;
+use App\Http\Controllers\Kinerja\IndikatorController as KinerjaIndikatorController;
+use App\Http\Controllers\Kinerja\KategoriController as KinerjaKategoriController;
 use App\Http\Controllers\LagMeasureController;
 use App\Http\Controllers\LeadMeasureController;
 use App\Http\Controllers\ModulController;
@@ -14,7 +17,11 @@ use App\Http\Controllers\MonevSegmenController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\Pm\DashboardController as PmDashboardController;
 use App\Http\Controllers\Pm\MemberController as PmMemberController;
+use App\Http\Controllers\Pm\MilestoneController as PmMilestoneController;
 use App\Http\Controllers\Pm\ProjectController as PmProjectController;
+use App\Http\Controllers\Pm\QuizController as PmQuizController;
+use App\Http\Controllers\Pm\QuizPengerjaanController as PmQuizPengerjaanController;
+use App\Http\Controllers\Pm\QuizSoalController as PmQuizSoalController;
 use App\Http\Controllers\Pm\RingkasanController as PmRingkasanController;
 use App\Http\Controllers\Pm\TaskController as PmTaskController;
 use App\Http\Controllers\Pm\TugasSayaController as PmTugasSayaController;
@@ -99,6 +106,7 @@ Route::middleware('auth')->group(function () {
 
         Route::middleware('role:admin,kedeputian_wilayah,kantor_cabang')->group(function () {
             Route::get('/wig-capaian', [WigCapaianController::class, 'index'])->name('wig-capaian');
+            Route::get('/wig-capaian/excel', [WigCapaianController::class, 'excel'])->name('wig-capaian.excel');
             Route::post('/wig-capaian', [WigCapaianController::class, 'store'])->name('wig-capaian.store');
             Route::get('/monitoring-prioritas/iuran', [IuranMonitoringController::class, 'index'])->name('monitoring-prioritas.iuran');
             Route::get('/monitoring-prioritas/iuran/excel', [IuranMonitoringController::class, 'excel'])->name('monitoring-prioritas.iuran.excel');
@@ -184,6 +192,39 @@ Route::middleware('auth')->group(function () {
 
     /*
      |--------------------------------------------------------------------
+     | Modul Monitoring Kinerja
+     |--------------------------------------------------------------------
+     | Berprefix /kinerja dengan nama rute `kinerja.`. Dijaga `modul:kinerja`
+     | (permission akses-kinerja).
+     |
+     | Dua lapis hak: melihat dan mengunduh berkas terbuka bagi seluruh role
+     | 4DX — itulah gunanya modul ini — sedangkan menyusun kategori, indikator,
+     | dan mengunggah berkas hanya Admin dan Kedeputian Wilayah.
+     */
+    Route::prefix('kinerja')->name('kinerja.')->middleware('modul:kinerja')->group(function () {
+        // Terbuka untuk semua pemegang akses modul, termasuk kantor cabang.
+        Route::get('/file', [KinerjaFileController::class, 'index'])->name('file');
+        Route::get('/file/{file}/unduh', [KinerjaFileController::class, 'unduh'])->name('file.unduh');
+
+        Route::middleware('role:admin,kedeputian_wilayah')->group(function () {
+            Route::get('/kategori', [KinerjaKategoriController::class, 'index'])->name('kategori');
+            Route::post('/kategori', [KinerjaKategoriController::class, 'store'])->name('kategori.store');
+            Route::put('/kategori/{kategori}', [KinerjaKategoriController::class, 'update'])->name('kategori.update');
+            Route::delete('/kategori/{kategori}', [KinerjaKategoriController::class, 'destroy'])->name('kategori.destroy');
+
+            Route::get('/indikator', [KinerjaIndikatorController::class, 'index'])->name('indikator');
+            Route::post('/indikator', [KinerjaIndikatorController::class, 'store'])->name('indikator.store');
+            Route::put('/indikator/{indikator}', [KinerjaIndikatorController::class, 'update'])->name('indikator.update');
+            Route::delete('/indikator/{indikator}', [KinerjaIndikatorController::class, 'destroy'])->name('indikator.destroy');
+
+            Route::post('/file', [KinerjaFileController::class, 'store'])->name('file.store');
+            Route::put('/file/{file}', [KinerjaFileController::class, 'update'])->name('file.update');
+            Route::delete('/file/{file}', [KinerjaFileController::class, 'destroy'])->name('file.destroy');
+        });
+    });
+
+    /*
+     |--------------------------------------------------------------------
      | Modul Project Management
      |--------------------------------------------------------------------
      | Berprefix /pm dengan nama rute `pm.` agar tidak bentrok dengan modul
@@ -208,6 +249,34 @@ Route::middleware('auth')->group(function () {
         Route::put('/projects/{project}', [PmProjectController::class, 'update'])->name('projects.update');
         Route::delete('/projects/{project}', [PmProjectController::class, 'destroy'])->name('projects.destroy');
 
+        /*
+         | Quiz. Membuat dan menyusun soal dijaga QuizPolicy (permission
+         | `pm.quiz.kelola`, hanya Project Manager); mengerjakan terbuka bagi
+         | semua pengguna modul.
+         |
+         | Rute percobaan sengaja tidak bersarang di bawah {quiz}: sebuah
+         | percobaan sudah menunjuk quiz-nya sendiri, dan menyalin id quiz ke
+         | URL hanya menambah satu hal lagi yang bisa tidak cocok.
+         */
+        Route::get('/quiz', [PmQuizController::class, 'index'])->name('quiz.index');
+        Route::post('/quiz', [PmQuizController::class, 'store'])->name('quiz.store');
+        Route::get('/quiz/{quiz}/kelola', [PmQuizController::class, 'kelola'])->name('quiz.kelola');
+        Route::put('/quiz/{quiz}', [PmQuizController::class, 'update'])->name('quiz.update');
+        Route::patch('/quiz/{quiz}/status', [PmQuizController::class, 'status'])->name('quiz.status');
+        Route::delete('/quiz/{quiz}', [PmQuizController::class, 'destroy'])->name('quiz.destroy');
+        Route::get('/quiz/{quiz}/peringkat', [PmQuizController::class, 'peringkat'])->name('quiz.peringkat');
+        Route::get('/quiz/{quiz}/peringkat/ekspor', [PmQuizController::class, 'ekspor'])->name('quiz.ekspor');
+
+        Route::post('/quiz/{quiz}/soal', [PmQuizSoalController::class, 'store'])->name('quiz.soal.store');
+        Route::put('/quiz/{quiz}/soal/{soal}', [PmQuizSoalController::class, 'update'])->name('quiz.soal.update');
+        Route::delete('/quiz/{quiz}/soal/{soal}', [PmQuizSoalController::class, 'destroy'])->name('quiz.soal.destroy');
+
+        Route::post('/quiz/{quiz}/mulai', [PmQuizPengerjaanController::class, 'mulai'])->name('quiz.mulai');
+        Route::get('/quiz/percobaan/{percobaan}', [PmQuizPengerjaanController::class, 'kerjakan'])->name('quiz.kerjakan');
+        Route::patch('/quiz/percobaan/{percobaan}/jawab', [PmQuizPengerjaanController::class, 'jawab'])->name('quiz.jawab');
+        Route::post('/quiz/percobaan/{percobaan}/selesai', [PmQuizPengerjaanController::class, 'selesai'])->name('quiz.selesai');
+        Route::get('/quiz/percobaan/{percobaan}/hasil', [PmQuizPengerjaanController::class, 'hasil'])->name('quiz.hasil');
+
         Route::prefix('projects/{project}')->group(function () {
             Route::post('/tasks', [PmTaskController::class, 'store'])->name('tasks.store');
             Route::post('/tasks/massal', [PmTaskController::class, 'storeMassal'])->name('tasks.massal');
@@ -215,6 +284,11 @@ Route::middleware('auth')->group(function () {
             Route::patch('/tasks/{task}/pindah', [PmTaskController::class, 'pindah'])->name('tasks.pindah');
             Route::patch('/tasks/{task}/progress', [PmTaskController::class, 'progress'])->name('tasks.progress');
             Route::delete('/tasks/{task}', [PmTaskController::class, 'destroy'])->name('tasks.destroy');
+
+            // Milestone opsional: project tanpa milestone tetap berjalan normal.
+            Route::post('/milestones', [PmMilestoneController::class, 'store'])->name('milestones.store');
+            Route::put('/milestones/{milestone}', [PmMilestoneController::class, 'update'])->name('milestones.update');
+            Route::delete('/milestones/{milestone}', [PmMilestoneController::class, 'destroy'])->name('milestones.destroy');
 
             Route::post('/anggota', [PmMemberController::class, 'store'])->name('anggota.store');
             Route::put('/anggota/{anggota}', [PmMemberController::class, 'update'])->name('anggota.update');

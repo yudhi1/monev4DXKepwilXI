@@ -242,7 +242,7 @@ const hapus = () => {
                     <DialogDescription>Setiap cabang harus berada di bawah satu wilayah.</DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
+                <form class="min-w-0 space-y-4" @submit.prevent="simpan">
                     <div class="space-y-2">
                         <Label>Wilayah</Label>
                         <Select v-model="form.wilayah_id">

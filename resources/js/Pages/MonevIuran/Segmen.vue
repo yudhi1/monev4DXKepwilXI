@@ -190,7 +190,7 @@ const hapus = () => {
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
+                <form class="min-w-0 space-y-4" @submit.prevent="simpan">
                     <div class="space-y-2">
                         <Label for="nama">Nama Segmen</Label>
                         <Input id="nama" v-model="form.nama" autofocus />

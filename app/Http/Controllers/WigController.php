@@ -40,6 +40,9 @@ class WigController extends Controller
             'wigs' => $wigs,
             'wilayahs' => Wilayah::orderBy('nama')->get(['id', 'nama']),
             'daftarBidang' => Wig::BIDANG,
+            'daftarSifat' => config('wig.sifat'),
+            'daftarArah' => config('wig.arah'),
+            'bawaanSifat' => config('wig.bawaan'),
             'daftarTahun' => Wig::query()
                 ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
                 ->distinct()

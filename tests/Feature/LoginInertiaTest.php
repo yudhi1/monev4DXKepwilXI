@@ -82,6 +82,50 @@ class LoginInertiaTest extends TestCase
             );
     }
 
+    public function test_pegawai_masuk_dengan_npp(): void
+    {
+        $pegawai = User::factory()->pegawai()->create([
+            'npp' => '123456',
+            'password' => Hash::make('rahasia123'),
+            'is_active' => true,
+        ]);
+
+        $this->post('/login', ['mode' => 'pegawai', 'npp' => '123456', 'password' => 'rahasia123'])
+            ->assertRedirect('/apps');
+
+        $this->assertAuthenticatedAs($pegawai);
+    }
+
+    public function test_npp_salah_ditolak_dengan_pesan_pada_field_npp(): void
+    {
+        User::factory()->pegawai()->create([
+            'npp' => '123456',
+            'password' => Hash::make('rahasia123'),
+        ]);
+
+        $this->from('/login')
+            ->post('/login', ['mode' => 'pegawai', 'npp' => '123456', 'password' => 'salah'])
+            ->assertSessionHasErrors('npp');
+
+        $this->assertGuest();
+    }
+
+    /** Nama akun pegawai tidak boleh menjadi jalan masuk lewat tab unit kerja. */
+    public function test_pegawai_tidak_bisa_masuk_lewat_nama(): void
+    {
+        User::factory()->pegawai()->create([
+            'name' => 'Dewi',
+            'npp' => '123456',
+            'password' => Hash::make('rahasia123'),
+        ]);
+
+        $this->from('/login')
+            ->post('/login', ['name' => 'Dewi', 'password' => 'rahasia123'])
+            ->assertSessionHasErrors('name');
+
+        $this->assertGuest();
+    }
+
     public function test_user_login_diarahkan_dari_halaman_login(): void
     {
         $this->actingAs($this->buatUser())

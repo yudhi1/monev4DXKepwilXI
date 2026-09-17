@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Paginasi from '@/components/Paginasi.vue';
+import InputPassword from '@/components/InputPassword.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -291,7 +292,7 @@ const hapus = () => {
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
+                <form class="min-w-0 space-y-4" @submit.prevent="simpan">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="space-y-2">
                             <Label for="name">Nama</Label>
@@ -304,7 +305,7 @@ const hapus = () => {
                                 Password
                                 <span v-if="userDiedit" class="text-muted-foreground font-normal">(opsional)</span>
                             </Label>
-                            <Input id="password" v-model="form.password" type="password" autocomplete="new-password" />
+                            <InputPassword id="password" v-model="form.password" />
                             <p v-if="form.errors.password" class="text-destructive text-sm">
                                 {{ form.errors.password }}
                             </p>

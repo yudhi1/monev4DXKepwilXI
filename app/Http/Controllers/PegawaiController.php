@@ -45,6 +45,7 @@ class PegawaiController extends Controller
             ->with('unitKerja.cabang:id,nama')
             ->when($cari !== '', fn ($q) => $q->where(
                 fn ($sub) => $sub->where('name', 'like', "%{$cari}%")
+                    ->orWhere('npp', 'like', "%{$cari}%")
                     ->orWhere('jabatan', 'like', "%{$cari}%")
             ))
             ->when($unitKerja, fn ($q) => $q->where('unit_kerja_id', $unitKerja))
@@ -57,6 +58,7 @@ class PegawaiController extends Controller
             ->through(fn (User $u) => [
                 'id' => $u->id,
                 'name' => $u->name,
+                'npp' => $u->npp,
                 'email' => $u->email,
                 'jabatan' => $u->jabatan,
                 'pm_role' => $u->pm_role,
@@ -159,7 +161,7 @@ class PegawaiController extends Controller
     /**
      * Impor pegawai massal dari Excel.
      *
-     * Kolom: nama | jabatan | bidang | cabang | role
+     * Kolom: npp | nama | jabatan | bidang | cabang | role
      * Kolom `cabang` dikosongkan untuk pegawai di kantor Kedeputian Wilayah.
      * Kolom `role` boleh kosong — bawaannya `member`.
      */
@@ -181,7 +183,7 @@ class PegawaiController extends Controller
         $header = array_map(fn ($k) => Str::of((string) $k)->lower()->trim()->toString(), $baris[0]);
         $kolom = array_flip($header);
 
-        foreach (['nama', 'bidang'] as $wajib) {
+        foreach (['npp', 'nama', 'bidang'] as $wajib) {
             if (! isset($kolom[$wajib])) {
                 return back()->with('error', "Kolom '{$wajib}' tidak ditemukan pada berkas. Unduh template terlebih dahulu.");
             }
@@ -203,6 +205,7 @@ class PegawaiController extends Controller
 
             $ambil = fn (string $nama) => isset($kolom[$nama]) ? trim((string) ($isi[$kolom[$nama]] ?? '')) : '';
 
+            $npp = $ambil('npp');
             $nama = $ambil('nama');
             $kodeBidang = Str::upper($ambil('bidang'));
             $kodeCabang = Str::upper($ambil('cabang'));
@@ -211,6 +214,13 @@ class PegawaiController extends Controller
 
             // Baris kosong dan baris keterangan pada template dilewati diam-diam.
             if ($nama === '' || $kodeBidang === '') {
+                continue;
+            }
+
+            // NPP dipakai untuk login, jadi barisnya tidak berguna tanpa itu.
+            if ($npp === '') {
+                $gagal[] = "baris {$nomorBaris}: NPP kosong";
+
                 continue;
             }
 
@@ -240,6 +250,7 @@ class PegawaiController extends Controller
 
             $atribut = [
                 'tipe' => 'pegawai',
+                'npp' => $npp,
                 'unit_kerja_id' => $unit->id,
                 'jabatan' => $jabatan ?: null,
                 'pm_role' => $role ?: 'member',
@@ -248,7 +259,14 @@ class PegawaiController extends Controller
                 'is_active' => true,
             ];
 
-            $sudahAda = User::where('name', $nama)->first();
+            /*
+             | Pegawai dikenali dari NPP, bukan nama: nama bisa kembar dan
+             | bisa berubah ejaannya, sedangkan NPP adalah identitas loginnya.
+             */
+            $sudahAda = User::where('npp', $npp)->first();
+
+            // Pegawai lama yang belum ber-NPP masih dicocokkan lewat nama.
+            $sudahAda ??= User::where('name', $nama)->whereNull('npp')->first();
 
             if ($sudahAda && ! in_array($sudahAda->unit_kerja_id, $request->user()->bidangTerkelola(), true)) {
                 $gagal[] = "baris {$nomorBaris}: '{$nama}' terdaftar di penempatan lain";

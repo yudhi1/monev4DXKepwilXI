@@ -52,6 +52,12 @@ class ProjectPolicy
         return $this->update($user, $project);
     }
 
+    /** Membuat, mengubah, dan menghapus milestone project ini. */
+    public function kelolaMilestone(User $user, Project $project): bool
+    {
+        return $this->update($user, $project);
+    }
+
     /** Membuat, mengubah, memindahkan, dan menghapus task di project ini. */
     public function kelolaTask(User $user, Project $project): bool
     {

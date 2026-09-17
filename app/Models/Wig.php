@@ -12,7 +12,22 @@ class Wig extends Model
 
     public const BIDANG = ['JPK', 'KML', 'PIKEU', 'SDMUK'];
 
-    protected $fillable = ['kode_wig', 'nama_wig', 'indikator_output', 'bidang', 'tahun', 'wilayah_id', 'created_by'];
+    protected $fillable = [
+        'kode_wig', 'nama_wig', 'indikator_output', 'sifat_capaian', 'arah',
+        'bidang', 'tahun', 'wilayah_id', 'created_by',
+    ];
+
+    /** Kunci sifat pengukuran yang dikenal, dari config/wig.php. */
+    public static function daftarSifat(): array
+    {
+        return array_keys(config('wig.sifat'));
+    }
+
+    /** Kunci arah keberhasilan yang dikenal, dari config/wig.php. */
+    public static function daftarArah(): array
+    {
+        return array_keys(config('wig.arah'));
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

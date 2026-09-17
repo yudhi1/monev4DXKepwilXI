@@ -36,6 +36,9 @@ const props = defineProps({
     wigs: { type: Object, required: true },
     wilayahs: { type: Array, required: true },
     daftarBidang: { type: Array, required: true },
+    daftarSifat: { type: Object, required: true },
+    daftarArah: { type: Object, required: true },
+    bawaanSifat: { type: Object, required: true },
     daftarTahun: { type: Array, required: true },
     filter: { type: Object, required: true },
     wilayahBawaan: { type: [Number, null], default: null },
@@ -77,6 +80,8 @@ const form = useForm({
     kode_wig: '',
     nama_wig: '',
     indikator_output: '',
+    sifat_capaian: props.bawaanSifat.sifat,
+    arah: props.bawaanSifat.arah,
     bidang: '',
     tahun: tahunIni,
     wilayah_id: props.wilayahBawaan ? String(props.wilayahBawaan) : null,
@@ -97,6 +102,8 @@ const bukaEdit = (wig) => {
     form.kode_wig = wig.kode_wig;
     form.nama_wig = wig.nama_wig;
     form.indikator_output = wig.indikator_output ?? '';
+    form.sifat_capaian = wig.sifat_capaian ?? props.bawaanSifat.sifat;
+    form.arah = wig.arah ?? props.bawaanSifat.arah;
     form.bidang = wig.bidang ?? '';
     form.tahun = wig.tahun;
     form.wilayah_id = wig.wilayah_id ? String(wig.wilayah_id) : null;
@@ -296,7 +303,7 @@ const hapus = () => {
                     <DialogDescription>Kode WIG harus unik di seluruh sistem.</DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
+                <form class="min-w-0 space-y-4" @submit.prevent="simpan">
                     <div class="grid gap-4 sm:grid-cols-4">
                         <div class="space-y-2 sm:col-span-2">
                             <Label for="kode_wig">Kode WIG</Label>
@@ -336,6 +343,44 @@ const hapus = () => {
                         <p v-if="form.errors.indikator_output" class="text-destructive text-sm">
                             {{ form.errors.indikator_output }}
                         </p>
+                    </div>
+
+                    <!--
+                      | Sifat menentukan cara capaian "s.d. bulan" dihitung; arah
+                      | menentukan apakah melampaui target itu baik atau buruk.
+                    -->
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="space-y-2">
+                            <Label>Sifat Capaian</Label>
+                            <Select v-model="form.sifat_capaian">
+                                <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="(s, kunci) in daftarSifat" :key="kunci" :value="kunci">
+                                        {{ s.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p class="text-muted-foreground text-xs">
+                                {{ daftarSifat[form.sifat_capaian]?.keterangan }}
+                            </p>
+                            <p v-if="form.errors.sifat_capaian" class="text-destructive text-sm">
+                                {{ form.errors.sifat_capaian }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label>Arah Keberhasilan</Label>
+                            <Select v-model="form.arah">
+                                <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="(a, kunci) in daftarArah" :key="kunci" :value="kunci">
+                                        {{ a.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p class="text-muted-foreground text-xs">{{ daftarArah[form.arah]?.keterangan }}</p>
+                            <p v-if="form.errors.arah" class="text-destructive text-sm">{{ form.errors.arah }}</p>
+                        </div>
                     </div>
 
                     <div class="space-y-2">

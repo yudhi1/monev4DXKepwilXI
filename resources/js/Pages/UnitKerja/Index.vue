@@ -278,7 +278,7 @@ const bisaDihapus = computed(() => (unitDihapus.value?.jumlahPegawai ?? 0) === 0
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
+                <form class="min-w-0 space-y-4" @submit.prevent="simpan">
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="space-y-1.5">
                             <Label for="kode">Kode</Label>

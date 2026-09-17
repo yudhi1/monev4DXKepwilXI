@@ -14,18 +14,35 @@ class AuthController extends Controller
         return Inertia::render('Auth/Login');
     }
 
+    /**
+     * Masuk lewat nama (akun unit kerja) atau NPP (akun pegawai).
+     *
+     * Kedua jenis akun tinggal di tabel `users` yang sama, jadi kolom
+     * pengenalnya dipilih dari `mode` yang dikirim form — bukan ditebak dari
+     * isi kolomnya. Tanpa syarat `tipe` pada attempt(), akun unit kerja yang
+     * kebetulan ber-NPP bisa ikut lolos lewat tab pegawai.
+     */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'name' => ['required', 'string'],
-            'password' => ['required'],
-        ]);
+        $pegawai = $request->input('mode') === 'pegawai';
+        $kolom = $pegawai ? 'npp' : 'name';
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        $request->validate([
+            $kolom => ['required', 'string'],
+            'password' => ['required'],
+        ], [], [$kolom => $pegawai ? 'NPP' : 'nama']);
+
+        $kredensial = [
+            $kolom => $request->input($kolom),
+            'password' => $request->input('password'),
+            'tipe' => $pegawai ? 'pegawai' : 'unit_kerja',
+        ];
+
+        if (Auth::attempt($kredensial, $request->boolean('remember'))) {
             if (! Auth::user()->is_active) {
                 Auth::logout();
 
-                return back()->withErrors(['name' => 'Akun nonaktif.']);
+                return back()->withErrors([$kolom => 'Akun nonaktif.']);
             }
             $request->session()->regenerate();
 
@@ -45,7 +62,9 @@ class AuthController extends Controller
             return redirect('/apps');
         }
 
-        return back()->withErrors(['name' => 'Nama atau password salah.'])->onlyInput('name');
+        return back()
+            ->withErrors([$kolom => $pegawai ? 'NPP atau password salah.' : 'Nama atau password salah.'])
+            ->onlyInput($kolom);
     }
 
     public function logout(Request $request)

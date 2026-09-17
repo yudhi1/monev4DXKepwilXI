@@ -46,6 +46,25 @@ return [
             'permission' => 'akses-master',
         ],
 
+        /*
+         | Monitoring Kinerja berdiri sendiri, bukan menu di dalam 4DX, karena
+         | isinya berkas capaian yang disampaikan ke kantor cabang — bukan
+         | rangkaian WIG/Lag/Lead. Menaruhnya di 4DX membuat cabang harus
+         | menelusuri menu perencanaan hanya untuk mengunduh satu berkas.
+         |
+         | Berandanya /kinerja/file: satu-satunya halaman yang terbuka bagi
+         | seluruh pemegang akses-kinerja. Kategori dan indikator hanya untuk
+         | Admin dan Kedeputian Wilayah.
+         */
+        'kinerja' => [
+            'nama' => 'Monitoring Kinerja',
+            'deskripsi' => 'Berkas capaian kinerja per kategori, indikator, dan bulan.',
+            'ikon' => 'Gauge',
+            'warna' => 'amber',
+            'beranda' => '/kinerja/file',
+            'permission' => 'akses-kinerja',
+        ],
+
         'pm' => [
             'nama' => 'Project Management',
             'deskripsi' => 'Pengelolaan project, task, tim, progres, dan kontribusi.',

@@ -140,14 +140,23 @@ class ProjectController extends Controller
         return Inertia::render('Pm/Project/Show', [
             'project' => [
                 ...$this->ringkas($project, $user),
-                'milestones' => $project->milestones->map(fn ($m) => [
-                    'id' => $m->id,
-                    'nama' => $m->nama,
-                    'deskripsi' => $m->deskripsi,
-                    'target_tanggal' => $m->target_tanggal?->toDateString(),
-                    'urutan' => $m->urutan,
-                    'jumlahTask' => $project->tasks->where('milestone_id', $m->id)->count(),
-                ]),
+                'milestones' => $project->milestones->map(function ($m) use ($project) {
+                    $tasks = $project->tasks->where('milestone_id', $m->id);
+
+                    return [
+                        'id' => $m->id,
+                        'nama' => $m->nama,
+                        'deskripsi' => $m->deskripsi,
+                        'target_tanggal' => $m->target_tanggal?->toDateString(),
+                        'urutan' => $m->urutan,
+                        'jumlahTask' => $tasks->count(),
+                        'jumlahSelesai' => $tasks->where('status', config('pm.status_selesai'))->count(),
+                        // Rata-rata progress task di tahapan ini; 0 bila belum ada task.
+                        'progress' => $tasks->isEmpty() ? 0 : (int) round($tasks->avg('progress')),
+                    ];
+                }),
+                // Task lepas ditampilkan di ujung Timeline agar tidak ada yang tersembunyi.
+                'taskTanpaMilestone' => $project->tasks->whereNull('milestone_id')->count(),
                 'anggotas' => $project->anggotas->map(fn ($a) => [
                     'id' => $a->id,
                     'user_id' => $a->user_id,
@@ -169,6 +178,7 @@ class ProjectController extends Controller
             'izin' => [
                 'kelola' => $user->can('update', $project),
                 'kelolaTask' => $user->can('kelolaTask', $project),
+                'kelolaMilestone' => $user->can('kelolaMilestone', $project),
                 'ubahProgress' => $user->can('ubahProgress', $project),
             ],
             'kandidatAnggota' => $user->can('kelolaAnggota', $project) ? $this->kandidatAnggota() : [],

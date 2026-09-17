@@ -26,11 +26,22 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            // Bawaannya akun unit kerja — pengguna modul Monev 4DX.
+            'tipe' => 'unit_kerja',
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /** Akun pegawai — masuk lewat NPP dan memakai modul Project Management. */
+    public function pegawai(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'tipe' => 'pegawai',
+            'npp' => (string) fake()->unique()->numberBetween(100000, 999999),
+        ]);
     }
 
     /**

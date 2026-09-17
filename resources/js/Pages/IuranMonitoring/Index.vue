@@ -404,7 +404,7 @@ const rupiah = (n) => 'Rp ' + Number(n ?? 0).toLocaleString('id-ID', { maximumFr
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="space-y-4" @submit.prevent="simpan">
+                <form class="min-w-0 space-y-4" @submit.prevent="simpan">
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="space-y-2 sm:col-span-2">
                             <Label>Cabang</Label>

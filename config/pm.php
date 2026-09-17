@@ -64,12 +64,12 @@ return [
         'project_manager' => [
             'label' => 'Project Manager',
             'keterangan' => 'Boleh membuat project atas nama unit kerjanya',
-            'permissions' => ['akses-pm', 'pm.project.buat'],
+            'permissions' => ['akses-pm', 'pm.project.buat', 'pm.quiz.kelola'],
         ],
         'pimpinan' => [
             'label' => 'Pimpinan',
             'keterangan' => 'Melihat seluruh project tanpa harus menjadi anggota',
-            'permissions' => ['akses-pm', 'pm.project.buat', 'pm.lihat-semua'],
+            'permissions' => ['akses-pm', 'pm.project.buat', 'pm.quiz.kelola', 'pm.lihat-semua'],
         ],
     ],
 
@@ -78,6 +78,17 @@ return [
         'manager' => ['label' => 'Project Manager', 'keterangan' => 'Atur anggota, milestone, task, dan bobot'],
         'member' => ['label' => 'Member', 'keterangan' => 'Kerjakan task, update progres, komentar'],
         'viewer' => ['label' => 'Viewer', 'keterangan' => 'Baca saja'],
+    ],
+
+    /*
+     | Status quiz. Hanya `terbit` yang bisa dikerjakan peserta; `draf` masih
+     | disusun pembuatnya, `ditutup` berhenti menerima percobaan baru tetapi
+     | papan peringkatnya tetap bisa dilihat.
+     */
+    'status_quiz' => [
+        'draf' => ['label' => 'Draf', 'warna' => 'slate'],
+        'terbit' => ['label' => 'Terbit', 'warna' => 'emerald'],
+        'ditutup' => ['label' => 'Ditutup', 'warna' => 'rose'],
     ],
 
     /*

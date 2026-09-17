@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\WigCapaianExport;
 use App\Models\Cabang;
 use App\Models\User;
 use App\Models\Wig;
@@ -9,8 +10,11 @@ use App\Models\WigRealisasi;
 use App\Models\WigTarget;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Target dan realisasi WIG dalam satu halaman.
@@ -41,7 +45,7 @@ class WigCapaianController extends Controller
             ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
             ->orderByDesc('tahun')
             ->orderBy('kode_wig')
-            ->get(['id', 'kode_wig', 'nama_wig', 'bidang', 'tahun']);
+            ->get(['id', 'kode_wig', 'nama_wig', 'bidang', 'tahun', 'sifat_capaian', 'arah']);
 
         $wigId = (int) ($request->query('wig_id') ?: $wigs->first()?->id);
         $wig = $wigs->firstWhere('id', $wigId);
@@ -52,10 +56,39 @@ class WigCapaianController extends Controller
             'baris' => $wig ? $this->baris($user, $wigId, $tahun) : [],
             'namaBulan' => self::BULAN,
             'daftarSatuan' => self::SATUAN,
+            'sifat' => config('wig.sifat'),
             'filter' => ['wig_id' => $wig?->id, 'tahun' => $tahun, 'bulan' => $bulanAcuan],
             // Kantor cabang hanya boleh mengisi realisasi; target ditetapkan wilayah.
             'bisaUbahTarget' => (bool) $user?->hasAnyRole(['admin', 'kedeputian_wilayah']),
         ]);
+    }
+
+    /** Unduhan memakai filter yang sama dengan tampilan agar isinya sepadan. */
+    public function excel(Request $request): BinaryFileResponse
+    {
+        $user = $request->user();
+        $tahun = (int) $request->query('tahun', date('Y'));
+        $bulanAcuan = min(max((int) $request->query('bulan', date('n')), 1), 12);
+
+        $wig = Wig::query()
+            ->when($this->wilayahTerbatas($user), fn ($q, $wilayahId) => $q->where('wilayah_id', $wilayahId))
+            ->findOrFail((int) $request->query('wig_id'));
+
+        $nama = Str::slug("capaian-wig-{$wig->kode_wig}-{$tahun}").'.xlsx';
+
+        return Excel::download(
+            new WigCapaianExport(
+                $this->baris($user, $wig->id, $tahun),
+                self::BULAN,
+                $tahun,
+                $bulanAcuan,
+                $wig->kode_wig,
+                $wig->nama_wig,
+                $wig->sifat_capaian,
+                $wig->arah,
+            ),
+            $nama
+        );
     }
 
     public function store(Request $request): RedirectResponse
@@ -65,6 +98,7 @@ class WigCapaianController extends Controller
             'tahun' => ['required', 'integer', 'min:2000', 'max:2100'],
             'baris' => ['required', 'array'],
             'baris.*.cabang_id' => ['required', 'exists:cabangs,id'],
+            'baris.*.nilai_awal' => ['nullable', 'numeric'],
             'baris.*.nilai_target' => ['nullable', 'numeric'],
             'baris.*.satuan' => ['nullable', 'string', 'max:50'],
             'baris.*.tanggal_target' => ['nullable', 'date'],
@@ -87,6 +121,7 @@ class WigCapaianController extends Controller
                 WigTarget::updateOrCreate(
                     ['wig_id' => $data['wig_id'], 'cabang_id' => $baris['cabang_id']],
                     [
+                        'nilai_awal' => (float) ($baris['nilai_awal'] ?? 0),
                         'nilai_target' => (float) ($baris['nilai_target'] ?? 0),
                         'satuan' => $baris['satuan'] ?: 'Rp',
                         'tanggal_target' => $baris['tanggal_target'] ?: null,
@@ -149,6 +184,7 @@ class WigCapaianController extends Controller
                 return [
                     'cabang_id' => $cabang->id,
                     'cabang_nama' => $cabang->nama,
+                    'nilai_awal' => (float) ($target?->nilai_awal ?? 0),
                     'nilai_target' => (float) ($target?->nilai_target ?? 0),
                     'satuan' => $target?->satuan ?? 'Rp',
                     'tanggal_target' => $target?->tanggal_target?->format('Y-m-d') ?? '',

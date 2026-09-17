@@ -177,6 +177,69 @@ const pindahStatus = (task, status) => {
     pindahkan(task, status, tujuan ? tujuan.tasks.length : 0);
 };
 
+/* ================= Milestone (opsional) ================= */
+
+/*
+ | Milestone sepenuhnya opsional — project tanpa milestone tetap berjalan
+ | normal, dan task boleh berdiri sendiri. Karena itu tab ini tidak pernah
+ | memaksa: kosongnya dijelaskan sebagai pilihan, bukan sebagai pekerjaan
+ | yang belum dilakukan.
+ */
+const dialogMilestone = ref(false);
+const milestoneDiedit = ref(null);
+
+const formMilestone = useForm({
+    nama: '',
+    deskripsi: '',
+    target_tanggal: '',
+});
+
+const bukaTambahMilestone = () => {
+    milestoneDiedit.value = null;
+    formMilestone.reset();
+    formMilestone.clearErrors();
+    dialogMilestone.value = true;
+};
+
+const bukaEditMilestone = (m) => {
+    milestoneDiedit.value = m;
+    formMilestone.clearErrors();
+    formMilestone.nama = m.nama;
+    formMilestone.deskripsi = m.deskripsi ?? '';
+    formMilestone.target_tanggal = m.target_tanggal ?? '';
+    dialogMilestone.value = true;
+};
+
+const simpanMilestone = () => {
+    const opsi = {
+        preserveScroll: true,
+        onSuccess: () => {
+            dialogMilestone.value = false;
+            formMilestone.reset();
+        },
+    };
+
+    if (milestoneDiedit.value) {
+        formMilestone.put(`/pm/projects/${props.project.id}/milestones/${milestoneDiedit.value.id}`, opsi);
+    } else {
+        formMilestone.post(`/pm/projects/${props.project.id}/milestones`, opsi);
+    }
+};
+
+const milestoneDihapus = ref(null);
+const dialogHapusMilestone = ref(false);
+
+const konfirmasiHapusMilestone = (m) => {
+    milestoneDihapus.value = m;
+    dialogHapusMilestone.value = true;
+};
+
+const hapusMilestone = () =>
+    router.delete(`/pm/projects/${props.project.id}/milestones/${milestoneDihapus.value.id}`, {
+        preserveScroll: true,
+        onFinish: () => (milestoneDihapus.value = null),
+    });
+
 /* ================= Form task ================= */
 
 const dialogTask = ref(false);
@@ -879,9 +942,26 @@ const kandidatTersisa = computed(() => {
 
         <!-- ============ Timeline ============ -->
         <div v-else-if="tab === 'timeline'">
+            <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <p class="text-muted-foreground max-w-2xl text-sm">
+                    Milestone adalah tahapan besar project — semacam map yang menampung beberapa task
+                    dan punya tanggal target sendiri. Sifatnya opsional: project pendek boleh berjalan
+                    tanpa milestone sama sekali.
+                </p>
+                <Button v-if="izin.kelolaMilestone" variant="outline" @click="bukaTambahMilestone">
+                    <Plus class="mr-1.5 size-4" />
+                    Milestone Baru
+                </Button>
+            </div>
+
             <Card v-if="project.milestones.length === 0">
                 <CardContent class="text-muted-foreground p-12 text-center text-sm">
-                    Belum ada milestone pada project ini.
+                    <Flag class="mx-auto mb-3 size-8 opacity-40" />
+                    <p>Project ini belum memakai milestone — dan memang tidak harus.</p>
+                    <p class="mt-1 text-xs">
+                        Seluruh {{ totalTask }} task tetap tercatat dan ikut menghitung progress project.
+                        Buat milestone hanya bila ingin membagi pekerjaan menjadi tahapan bertanggal.
+                    </p>
                 </CardContent>
             </Card>
 
@@ -892,10 +972,51 @@ const kandidatTersisa = computed(() => {
                         <CardContent class="p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <p class="font-medium">{{ m.nama }}</p>
-                                <span class="text-muted-foreground text-xs">{{ tanggal(m.target_tanggal) }}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-muted-foreground text-xs">
+                                        {{ m.target_tanggal ? tanggal(m.target_tanggal) : 'Tanpa target tanggal' }}
+                                    </span>
+                                    <template v-if="izin.kelolaMilestone">
+                                        <Button variant="ghost" size="icon" title="Ubah" @click="bukaEditMilestone(m)">
+                                            <Pencil class="size-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Hapus"
+                                            class="text-destructive hover:text-destructive"
+                                            @click="konfirmasiHapusMilestone(m)"
+                                        >
+                                            <Trash2 class="size-4" />
+                                        </Button>
+                                    </template>
+                                </div>
                             </div>
                             <p v-if="m.deskripsi" class="text-muted-foreground mt-1 text-sm">{{ m.deskripsi }}</p>
-                            <p class="text-muted-foreground mt-2 text-xs">{{ m.jumlahTask }} task</p>
+
+                            <div v-if="m.jumlahTask > 0" class="mt-3">
+                                <BilahProgress :nilai="m.progress" />
+                                <p class="text-muted-foreground mt-1.5 text-xs">
+                                    {{ m.jumlahSelesai }} dari {{ m.jumlahTask }} task selesai
+                                </p>
+                            </div>
+                            <p v-else class="text-muted-foreground mt-2 text-xs">
+                                Belum ada task pada tahapan ini.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </li>
+
+                <!--
+                  Task lepas disebut di ujung timeline supaya tidak ada pekerjaan yang
+                  tak terlihat di tab ini hanya karena tidak terikat tahapan.
+                -->
+                <li v-if="project.taskTanpaMilestone > 0" class="relative">
+                    <span class="bg-muted-foreground/40 ring-background absolute top-1.5 -left-[1.65rem] size-3 rounded-full ring-4" />
+                    <Card class="border-dashed">
+                        <CardContent class="text-muted-foreground p-4 text-sm">
+                            {{ project.taskTanpaMilestone }} task tanpa milestone — tetap dikerjakan dan
+                            tetap dihitung, hanya tidak terikat tahapan mana pun.
                         </CardContent>
                     </Card>
                 </li>
@@ -1391,6 +1512,73 @@ const kandidatTersisa = computed(() => {
                 </form>
             </DialogContent>
         </Dialog>
+
+        <!-- ============ Form milestone ============ -->
+        <Dialog v-model:open="dialogMilestone">
+            <DialogContent class="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>{{ milestoneDiedit ? 'Ubah Milestone' : 'Milestone Baru' }}</DialogTitle>
+                    <DialogDescription>
+                        Tahapan besar project. Hanya namanya yang wajib — tanggal target boleh menyusul.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <form class="min-w-0 space-y-4" @submit.prevent="simpanMilestone">
+                    <div class="space-y-2">
+                        <Label for="nama-milestone">Nama</Label>
+                        <Input
+                            id="nama-milestone"
+                            v-model="formMilestone.nama"
+                            placeholder="Persiapan Data Tunggakan"
+                        />
+                        <p v-if="formMilestone.errors.nama" class="text-destructive text-sm">
+                            {{ formMilestone.errors.nama }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="target-milestone">Target Tanggal</Label>
+                        <Input id="target-milestone" v-model="formMilestone.target_tanggal" type="date" />
+                        <p v-if="formMilestone.errors.target_tanggal" class="text-destructive text-sm">
+                            {{ formMilestone.errors.target_tanggal }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="deskripsi-milestone">Deskripsi</Label>
+                        <Textarea
+                            id="deskripsi-milestone"
+                            v-model="formMilestone.deskripsi"
+                            rows="3"
+                            placeholder="Opsional — apa yang harus rampung di tahapan ini."
+                        />
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" @click="dialogMilestone = false">Batal</Button>
+                        <Button type="submit" :disabled="formMilestone.processing">Simpan</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
+        <AlertDialog v-model:open="dialogHapusMilestone">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus milestone ini?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        <span class="font-medium">{{ milestoneDihapus?.nama }}</span> akan dihapus.
+                        {{ milestoneDihapus?.jumlahTask ?? 0 }} task di dalamnya
+                        <span class="font-medium">tidak ikut terhapus</span> — task itu hanya kembali
+                        menjadi task tanpa milestone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction @click="hapusMilestone">Hapus</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
         <!-- ============ Konfirmasi hapus ============ -->
         <AlertDialog v-model:open="dialogHapus">

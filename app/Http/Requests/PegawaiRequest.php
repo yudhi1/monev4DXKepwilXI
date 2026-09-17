@@ -21,6 +21,15 @@ class PegawaiRequest extends FormRequest
                 'required', 'string', 'max:100',
                 Rule::unique('users', 'name')->ignore($pegawai?->id),
             ],
+            /*
+             | NPP adalah identitas login pegawai ke modul Project Management,
+             | jadi wajib dan tidak boleh kembar.
+             */
+            'npp' => [
+                'required', 'string', 'max:20',
+                Rule::unique('users', 'npp')->ignore($pegawai?->id),
+            ],
+
             // Saat edit, password kosong berarti "jangan diubah".
             'password' => [$pegawai ? 'nullable' : 'required', 'min:6'],
 
@@ -51,6 +60,7 @@ class PegawaiRequest extends FormRequest
     {
         return [
             'name' => 'nama pegawai',
+            'npp' => 'NPP',
             'unit_kerja_id' => 'unit kerja',
             'pm_role' => 'role',
         ];

@@ -45,7 +45,12 @@ class PegawaiDemoSeeder extends Seeder
         $unitKerjas = UnitKerja::with('cabang:id,kode')->get();
         $dibuat = 0;
 
+        // NPP demo diurutkan dari 900001 — pegawai memakainya untuk login.
+        $nomor = 900000;
+
         foreach ($pegawai as [$nama, $jabatan, $kodeBidang, $kodeCabang, $role]) {
+            $nomor++;
+
             $unit = $unitKerjas->first(
                 fn (UnitKerja $u) => $u->kode === $kodeBidang
                     && ($kodeCabang === null ? $u->cabang_id === null : $u->cabang?->kode === $kodeCabang)
@@ -60,6 +65,7 @@ class PegawaiDemoSeeder extends Seeder
             $user = User::updateOrCreate(
                 ['name' => $nama],
                 [
+                    'npp' => (string) $nomor,
                     'email' => Str::slug($nama, '.').'@monev.local',
                     'password' => Hash::make(self::PASSWORD_AWAL),
                     'tipe' => 'pegawai',

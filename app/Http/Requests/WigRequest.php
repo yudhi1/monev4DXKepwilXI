@@ -23,6 +23,8 @@ class WigRequest extends FormRequest
             ],
             'nama_wig' => ['required', 'max:150'],
             'indikator_output' => ['nullable', 'string'],
+            'sifat_capaian' => ['required', Rule::in(Wig::daftarSifat())],
+            'arah' => ['required', Rule::in(Wig::daftarArah())],
             'bidang' => ['nullable', Rule::in(Wig::BIDANG)],
             'tahun' => ['required', 'integer', 'min:2020', 'max:2100'],
             'wilayah_id' => ['nullable', 'exists:wilayahs,id'],
@@ -34,6 +36,7 @@ class WigRequest extends FormRequest
         return [
             'kode_wig' => 'kode WIG',
             'nama_wig' => 'nama WIG',
+            'sifat_capaian' => 'sifat capaian',
         ];
     }
 }

@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Target } from '@lucide/vue';
+import { FileDown, Save, Target } from '@lucide/vue';
 import { kelasBidang } from '@/lib/bidang';
+import * as hitung from '@/lib/capaianWig';
 import { cn } from '@/lib/utils';
 
 const props = defineProps({
@@ -18,6 +19,7 @@ const props = defineProps({
     baris: { type: Array, required: true },
     namaBulan: { type: Array, required: true },
     daftarSatuan: { type: Array, required: true },
+    sifat: { type: Object, required: true },
     filter: { type: Object, required: true },
     bisaUbahTarget: { type: Boolean, default: false },
 });
@@ -57,41 +59,54 @@ watch(
 
 const simpan = () => form.post('/wig-capaian', { preserveScroll: true });
 
+/*
+ | Unduhan harus lewat permintaan biasa, bukan <Link> Inertia, supaya berkas
+ | ditangani browser. Filternya disamakan dengan yang sedang tampil.
+ */
+const tautanEkspor = computed(() => {
+    const params = new URLSearchParams({
+        wig_id: wigId.value,
+        tahun: tahun.value,
+        bulan: bulanAcuan.value,
+    });
+
+    return `/wig-capaian/excel?${params}`;
+});
+
 /* ---------------- Perhitungan ---------------- */
 const angka = (n) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 0 });
 
-/** Jumlah nilai bulan 1..n; dipakai untuk mode "s.d. Bulan". */
-const akumulasi = (bulan, sampai, kunci) =>
-    bulan.slice(0, sampai).reduce((jml, m) => jml + Number(m[kunci] || 0), 0);
+/* Sifat dan arah WIG menentukan cara meringkas dan menilai; lihat @/lib/capaianWig. */
+const sifatWig = computed(() => props.wig?.sifat_capaian ?? 'akumulatif');
+const arahWig = computed(() => props.wig?.arah ?? 'naik');
+const wigPosisi = computed(() => sifatWig.value === 'posisi');
+const wigPeriodik = computed(() => sifatWig.value === 'periodik');
 
+/** Nilai satu sel bulan, mengikuti mode tampilan yang sedang aktif. */
 const nilaiSel = (baris, indeks, kunci) =>
     mode.value === 'bulan'
         ? Number(baris.bulan[indeks][kunci] || 0)
-        : akumulasi(baris.bulan, indeks + 1, kunci);
-
-const persen = (pembilang, penyebut) =>
-    Number(penyebut) > 0 ? Math.round((pembilang / penyebut) * 10000) / 100 : 0;
+        : hitung.ringkas(baris.bulan, indeks + 1, kunci, sifatWig.value);
 
 /** Capaian tiap kolom bulan, mengikuti mode tampilan yang sedang aktif. */
 const persenSel = (baris, indeks) =>
-    persen(nilaiSel(baris, indeks, 'realisasi'), nilaiSel(baris, indeks, 'target'));
+    hitung.persen(nilaiSel(baris, indeks, 'realisasi'), nilaiSel(baris, indeks, 'target'));
 
 /* Kedua kolom ringkasan mengacu pada bulan yang dipilih di filter. */
 const indeksAcuan = computed(() => Number(props.filter.bulan) - 1);
 
-/** Realisasi s.d. bulan acuan dibanding target tahunan. */
+/** Capaian s.d. bulan acuan terhadap target tahunan. */
 const persenTahunan = (baris) =>
-    persen(akumulasi(baris.bulan, indeksAcuan.value + 1, 'realisasi'), baris.nilai_target);
+    hitung.persenTahunan(baris, indeksAcuan.value + 1, sifatWig.value);
 
-/** Realisasi bulan acuan dibanding target bulan acuan. */
-const persenBulanan = (baris) =>
-    persen(
-        Number(baris.bulan[indeksAcuan.value].realisasi || 0),
-        Number(baris.bulan[indeksAcuan.value].target || 0)
-    );
+const warnaPersen = (nilai) => hitung.warnaPersen(nilai, arahWig.value);
 
-const warnaPersen = (nilai) =>
-    nilai >= 100 ? 'text-success' : nilai >= 90 ? 'text-warning-foreground' : 'text-destructive';
+const labelTarget = computed(() => hitung.labelTarget(sifatWig.value, props.filter.tahun));
+
+/** Judul kolom ringkasan s.d. bulan, disesuaikan dengan sifat WIG. */
+const labelPersenTahunan = computed(() =>
+    wigPeriodik.value ? '% Rata-rata s.d. Bulan' : '% thd Target'
+);
 
 /** Bulan yang sudah berjalan diberi latar berbeda agar terpisah dari rencana ke depan. */
 const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
@@ -109,10 +124,18 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                         Target tahunan, target bulanan, dan realisasinya dalam satu tabel.
                     </p>
                 </div>
-                <Button :disabled="!wig || form.processing" @click="simpan">
-                    <Save class="mr-1.5 size-4" />
-                    {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
-                </Button>
+                <div class="flex flex-wrap gap-2">
+                    <Button v-if="wig" variant="outline" as-child>
+                        <a :href="tautanEkspor">
+                            <FileDown class="mr-1.5 size-4" />
+                            Excel
+                        </a>
+                    </Button>
+                    <Button :disabled="!wig || form.processing" @click="simpan">
+                        <Save class="mr-1.5 size-4" />
+                        {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
+                    </Button>
+                </div>
             </div>
         </template>
 
@@ -165,15 +188,24 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                 <div v-if="wig" class="bg-accent/40 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
                     <Badge variant="secondary" class="font-mono">{{ wig.kode_wig }}</Badge>
                     <Badge v-if="wig.bidang" variant="outline" :class="kelasBidang(wig.bidang)">{{ wig.bidang }}</Badge>
+                    <Badge variant="outline">{{ sifat[sifatWig]?.label }}</Badge>
+                    <Badge v-if="arahWig === 'turun'" variant="outline">Turun lebih baik</Badge>
                     <span class="text-muted-foreground">{{ wig.nama_wig }}</span>
                 </div>
+
+                <!-- Cara meringkas berbeda per sifat, jadi dijelaskan di tempat angkanya dibaca. -->
+                <p v-if="wig" class="text-muted-foreground text-sm">
+                    {{ sifat[sifatWig]?.keterangan }}
+                </p>
 
                 <p v-if="!bisaUbahTarget" class="text-muted-foreground text-sm">
                     Baris target ditetapkan oleh Kedeputian Wilayah, jadi hanya realisasi yang dapat kamu isi.
                 </p>
 
                 <p v-if="mode === 'sd'" class="text-muted-foreground text-sm">
-                    Sedang menampilkan angka akumulasi. Untuk mengisi data, ganti ke <strong>Per Bulan</strong>.
+                    Sedang menampilkan angka
+                    {{ wigPeriodik ? 'rata-rata' : wigPosisi ? 'posisi terakhir' : 'akumulasi' }}.
+                    Untuk mengisi data, ganti ke <strong>Per Bulan</strong>.
                 </p>
             </CardContent>
         </Card>
@@ -201,14 +233,17 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                                 >
                                     {{ b.slice(0, 3) }}
                                 </th>
+                                <th
+                                    v-if="wigPosisi"
+                                    class="bg-muted/60 sticky top-0 z-30 min-w-[9rem] border-b border-r px-3 py-2 text-right font-medium"
+                                >
+                                    Nilai Awal
+                                </th>
                                 <th class="bg-muted/60 sticky top-0 z-30 min-w-[9rem] border-b border-r px-3 py-2 text-right font-medium">
-                                    Target {{ filter.tahun }}
+                                    {{ labelTarget }}
                                 </th>
                                 <th class="bg-muted/60 sticky top-0 z-30 min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
-                                    % thd Target
-                                </th>
-                                <th class="bg-muted/60 sticky top-0 z-30 min-w-[7.5rem] border-b border-r px-3 py-2 text-center font-medium">
-                                    % Bulan Berjalan
+                                    {{ labelPersenTahunan }}
                                 </th>
                                 <th class="bg-muted/60 sticky top-0 z-30 min-w-[7rem] border-b border-r px-3 py-2 text-left font-medium">Satuan</th>
                                 <th class="bg-muted/60 sticky top-0 z-30 min-w-[9rem] border-b px-3 py-2 text-left font-medium">Tanggal Target</th>
@@ -248,6 +283,15 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                                         </span>
                                     </td>
 
+                                    <td v-if="wigPosisi" rowspan="3" class="border-b-2 border-r px-2 py-1.5 align-top">
+                                        <Input
+                                            v-model.number="b.nilai_awal"
+                                            type="number"
+                                            step="any"
+                                            class="h-8 text-right"
+                                            :disabled="!bisaUbahTarget"
+                                        />
+                                    </td>
                                     <td rowspan="3" class="border-b-2 border-r px-2 py-1.5 align-top">
                                         <Input
                                             v-model.number="b.nilai_target"
@@ -262,12 +306,6 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                                         :class="cn('border-b-2 border-r px-3 text-center align-middle text-base font-semibold tabular-nums', warnaPersen(persenTahunan(b)))"
                                     >
                                         {{ persenTahunan(b) }}%
-                                    </td>
-                                    <td
-                                        rowspan="3"
-                                        :class="cn('border-b-2 border-r px-3 text-center align-middle text-base font-semibold tabular-nums', warnaPersen(persenBulanan(b)))"
-                                    >
-                                        {{ persenBulanan(b) }}%
                                     </td>
                                     <td rowspan="3" class="border-b-2 border-r px-2 py-1.5 align-top">
                                         <Select v-model="b.satuan" :disabled="!bisaUbahTarget">
@@ -335,7 +373,7 @@ const sudahLewat = (indeks) => indeks <= indeksAcuan.value;
                             </template>
 
                             <tr v-if="form.baris.length === 0">
-                                <td colspan="19" class="py-12">
+                                <td :colspan="wigPosisi ? 19 : 18" class="py-12">
                                     <div class="text-muted-foreground flex flex-col items-center gap-2">
                                         <Target class="size-8 opacity-40" />
                                         <p class="text-sm">Belum ada unit kerja.</p>

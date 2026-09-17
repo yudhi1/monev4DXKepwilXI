@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, CircleCheckBig, Gauge, Target } from '@lucide/vue';
+import { Building2, ChevronDown, CircleCheckBig, Gauge, Target } from '@lucide/vue';
 import { cn } from '@/lib/utils';
 
 const props = defineProps({
@@ -42,6 +42,28 @@ const mingguBanding = ref(props.filter.minggu_banding ? String(props.filter.ming
 const wigId = ref(props.filter.wig_id ? String(props.filter.wig_id) : SEMUA);
 const lagId = ref(props.filter.lag_id ? String(props.filter.lag_id) : SEMUA);
 const cabangId = ref(props.filter.cabang_id ? String(props.filter.cabang_id) : SEMUA);
+
+/* ---------------- Kartu sasaran ---------------- */
+const KUNCI_SASARAN = 'kepwil.sasaran-terbuka';
+
+// Pilihan buka/tutup diingat per browser; localStorage bisa gagal di mode privat.
+const bacaPreferensiSasaran = () => {
+    try {
+        return localStorage.getItem(KUNCI_SASARAN) !== '0';
+    } catch {
+        return true;
+    }
+};
+
+const sasaranTerbuka = ref(bacaPreferensiSasaran());
+
+watch(sasaranTerbuka, (terbuka) => {
+    try {
+        localStorage.setItem(KUNCI_SASARAN, terbuka ? '1' : '0');
+    } catch {
+        // Preferensi tampilan saja — abaikan bila penyimpanan diblokir.
+    }
+});
 
 const muatUlang = () =>
     router.get(
@@ -251,7 +273,27 @@ const membandingkan = computed(() => props.detailLeadBanding !== null);
         <!-- Sasaran yang sedang ditinjau -->
         <Card v-if="sasaran" class="mb-6 overflow-hidden py-0">
             <div class="divide-y">
-                <div class="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
+                <!--
+                  | Daftar Lead Measure bisa panjang sehingga kartu ini mendorong
+                  | tabel peringkat jauh ke bawah. Ringkasannya tetap terlihat di
+                  | baris ini saat ditutup.
+                -->
+                <button
+                    type="button"
+                    class="hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left"
+                    :aria-expanded="sasaranTerbuka"
+                    @click="sasaranTerbuka = !sasaranTerbuka"
+                >
+                    <ChevronDown
+                        :class="cn('text-muted-foreground size-4 shrink-0 transition-transform', !sasaranTerbuka && '-rotate-90')"
+                    />
+                    <span class="text-sm font-semibold">Sasaran yang ditinjau</span>
+                    <span v-if="!sasaranTerbuka" class="text-muted-foreground min-w-0 truncate text-sm">
+                        {{ sasaran.wig.kode }} · {{ sasaran.leads.length }} Lead Measure
+                    </span>
+                </button>
+
+                <div v-show="sasaranTerbuka" class="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
                     <span class="w-32 shrink-0 text-sm font-semibold">WIG</span>
                     <p class="text-sm">
                         <Badge variant="secondary" class="mr-2 font-mono text-xs">{{ sasaran.wig.kode }}</Badge>
@@ -259,7 +301,7 @@ const membandingkan = computed(() => props.detailLeadBanding !== null);
                     </p>
                 </div>
 
-                <div v-if="sasaran.lag" class="bg-muted/40 flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
+                <div v-if="sasaran.lag" v-show="sasaranTerbuka" class="bg-muted/40 flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
                     <span class="w-32 shrink-0 text-sm font-semibold">LAG</span>
                     <p class="text-sm">
                         <Badge variant="outline" class="mr-2 font-mono text-xs">{{ sasaran.lag.kode }}</Badge>
@@ -267,7 +309,7 @@ const membandingkan = computed(() => props.detailLeadBanding !== null);
                     </p>
                 </div>
 
-                <div class="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
+                <div v-show="sasaranTerbuka" class="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
                     <span class="w-32 shrink-0 text-sm font-semibold">Lead Measure</span>
                     <ol v-if="sasaran.leads.length" class="list-decimal space-y-1 pl-4 text-sm">
                         <li v-for="lead in sasaran.leads" :key="lead.kode">

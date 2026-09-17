@@ -27,10 +27,28 @@
 ## Struktur Database
 Tabel utama:
 - users
-- wigs (kode_wig, nama_wig, indikator_output, tahun)
+- wigs (kode_wig, nama_wig, indikator_output, tahun, sifat_capaian, arah)
 - lag_measures (kode_lag, wig_id, tahun)
 - lead_measures (kode_lead, lag_measure_id, wig_id, tahun)
 - lead_measure_realisasis (lead_measure_id, minggu, bulan, tahun, target, realisasi)
+
+## Sifat Capaian WIG
+Tidak semua WIG boleh dijumlahkan antar bulan. `wigs.sifat_capaian` menentukan
+cara meringkas angka bulanan jadi capaian "s.d. bulan", dan `wigs.arah`
+menentukan penilaiannya (naik/turun lebih baik). Pilihannya di `config/wig.php`,
+bukan enum MySQL.
+
+| sifat | s.d. bulan | contoh |
+|---|---|---|
+| `akumulatif` | penjumlahan | penerimaan iuran, biaya pelayanan |
+| `posisi` | nilai bulan terakhir terisi | jumlah peserta aktif |
+| `periodik` | rata-rata bulan terisi | persentase kepatuhan |
+
+Rumusnya ada **dua salinan yang harus dijaga sinkron**: `App\Support\Wig\Capaian`
+(export, dashboard) dan `resources/js/lib/capaianWig.js` (halaman Capaian).
+`arah` hanya memengaruhi warna dan status tercapai, tidak mengubah aritmetika —
+persentase tetap realisasi ÷ target, dibaca sebagai "berapa persen pagu terpakai"
+untuk WIG efisiensi.
 
 ## Relasi Data
 - 1 WIG → banyak Lag Measure
@@ -75,10 +93,20 @@ Aplikasi ini menampung dua modul dengan **satu login** dan satu tabel `users`:
 | Monev 4DX | root (`/dashboard`, `/wigs`, …) | `App\Http\Controllers\*`, `Pages/*` |
 | Master Data | root (`/users`, `/pegawai`, `/unit-kerja`, `/wilayahs`, `/cabangs`) | `UserController`, `PegawaiController`, `UnitKerjaController`, … |
 | Project Management | `/pm` | `App\Http\Controllers\Pm\*`, `App\Models\Pm\*`, `Pages/Pm/*` |
+| Monitoring Kinerja | `/kinerja` | `App\Http\Controllers\Kinerja\*`, `App\Models\Kinerja\*`, `Pages/Kinerja/*` |
 
 - **Master Data berdiri sendiri, bukan menu di dalam 4DX.** Isinya melayani kedua
   modul; dulu ia menu 4DX sehingga menambah Pegawai (urusan PM) harus lewat 4DX.
   Dijaga `modul:master` + `role:admin`.
+
+- **Monitoring Kinerja juga berdiri sendiri.** Isinya berkas capaian yang
+  disampaikan ke kantor cabang, bukan rangkaian WIG/Lag/Lead, jadi cabang tidak
+  perlu menelusuri menu perencanaan 4DX hanya untuk mengunduh satu berkas.
+  Tiga lapis: kategori → indikator → file (maks 2 MB, tabel `kinerja_*`).
+  Admin & Kedeputian Wilayah menyusun dan mengunggah; kantor cabang hanya
+  melihat dan mengunduh. Pembatasnya `modul:kinerja` + `role:` di rute —
+  tidak ada permission `kinerja.*` tersendiri, supaya hak unggah hanya punya
+  satu sumber kebenaran.
 
 - Modul dipilih di `/apps` setelah login; user yang hanya berhak atas satu modul langsung dialihkan.
 - Daftar modul: `config/modul.php`. Akses modul disaring middleware `modul:<kunci>`.

@@ -11,9 +11,11 @@ import {
     CircleCheckBig,
     FileText,
     FolderKanban,
-    Gauge,
+    GraduationCap,
     Landmark,
+    Layers,
     LayoutDashboard,
+    ListChecks,
     Map,
     Star,
     Target,
@@ -56,19 +58,6 @@ export const menu4dx = [
             { label: 'Input Realisasi Iuran', href: '/monev-iuran/input' },
         ],
     },
-    {
-        label: 'Monitoring Kinerja',
-        icon: Gauge,
-        roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'],
-        items: [
-            { label: 'Capaian Total APC', href: '/monitoring-kinerja/total' },
-            { label: 'Peserta Aktif', href: '/monitoring-kinerja/peserta-aktif' },
-            { label: 'Tingkat Kepuasan', href: '/monitoring-kinerja/kepuasan' },
-            { label: 'Penerimaan Iuran', href: '/monitoring-kinerja/penerimaan-iuran' },
-            { label: 'Realisasi Biaya Manfaat', href: '/monitoring-kinerja/biaya-manfaat' },
-            { label: 'Biaya Operasional', href: '/monitoring-kinerja/biaya-operasional' },
-        ],
-    },
     { label: 'Laporan', href: '/laporan', icon: FileText, roles: ['admin', 'kedeputian_wilayah', 'kantor_cabang'] },
     { label: 'Panduan', href: '/panduan', icon: BookOpen, roles: null },
 ];
@@ -80,6 +69,8 @@ export const menuPm = [
     // Bukan "Tugas Saya": halamannya juga memuat tugas tim bagi yang berhak.
     // Judul di dalamnya yang menyesuaikan lingkup terpilih.
     { label: 'Tugas', href: '/pm/tugas-saya', icon: CircleCheckBig, roles: null },
+    // Terbuka untuk semua: peserta mengerjakan, Project Manager menyusun.
+    { label: 'Quiz', href: '/pm/quiz', icon: GraduationCap, roles: null },
 ];
 
 /*
@@ -97,9 +88,24 @@ export const menuMaster = [
     { label: 'Cabang', href: '/cabangs', icon: Landmark, roles: ['admin'] },
 ];
 
+/*
+ | Modul Monitoring Kinerja, diurutkan mengikuti alur kerjanya: kategori dulu,
+ | lalu indikator di bawahnya, baru berkasnya.
+ |
+ | Beranda modul tetap /kinerja/file, bukan menu teratas ini — kategori dan
+ | indikator khusus Admin & Kedeputian Wilayah, sehingga kantor cabang akan
+ | menabrak 403 kalau diarahkan ke sana sesudah mengklik kartunya di /apps.
+ */
+export const menuKinerja = [
+    { label: 'Kategori Capaian', href: '/kinerja/kategori', icon: Layers, roles: ['admin', 'kedeputian_wilayah'] },
+    { label: 'Indikator', href: '/kinerja/indikator', icon: ListChecks, roles: ['admin', 'kedeputian_wilayah'] },
+    { label: 'File Capaian', href: '/kinerja/file', icon: FileText, roles: null },
+];
+
 export const MENU_MODUL = {
     '4dx': menu4dx,
     master: menuMaster,
+    kinerja: menuKinerja,
     pm: menuPm,
 };
 
@@ -107,5 +113,6 @@ export const MENU_MODUL = {
 export const BRAND_MODUL = {
     '4dx': { judul: 'Monev', sub: '4DX', beranda: '/dashboard', ikon: 'ChartNoAxesCombined' },
     master: { judul: 'Master', sub: 'Data', beranda: '/pegawai', ikon: 'Database' },
+    kinerja: { judul: 'Monitoring', sub: 'Kinerja', beranda: '/kinerja/file', ikon: 'Gauge' },
     pm: { judul: 'Project', sub: 'Management', beranda: '/pm', ikon: 'FolderKanban' },
 };

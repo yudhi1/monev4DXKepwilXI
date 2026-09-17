@@ -19,6 +19,7 @@ import {
     ChevronsUpDown,
     Database,
     FolderKanban,
+    Gauge,
     Grid2x2,
     LogOut,
     Menu,
@@ -37,7 +38,7 @@ const modulTersedia = computed(() => page.props.modul?.daftar ?? []);
 const bisaGantiModul = computed(() => modulTersedia.value.length > 1);
 const brand = computed(() => BRAND_MODUL[modulAktif.value] ?? BRAND_MODUL['4dx']);
 
-const IKON_MODUL = { ChartNoAxesCombined, Database, FolderKanban };
+const IKON_MODUL = { ChartNoAxesCombined, Database, FolderKanban, Gauge };
 
 const ROLE_LABEL = {
     admin: 'Admin',

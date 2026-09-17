@@ -20,8 +20,6 @@ const props = defineProps({
     filter: { type: Object, required: true },
     terkunciCabang: { type: Boolean, default: false },
     ringkasan: { type: Object, required: true },
-    bulanData: { type: Array, required: true },
-    rankingCabang: { type: Array, required: true },
     wigProgress: { type: Array, required: true },
     pohonWig: { type: Array, required: true },
     jumlahMinggu: { type: Number, default: 5 },
@@ -73,21 +71,6 @@ const nilai = (v, satuan) => {
 
     return `${Number(v ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 0 })} ${s}`;
 };
-
-/* ---------------- Grafik tren bulanan ---------------- */
-const dataTren = computed(() => ({
-    labels: BULAN,
-    datasets: [
-        {
-            label: '% Capaian',
-            data: props.bulanData,
-            backgroundColor: warnaToken('chart-1'),
-            borderRadius: 4,
-        },
-    ],
-}));
-
-const opsiTren = computed(() => opsiDasar({ maxY: 150, legend: false }));
 
 /* ---------------- Detail WIG ---------------- */
 const wigDipilih = ref(0);
@@ -318,46 +301,6 @@ const toggleWig = (id) => (wigTerbuka.value[id] = ! wigTerbuka.value[id]);
                 <CardContent>
                     <p class="text-muted-foreground text-sm">Rata-rata Capaian</p>
                     <p class="mt-1 text-3xl font-semibold tabular-nums">{{ ringkasan.avg_pct }}%</p>
-                </CardContent>
-            </Card>
-        </div>
-
-        <div class="mb-6 grid gap-4 lg:grid-cols-3">
-            <!-- Tren bulanan -->
-            <Card class="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle class="text-base">Tren Capaian Aktivitas {{ filter.tahun }}</CardTitle>
-                    <CardDescription>Rata-rata persentase realisasi Lead Measure per bulan.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Grafik tipe="bar" :data="dataTren" :opsi="opsiTren" tinggi="h-64" />
-                </CardContent>
-            </Card>
-
-            <!-- Ranking -->
-            <Card>
-                <CardHeader>
-                    <CardTitle class="text-base">Ranking Cabang</CardTitle>
-                    <CardDescription>Rata-rata capaian sepanjang {{ filter.tahun }}.</CardDescription>
-                </CardHeader>
-                <CardContent class="space-y-3">
-                    <div v-for="(baris, i) in rankingCabang" :key="baris.cabang_id" class="flex items-center gap-3">
-                        <span
-                            :class="
-                                cn(
-                                    'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                                    i < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                                )
-                            "
-                        >
-                            {{ i + 1 }}
-                        </span>
-                        <span class="min-w-0 flex-1 truncate text-sm">{{ baris.nama }}</span>
-                        <span class="text-sm font-medium tabular-nums">{{ baris.pct }}%</span>
-                    </div>
-                    <p v-if="rankingCabang.length === 0" class="text-muted-foreground py-8 text-center text-sm">
-                        Belum ada data realisasi.
-                    </p>
                 </CardContent>
             </Card>
         </div>

@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ChartNoAxesCombined, Database, FolderKanban, LogOut } from '@lucide/vue';
+import { ArrowRight, ChartNoAxesCombined, Database, FolderKanban, Gauge, LogOut } from '@lucide/vue';
 
 defineProps({
     modules: { type: Array, required: true },
@@ -13,12 +13,13 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 
 /* Nama ikon di config/modul.php dipetakan ke komponen Lucide di sini. */
-const IKON = { ChartNoAxesCombined, Database, FolderKanban };
+const IKON = { ChartNoAxesCombined, Database, FolderKanban, Gauge };
 
 const GAYA = {
     primary: 'from-primary to-primary/60',
     success: 'from-success to-success/60',
     slate: 'from-slate-500 to-slate-400',
+    amber: 'from-amber-500 to-amber-400',
 };
 
 const logout = () => router.post('/logout');

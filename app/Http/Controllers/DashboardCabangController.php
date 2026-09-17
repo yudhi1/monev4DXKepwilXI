@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Wig;
 use App\Models\WigRealisasi;
 use App\Models\WigTarget;
+use App\Support\Wig\Capaian;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -63,8 +64,6 @@ class DashboardCabangController extends Controller
                 'avg_pct' => $avgPct,
             ],
             'jumlahMinggu' => LeadMeasureRealisasi::JUMLAH_MINGGU,
-            'bulanData' => $this->capaianPerBulan($tahun, $cabangId),
-            'rankingCabang' => $this->rankingCabang($user, $tahun, $cabangs),
             'wigProgress' => $this->progresWig($cabangId, $tahun, $bulan),
             'pohonWig' => $pohonWig,
         ]);
@@ -212,45 +211,6 @@ class DashboardCabangController extends Controller
         return [$totalLead, $onTrack, $avgPct, $pohon];
     }
 
-    private function capaianPerBulan(int $tahun, ?int $cabangId): array
-    {
-        $perBulan = LeadMeasureRealisasi::where('tahun', $tahun)
-            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
-            ->selectRaw('bulan, AVG(persentase) as pct')
-            ->groupBy('bulan')
-            ->orderBy('bulan')
-            ->pluck('pct', 'bulan')
-            ->toArray();
-
-        $hasil = [];
-
-        for ($i = 1; $i <= 12; $i++) {
-            $hasil[] = round((float) ($perBulan[$i] ?? 0), 2);
-        }
-
-        return $hasil;
-    }
-
-    private function rankingCabang(?User $user, int $tahun, $cabangs)
-    {
-        return LeadMeasureRealisasi::where('tahun', $tahun)
-            ->selectRaw('cabang_id, AVG(persentase) as pct')
-            ->groupBy('cabang_id')
-            ->orderByDesc('pct')
-            ->with('cabang:id,nama')
-            ->when(
-                $user?->hasRole('kedeputian_wilayah') && $user->wilayah_id,
-                fn ($q) => $q->whereIn('cabang_id', $cabangs->pluck('id'))
-            )
-            ->limit(10)
-            ->get()
-            ->map(fn ($baris) => [
-                'cabang_id' => $baris->cabang_id,
-                'nama' => $baris->cabang?->nama ?? '—',
-                'pct' => round((float) $baris->pct, 2),
-            ]);
-    }
-
     /**
      * Progres tiap WIG untuk cabang terpilih: capaian kumulatif bulanan,
      * capaian aktivitas (Lead) bulanan & mingguan, serta korelasi keduanya.
@@ -324,16 +284,44 @@ class DashboardCabangController extends Controller
                 }
             }
 
+            /*
+             | Cara meringkas angka bulanan mengikuti sifat WIG: hanya yang
+             | akumulatif boleh dijumlahkan. WIG posisi mencatat keadaan, dan
+             | WIG periodik mencatat kadar yang berlaku sebulan saja — lihat
+             | App\Support\Wig\Capaian.
+             */
+            $sifat = $t->wig?->sifat_capaian ?? 'akumulatif';
+
+            $bulanSeri = [];
+
+            for ($b = 1; $b <= 12; $b++) {
+                $bulanSeri[] = ['bulan' => $b, 'target' => 0.0, 'realisasi' => (float) ($wigRealBulan[$b] ?? 0)];
+            }
+
             $wigPctBulan = [];
             $wigDeltaBulan = [];
             $leadPctBulan = [];
-            $kumulatif = 0;
 
             for ($b = 1; $b <= 12; $b++) {
                 $delta = (float) ($wigRealBulan[$b] ?? 0);
-                $kumulatif += $delta;
-                $wigPctBulan[] = $rentang > 0 ? round(($kumulatif / $rentang) * 100, 2) : 0;
-                $wigDeltaBulan[] = $rentang > 0 ? round(($delta / $rentang) * 100, 2) : 0;
+                $sampai = Capaian::ringkas($bulanSeri, $b, 'realisasi', $sifat);
+
+                /*
+                 | Akumulatif diukur dari jarak yang sudah ditempuh sejak nilai
+                 | awal (seperti sebelumnya); posisi diukur sama tetapi dari
+                 | keadaan terakhir, bukan penjumlahan; periodik dibandingkan
+                 | langsung dengan target bulanannya.
+                 */
+                $wigPctBulan[] = match ($sifat) {
+                    'periodik' => Capaian::persen($sampai, $nilaiTarget),
+                    'posisi' => $rentang != 0.0 ? round((($sampai - $nilaiAwal) / $rentang) * 100, 2) : 0,
+                    default => $rentang > 0 ? round(($sampai / $rentang) * 100, 2) : 0,
+                };
+
+                $wigDeltaBulan[] = $sifat === 'periodik'
+                    ? Capaian::persen($delta, $nilaiTarget)
+                    : ($rentang > 0 ? round(($delta / $rentang) * 100, 2) : 0);
+
                 $leadPctBulan[] = round((float) ($leadAvgBulan[$b] ?? 0), 2);
             }
 

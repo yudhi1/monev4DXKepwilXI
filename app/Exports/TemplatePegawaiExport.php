@@ -24,7 +24,7 @@ class TemplatePegawaiExport implements FromArray, ShouldAutoSize, WithHeadings, 
 
     public function headings(): array
     {
-        return ['nama', 'jabatan', 'bidang', 'cabang', 'role'];
+        return ['npp', 'nama', 'jabatan', 'bidang', 'cabang', 'role'];
     }
 
     public function array(): array
@@ -32,10 +32,11 @@ class TemplatePegawaiExport implements FromArray, ShouldAutoSize, WithHeadings, 
         $contohCabang = UnitKerja::where('tingkat', 'cabang')->with('cabang')->first();
 
         $baris = [
-            ['Budi Santoso', 'Staf', 'KML', '', 'member'],
-            ['Siti Rahayu', 'Kepala Bidang', 'JPK', '', 'project_manager'],
-            ['Andi Wijaya', 'Staf', $contohCabang?->kode ?? 'PMU', $contohCabang?->cabang?->kode ?? 'KC-DPS', ''],
+            ['10001', 'Budi Santoso', 'Staf', 'KML', '', 'member'],
+            ['10002', 'Siti Rahayu', 'Kepala Bidang', 'JPK', '', 'project_manager'],
+            ['10003', 'Andi Wijaya', 'Staf', $contohCabang?->kode ?? 'PMU', $contohCabang?->cabang?->kode ?? 'KC-DPS', ''],
             [],
+            ['— Kolom "npp" wajib: NPP dipakai pegawai untuk masuk ke Project Management —'],
             ['— Kosongkan kolom "cabang" untuk pegawai di kantor Kedeputian Wilayah —'],
             ['— Kolom "role" boleh kosong; bawaannya member —'],
             [],
